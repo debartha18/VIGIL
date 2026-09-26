@@ -83,7 +83,7 @@ class OfflineNetworkInspector {
 
 export const offlineInspector = new OfflineNetworkInspector();
 
-const API_BASE = '/api';
+const API_BASE = ((import.meta as any).env?.VITE_API_URL as string) || '/api';
 
 export const api = {
   async getHealth(): Promise<SystemHealth> {
