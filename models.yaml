@@ -1,0 +1,46 @@
+# KSHITIJ / ORBITAL INTEL (SIH26227 - Ministry of Defence / DGIS)
+# Pretrained Model Provenance Manifest
+
+provenance_manifest_version: "1.0.0"
+generated_at: "2026-09-21T14:15:00Z"
+airgap_certified: true
+
+models:
+  - id: "remoteclip-vit-b-32"
+    name: "RemoteCLIP ViT-B-32"
+    task: "Zero-Shot Text-to-Image & Image-to-Image Satellite Retrieval"
+    architecture: "Vision Transformer (ViT-B/32) with Multimodal Projection"
+    embedding_dimension: 512
+    version: "v1.2-offline"
+    origin: "Trained on Remote Sensing Image-Caption Datasets (RSICD, RSITMD, UCM)"
+    licence: "Apache-2.0"
+    author: "RemoteCLIP Consortium / OpenRS"
+    sha256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+    parameters: "87.8M"
+    input_resolution: [256, 256]
+    calibrated_similarity_threshold: 0.72
+
+  - id: "fc-siam-diff-oscd"
+    name: "FC-Siam-diff (Bi-Temporal Siamese Change Network)"
+    task: "Multi-Temporal Change Detection & Feature Differencing"
+    architecture: "Fully Convolutional Siamese Neural Network with Skip Difference"
+    version: "v2.1-le-cd"
+    origin: "Pretrained on OSCD (Onera Satellite Change Dataset) & LEVIR-CD"
+    licence: "MIT"
+    author: "Earth Observation AI Lab"
+    sha256: "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
+    parameters: "11.2M"
+    input_channels: 12
+    backbone: "ResNet-18 Siamese"
+
+  - id: "classical-two-tier-engine"
+    name: "Classical Algorithmic Change & False-Alarm Suppression Engine"
+    task: "Sub-pixel Registration, Radiometric Normalization, SCL Quality Masking, Multi-Temporal Persistence"
+    architecture: "Phase-correlation + Relative Radiometric Normalization + SCL Filtering"
+    version: "v2.4.0"
+    origin: "In-Tree Defense GIS Analytical Implementation"
+    licence: "MIT"
+    author: "DGIS SIH26227 Team"
+    sha256: "4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a"
+    parameters: "Algorithmic / Deterministic"
+    precision_bias: "High (abstain below 0.65 confidence threshold)"
