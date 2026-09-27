@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
 
 export interface AnalystProfile {
   name: string;
@@ -33,6 +34,7 @@ interface AnalystContextType {
 const AnalystContext = createContext<AnalystContextType | undefined>(undefined);
 
 export const AnalystProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<AnalystProfile>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -46,6 +48,21 @@ export const AnalystProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+
+  // Sync profile when authenticated OIT user changes
+  useEffect(() => {
+    if (user) {
+      setProfile((prev) => ({
+        ...prev,
+        name: user.name,
+        email: user.email,
+        role: user.role === 'oit_admin' ? 'OIT Administrator' : 'Imagery Intelligence',
+        callSign: user.call_sign || prev.callSign,
+        clearance: user.clearance || prev.clearance,
+        department: user.organization || prev.department,
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     try {

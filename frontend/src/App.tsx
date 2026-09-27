@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { OrbitalHeader } from './components/layout/OrbitalHeader';
 import { OrbitalSidebar, OrbitalTab } from './components/layout/OrbitalSidebar';
 import { OrbitalSearchBar } from './components/search/OrbitalSearchBar';
@@ -9,6 +9,8 @@ import { SystemAnalyticsGauges } from './components/analytics/SystemAnalyticsGau
 import { CandidateDetailModal } from './components/analysis/CandidateDetailModal';
 import { AnalystProfileModal } from './components/layout/AnalystProfileModal';
 import { AnalystProvider } from './context/AnalystContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { OITLoginView } from './views/OITLoginView';
 import { AuditTrailView } from './views/AuditTrailView';
 import { ArchiveIngestView } from './views/ArchiveIngestView';
 import { EvaluationView } from './views/EvaluationView';
@@ -112,8 +114,60 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
   }
 ];
 
-export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<OrbitalTab>('semantic-search');
+// Helper to map browser pathname to OrbitalTab
+const tabFromPath = (path: string): OrbitalTab => {
+  const clean = path.toLowerCase().replace(/\/$/, '') || '/';
+  switch (clean) {
+    case '/overview':
+      return 'overview';
+    case '/imagery':
+    case '/image-search':
+      return 'image-search';
+    case '/analysis':
+    case '/change-analysis':
+    case '/change-detection':
+      return 'change-analysis';
+    case '/aoi-monitor':
+      return 'aoi-monitor';
+    case '/archive':
+      return 'archive';
+    case '/audit-log':
+    case '/audit':
+      return 'audit-log';
+    case '/dashboard':
+    case '/search':
+    case '/':
+    default:
+      return 'semantic-search';
+  }
+};
+
+const pathForTab = (tab: OrbitalTab): string => {
+  switch (tab) {
+    case 'overview':
+      return '/overview';
+    case 'image-search':
+      return '/imagery';
+    case 'change-analysis':
+      return '/analysis';
+    case 'aoi-monitor':
+      return '/aoi-monitor';
+    case 'archive':
+      return '/archive';
+    case 'audit-log':
+      return '/audit-log';
+    case 'semantic-search':
+    default:
+      return '/dashboard';
+  }
+};
+
+const VigilPlatform: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+
+  const [activeTab, setActiveTab] = useState<OrbitalTab>(() => {
+    return tabFromPath(window.location.pathname);
+  });
   const [selectedResultId, setSelectedResultId] = useState<string>('res-1');
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
@@ -123,6 +177,47 @@ export const App: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>(GROUND_TRUTH_TARGETS.slice(0, 5));
   const [selectedResult, setSelectedResult] = useState<SearchResultItem>(GROUND_TRUTH_TARGETS[0]);
   const [scenes, setScenes] = useState<Scene[]>([]);
+
+  // Route Synchronization with Browser History & Popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      const currentPath = window.location.pathname;
+      if (currentPath === '/login' && isAuthenticated) {
+        window.history.replaceState(null, '', pathForTab(activeTab));
+      } else if (currentPath !== '/login') {
+        setActiveTab(tabFromPath(currentPath));
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isAuthenticated, activeTab]);
+
+  // Route protection redirect effect
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    if (!isAuthenticated) {
+      if (currentPath !== '/login') {
+        sessionStorage.setItem('vigil_intended_path', currentPath);
+        window.history.replaceState(null, '', '/login');
+      }
+    } else {
+      if (currentPath === '/login') {
+        const intended = sessionStorage.getItem('vigil_intended_path') || '/dashboard';
+        sessionStorage.removeItem('vigil_intended_path');
+        setActiveTab(tabFromPath(intended));
+        window.history.replaceState(null, '', intended);
+      }
+    }
+  }, [isAuthenticated]);
+
+  const handleTabChange = useCallback((tab: OrbitalTab) => {
+    setActiveTab(tab);
+    const targetPath = pathForTab(tab);
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState(null, '', targetPath);
+    }
+  }, []);
 
   useEffect(() => {
     // Initial fetch of scenes
@@ -151,7 +246,7 @@ export const App: React.FC = () => {
 
       // Score and rank authentic targets based on semantic concept terms
       const terms = query.toLowerCase().replace(/["']/g, '').split(/\s+/).filter(t => t.length > 2);
-      
+
       const scored = GROUND_TRUTH_TARGETS.map(target => {
         let score = 0;
         for (const term of terms) {
@@ -182,142 +277,165 @@ export const App: React.FC = () => {
     }
   };
 
+  // 1. Unauthenticated -> Render OIT Login Screen
+  if (!isAuthenticated) {
+    return (
+      <OITLoginView
+        onSuccess={() => {
+          const intended = sessionStorage.getItem('vigil_intended_path') || '/dashboard';
+          sessionStorage.removeItem('vigil_intended_path');
+          setActiveTab(tabFromPath(intended));
+          window.history.replaceState(null, '', intended);
+        }}
+      />
+    );
+  }
+
+  // 2. Authenticated -> Render Authorized VIGIL Workstation
   return (
-    <AnalystProvider>
-      <div className="flex flex-col h-screen w-screen bg-[#070D16] text-white overflow-hidden font-sans select-none">
-        {/* 1. Top Header (Fixed Height) */}
-        <OrbitalHeader />
+    <div className="flex flex-col h-screen w-screen bg-[#070D16] text-white overflow-hidden font-sans select-none">
+      {/* 1. Top Header (Fixed Height with OIT Account Section) */}
+      <OrbitalHeader />
 
-        {/* 2. Main Workstation Area: Left Sidebar + Content Workspace */}
-        <div className="flex-1 flex min-h-0 overflow-hidden">
-          {/* Left Sidebar */}
-          <OrbitalSidebar activeTab={activeTab} onSelectTab={setActiveTab} />
+      {/* 2. Main Workstation Area: Left Sidebar + Content Workspace */}
+      <div className="flex-1 flex min-h-0 overflow-hidden">
+        {/* Left Sidebar */}
+        <OrbitalSidebar activeTab={activeTab} onSelectTab={handleTabChange} />
 
-          {/* Content Workspace */}
-          <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070D16]">
-            {/* Top Search Filter Bar */}
-            <OrbitalSearchBar onSearch={handleSearch} defaultQuery={currentQuery} />
+        {/* Content Workspace */}
+        <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070D16]">
+          {/* Top Search Filter Bar */}
+          <OrbitalSearchBar onSearch={handleSearch} defaultQuery={currentQuery} />
 
-            {/* Conditional View Rendering */}
-            {activeTab === 'overview' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <EvaluationView />
-              </div>
-            ) : activeTab === 'image-search' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <ImageSearchView
-                  onInspectLocation={(coords, title) => {
-                    setSelectedResult({
-                      ...selectedResult,
-                      title: title,
-                      coordinates: coords,
-                    });
-                    setActiveTab('semantic-search');
-                  }}
-                />
-              </div>
-            ) : activeTab === 'change-analysis' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <ChangeAnalysisView onSelectCandidate={(c) => {
+          {/* Conditional View Rendering */}
+          {activeTab === 'overview' ? (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <EvaluationView />
+            </div>
+          ) : activeTab === 'image-search' ? (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <ImageSearchView
+                onInspectLocation={(coords, title) => {
                   setSelectedResult({
                     ...selectedResult,
-                    title: c.id,
-                    coordinates: '21.4587° N, 72.7812° E',
-                    confidencePct: Math.round((c.confidence?.composite_score || 0.88) * 100)
+                    title: title,
+                    coordinates: coords,
                   });
-                  setShowDetailModal(true);
-                }} />
-              </div>
-            ) : activeTab === 'aoi-monitor' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <AOIMonitorView
-                  onViewChange={() => {
-                    setActiveTab('change-analysis');
-                  }}
-                />
-              </div>
-            ) : activeTab === 'archive' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <ArchiveIngestView scenes={scenes} />
-              </div>
-            ) : activeTab === 'audit-log' ? (
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <AuditTrailView />
-              </div>
-            ) : (
-              /* Main Signature Grid: Responsive with guaranteed visibility on all screen sizes */
-              <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto min-h-0 pb-20">
-                {/* Top Row: Central Map (Left) + Change Analysis Panel (Right) */}
-                <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-3 shrink-0 h-[360px] lg:h-[390px] xl:h-[430px]">
-                  {/* Central Map with AOI, Controls & India Inset */}
-                  <div className="h-full min-h-0">
-                    <SatelliteMapCanvas
-                      coordinates={`Lat: ${selectedResult.coordinates.split(',')[0]}   Lon: ${selectedResult.coordinates.split(',')[1] || ''}`}
-                      selectedAOI="AOI-1"
-                      siteName={selectedResult.title}
-                    />
-                  </div>
-
-                  {/* Change Analysis Panel with Before/After Crops & Timeline */}
-                  <div className="h-full min-h-0">
-                    <ChangeAnalysisCard
-                      candidateTitle={selectedResult.title}
-                      coordinates={selectedResult.coordinates}
-                      confidence={selectedResult.confidencePct}
-                      beforeImgUrl={selectedResult.beforeImgUrl}
-                      afterImgUrl={selectedResult.afterImgUrl}
-                      areaHa={selectedResult.areaHa}
-                      timeGap={selectedResult.timeGap}
-                      onViewFullReport={() => setShowDetailModal(true)}
-                    />
-                  </div>
+                  handleTabChange('semantic-search');
+                }}
+              />
+            </div>
+          ) : activeTab === 'change-analysis' ? (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <ChangeAnalysisView onSelectCandidate={(c) => {
+                setSelectedResult({
+                  ...selectedResult,
+                  title: c.id,
+                  coordinates: '21.4587° N, 72.7812° E',
+                  confidencePct: Math.round((c.confidence?.composite_score || 0.88) * 100)
+                });
+                setShowDetailModal(true);
+              }} />
+            </div>
+          ) : activeTab === 'aoi-monitor' ? (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <AOIMonitorView
+                onViewChange={() => {
+                  handleTabChange('change-analysis');
+                }}
+              />
+            </div>
+          ) : activeTab === 'archive' ? (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <ArchiveIngestView scenes={scenes} />
+            </div>
+          ) : activeTab === 'audit-log' ? (
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <AuditTrailView />
+            </div>
+          ) : (
+            /* Main Signature Grid: Responsive with guaranteed visibility on all screen sizes */
+            <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto min-h-0 pb-20">
+              {/* Top Row: Central Map (Left) + Change Analysis Panel (Right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-3 shrink-0 h-[360px] lg:h-[390px] xl:h-[430px]">
+                {/* Central Map with AOI, Controls & India Inset */}
+                <div className="h-full min-h-0">
+                  <SatelliteMapCanvas
+                    coordinates={`Lat: ${selectedResult.coordinates.split(',')[0]}   Lon: ${selectedResult.coordinates.split(',')[1] || ''}`}
+                    selectedAOI="AOI-1"
+                    siteName={selectedResult.title}
+                  />
                 </div>
 
-                {/* Bottom Row: Semantic Search Results + Optional Collapsible System Analytics */}
-                <div className={`grid grid-cols-1 ${showBottomAnalytics ? 'lg:grid-cols-[3.2fr_1fr]' : 'lg:grid-cols-1'} gap-3 shrink-0 min-h-[250px] pb-2 transition-all`}>
-                  {/* Semantic Search Results (5 Cards) */}
-                  <div className="h-full min-h-0 relative">
-                    <SemanticSearchResults
-                      items={searchResults}
-                      selectedId={selectedResultId}
-                      onSelectResult={(item) => handleSelectResult(item)}
-                      isSearching={isSearching}
-                    />
-                    {!showBottomAnalytics && (
-                      <button
-                        onClick={() => setShowBottomAnalytics(true)}
-                        className="absolute top-2.5 right-28 h-6 px-2.5 rounded-md bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-[11px] text-[#38BDF8] flex items-center space-x-1 cursor-pointer transition font-sans"
-                        title="Show system analytics gauges"
-                      >
-                        <span>Show analytics</span>
-                      </button>
-                    )}
-                  </div>
+                {/* Change Analysis Panel with Before/After Crops & Timeline */}
+                <div className="h-full min-h-0">
+                  <ChangeAnalysisCard
+                    candidateTitle={selectedResult.title}
+                    coordinates={selectedResult.coordinates}
+                    confidence={selectedResult.confidencePct}
+                    beforeImgUrl={selectedResult.beforeImgUrl}
+                    afterImgUrl={selectedResult.afterImgUrl}
+                    areaHa={selectedResult.areaHa}
+                    timeGap={selectedResult.timeGap}
+                    onViewFullReport={() => setShowDetailModal(true)}
+                  />
+                </div>
+              </div>
 
-                  {/* System Analytics (3 Circular Gauges) */}
-                  {showBottomAnalytics && (
-                    <div className="h-full min-h-0">
-                      <SystemAnalyticsGauges onClose={() => setShowBottomAnalytics(false)} />
-                    </div>
+              {/* Bottom Row: Semantic Search Results + Optional Collapsible System Analytics */}
+              <div className={`grid grid-cols-1 ${showBottomAnalytics ? 'lg:grid-cols-[3.2fr_1fr]' : 'lg:grid-cols-1'} gap-3 shrink-0 min-h-[250px] pb-2 transition-all`}>
+                {/* Semantic Search Results (5 Cards) */}
+                <div className="h-full min-h-0 relative">
+                  <SemanticSearchResults
+                    items={searchResults}
+                    selectedId={selectedResultId}
+                    onSelectResult={(item) => handleSelectResult(item)}
+                    isSearching={isSearching}
+                  />
+                  {!showBottomAnalytics && (
+                    <button
+                      onClick={() => setShowBottomAnalytics(true)}
+                      className="absolute top-2.5 right-28 h-6 px-2.5 rounded-md bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-[11px] text-[#38BDF8] flex items-center space-x-1 cursor-pointer transition font-sans"
+                      title="Show system analytics gauges"
+                    >
+                      <span>Show analytics</span>
+                    </button>
                   )}
                 </div>
+
+                {/* System Analytics (3 Circular Gauges) */}
+                {showBottomAnalytics && (
+                  <div className="h-full min-h-0">
+                    <SystemAnalyticsGauges onClose={() => setShowBottomAnalytics(false)} />
+                  </div>
+                )}
               </div>
-            )}
-          </main>
-        </div>
-
-        {/* Full Evidence Dossier Modal */}
-        {showDetailModal && (
-          <CandidateDetailModal
-            item={selectedResult}
-            onClose={() => setShowDetailModal(false)}
-          />
-        )}
-
-        {/* Operator Profile Modal */}
-        <AnalystProfileModal />
+            </div>
+          )}
+        </main>
       </div>
-    </AnalystProvider>
+
+      {/* Full Evidence Dossier Modal */}
+      {showDetailModal && (
+        <CandidateDetailModal
+          item={selectedResult}
+          onClose={() => setShowDetailModal(false)}
+        />
+      )}
+
+      {/* Operator Profile Modal */}
+      <AnalystProfileModal />
+    </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AnalystProvider>
+        <VigilPlatform />
+      </AnalystProvider>
+    </AuthProvider>
   );
 };
 

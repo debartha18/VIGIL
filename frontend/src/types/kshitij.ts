@@ -162,3 +162,36 @@ export interface SystemHealth {
     storage: string;
   };
 }
+
+// OIT User & Authentication Types
+export type OitRole = 'oit_user' | 'oit_admin';
+
+export interface OitUser {
+  id: string;
+  oit_user_id: string; // e.g. "OIT-IMINT-804"
+  name: string;
+  email: string;
+  role: OitRole;
+  organization: string;
+  call_sign?: string;
+  clearance?: string;
+  is_active: boolean;
+  created_at: string;
+  last_login?: string;
+}
+
+export interface AuthSession {
+  token: string;
+  user: OitUser;
+  expires_at: number; // millisecond timestamp
+  remember_me: boolean;
+}
+
+export interface LoginResult {
+  success: boolean;
+  token?: string;
+  user?: OitUser;
+  expires_at?: number;
+  message?: string;
+}
+

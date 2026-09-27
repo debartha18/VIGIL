@@ -30,8 +30,10 @@ from backend.change.persistence import persistence_engine
 from backend.change.false_alarm import false_alarm_filter
 from backend.discovery.clustering import discovery_engine
 from backend.ingest.watcher import ingest_watcher
+from backend.api.auth import auth_router
 
 router = APIRouter(prefix="/api")
+router.include_router(auth_router)
 
 
 # Request & Response Models

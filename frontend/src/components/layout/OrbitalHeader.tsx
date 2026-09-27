@@ -1,11 +1,42 @@
-import React from 'react';
-import { ShieldCheck, User, Edit3 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  ShieldCheck,
+  User,
+  LogOut,
+  Settings,
+  ShieldAlert,
+  ChevronDown
+} from 'lucide-react';
 import { useAnalyst } from '../../context/AnalystContext';
+import { useAuth } from '../../context/AuthContext';
+import { OITAdminModal } from './OITAdminModal';
 
 export const OrbitalHeader: React.FC = () => {
   const { profile, setIsProfileModalOpen } = useAnalyst();
+  const { user, logout } = useAuth();
 
-  const initials = (profile.name || 'Analyst')
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const displayName = user?.name || profile.name || 'Debarghya';
+  const displayId = user?.oit_user_id || 'OIT-IMINT-804';
+  const role = user?.role || 'oit_user';
+  const isAdmin = role === 'oit_admin';
+
+  const initials = displayName
     .split(' ')
     .filter(Boolean)
     .map((n) => n[0])
@@ -13,8 +44,14 @@ export const OrbitalHeader: React.FC = () => {
     .join('')
     .toUpperCase();
 
+  const handleLogout = async () => {
+    setIsDropdownOpen(false);
+    setShowLogoutConfirm(false);
+    await logout();
+  };
+
   return (
-    <header className="h-16 bg-[#070D16] border-b border-[#182A40] px-5 flex items-center justify-between select-none z-30 shrink-0">
+    <header className="h-16 bg-[#070D16] border-b border-[#182A40] px-5 flex items-center justify-between select-none z-30 shrink-0 font-sans">
       {/* Left: Orbital Intel Logo & Subtitle */}
       <div className="flex items-center space-x-3.5">
         <div className="relative flex items-center justify-center w-10 h-10">
@@ -27,7 +64,6 @@ export const OrbitalHeader: React.FC = () => {
               strokeWidth="1.8"
               strokeDasharray="4 2"
             />
-            {/* Elliptical Orbit Ring */}
             <ellipse
               cx="18"
               cy="18"
@@ -52,12 +88,10 @@ export const OrbitalHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* Middle-Left: Ministry of Defence / SIH26227 DGIS Emblem */}
+      {/* Middle-Left: DGIS Ground Station Emblem */}
       <div className="flex items-center space-x-3 pl-8 border-l border-[#182A40]/80">
-        {/* National Emblem SVG */}
         <div className="w-8 h-8 flex items-center justify-center">
           <svg className="w-7 h-7 text-[#E2E8F0]" viewBox="0 0 24 24" fill="currentColor">
-            {/* Ashoka Stambh stylized silhouette */}
             <path d="M12 2C10.89 2 10 2.89 10 4V6H7V8H17V6H14V4C14 2.89 13.11 2 12 2ZM6 9V11H18V9H6ZM7 12C6.45 12 6 12.45 6 13V18H9V14H15V18H18V13C18 12.45 17.55 12 17 12H7ZM5 19V21H19V19H5Z" />
           </svg>
         </div>
@@ -75,13 +109,13 @@ export const OrbitalHeader: React.FC = () => {
       {/* Right side containers */}
       <div className="flex items-center space-x-4">
         {/* Prototype / Demonstration Notice */}
-        <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-[#0F2238] border border-[#1E3A5F] text-[10px] font-mono text-[#38BDF8]">
+        <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-[#0F2238] border border-[#1E3A5F] text-[10px] font-mono text-[#38BDF8]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse" />
           <span>Operational Prototype // System Demonstration</span>
         </div>
 
         {/* On-Premise Ready Badge */}
-        <div className="flex items-center space-x-2.5 px-3 py-1.5 rounded-md bg-[#0B1D28] border border-[#144A3F]">
+        <div className="hidden md:flex items-center space-x-2.5 px-3 py-1.5 rounded-md bg-[#0B1D28] border border-[#144A3F]">
           <div className="w-6 h-6 rounded bg-[#063327] flex items-center justify-center text-[#10B981]">
             <ShieldCheck className="w-4 h-4" />
           </div>
@@ -95,31 +129,165 @@ export const OrbitalHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Clickable Analyst Profile Badge */}
-        <div
-          onClick={() => setIsProfileModalOpen(true)}
-          className="group relative flex items-center space-x-3 pl-3 border-l border-[#182A40] cursor-pointer hover:opacity-95 transition"
-          title="Click to edit your operator details (Name, Call Sign, Role, Department)"
-        >
-          <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-[#0E1A2B] border-2 border-[#00E5FF]/70 group-hover:border-[#00E5FF] flex items-center justify-center text-[#00E5FF] font-mono font-bold text-xs shadow-[0_0_10px_rgba(0,229,255,0.2)] transition">
-              {initials || <User className="w-4 h-4" />}
+        {/* Authenticated OIT User Badge & Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <div
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="group relative flex items-center space-x-3 pl-3 border-l border-[#182A40] cursor-pointer hover:opacity-95 transition"
+            title="Click to view OIT account, permissions, and session options"
+          >
+            <div className="relative">
+              <div
+                className={`w-9 h-9 rounded-full flex items-center justify-center font-mono font-bold text-xs shadow-md transition border-2 ${
+                  isAdmin
+                    ? 'bg-[#A855F7]/15 border-[#A855F7] text-[#C084FC] shadow-[0_0_10px_rgba(168,85,247,0.25)]'
+                    : 'bg-[#0E1A2B] border-[#00E5FF] text-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.2)]'
+                }`}
+              >
+                {initials || <User className="w-4 h-4" />}
+              </div>
+              {/* Active beacon indicator */}
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#10B981] border-2 border-[#070D16]" />
             </div>
-            {/* Active beacon indicator */}
-            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#10B981] border-2 border-[#070D16]" />
+
+            <div className="text-left leading-tight">
+              <div className="text-xs font-semibold text-white group-hover:text-[#38BDF8] transition flex items-center space-x-1.5">
+                <span className="truncate max-w-[120px]">{displayName}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[#64748B] group-hover:text-white transition" />
+              </div>
+              <div className="flex items-center space-x-1.5 mt-0.5">
+                <span className="text-[10px] font-mono text-[#94A3B8]">{displayId}</span>
+                <span
+                  className={`text-[9px] px-1 py-0.2 rounded font-mono font-medium uppercase ${
+                    isAdmin
+                      ? 'bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/40'
+                      : 'bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/40'
+                  }`}
+                >
+                  {isAdmin ? 'Admin' : 'User'}
+                </span>
+              </div>
+            </div>
           </div>
 
-          <div className="text-left leading-tight">
-            <div className="text-xs font-semibold text-white group-hover:text-[#00E5FF] transition flex items-center space-x-1.5">
-              <span className="truncate max-w-[130px]">{profile.name || 'Analyst'}</span>
-              <Edit3 className="w-3 h-3 text-[#64748B] group-hover:text-[#00E5FF] opacity-0 group-hover:opacity-100 transition" />
+          {/* OIT User Account Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className="absolute right-0 top-12 w-64 bg-[#0B1523] border border-[#182A40] rounded-xl shadow-2xl py-2 z-50 text-xs font-sans animate-in fade-in duration-150">
+              {/* User Identity Info Header */}
+              <div className="px-3.5 py-2.5 border-b border-[#182A40]/80 space-y-1">
+                <div className="font-semibold text-white text-xs">{displayName}</div>
+                <div className="text-[11px] font-mono text-[#94A3B8]">{user?.email || 'debarghya.imint@dgis.mod.gov.in'}</div>
+                <div className="flex items-center space-x-2 pt-1">
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
+                      isAdmin
+                        ? 'bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/50'
+                        : 'bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/50'
+                    }`}
+                  >
+                    {isAdmin ? 'OIT Administrator' : 'OIT Analyst'}
+                  </span>
+                  <span className="text-[10px] text-[#10B981] font-mono bg-[#063327] px-1.5 py-0.5 rounded border border-[#10B981]/40">
+                    Active Session
+                  </span>
+                </div>
+              </div>
+
+              {/* Menu Actions */}
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
+                >
+                  <User className="w-3.5 h-3.5 text-[#38BDF8]" />
+                  <span>Operator Profile & Clearance</span>
+                </button>
+
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsAdminModalOpen(true);
+                    }}
+                    className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#C084FC] hover:text-white transition cursor-pointer"
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5 text-[#A855F7]" />
+                    <span>OIT Administration Console</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
+                >
+                  <Settings className="w-3.5 h-3.5 text-[#64748B]" />
+                  <span>Workstation Settings</span>
+                </button>
+              </div>
+
+              {/* Sign Out Option */}
+              <div className="pt-1 border-t border-[#182A40]/80">
+                <button
+                  onClick={() => setShowLogoutConfirm(true)}
+                  className="w-full px-3.5 py-2 hover:bg-[#2D1215]/60 text-left flex items-center space-x-2.5 text-[#EF4444] transition cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
             </div>
-            <div className="text-[10px] text-[#94A3B8] truncate max-w-[130px]">
-              {profile.role || 'Imagery Intelligence'}
+          )}
+        </div>
+      </div>
+
+      {/* Logout Confirmation Dialog */}
+      {showLogoutConfirm && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div
+            className="w-80 bg-[#0B1523] border border-[#182A40] rounded-xl p-5 space-y-4 shadow-2xl text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-full bg-[#EF4444]/15 border border-[#EF4444]/40 flex items-center justify-center text-[#EF4444]">
+                <LogOut className="w-4 h-4" />
+              </div>
+              <div className="leading-tight">
+                <div className="font-semibold text-sm">Sign Out from VIGIL?</div>
+                <div className="text-[11px] text-[#94A3B8]">Your OIT session will be terminated.</div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="h-7 px-3 rounded-lg bg-[#0E1A2B] text-[#94A3B8] hover:text-white text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="h-7 px-3.5 rounded-lg bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs font-medium cursor-pointer transition shadow"
+              >
+                Confirm Sign Out
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Admin User Management Modal */}
+      {isAdminModalOpen && (
+        <OITAdminModal isOpen={isAdminModalOpen} onClose={() => setIsAdminModalOpen(false)} />
+      )}
     </header>
   );
 };
