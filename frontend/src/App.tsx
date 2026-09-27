@@ -10,7 +10,7 @@ import { CandidateDetailModal } from './components/analysis/CandidateDetailModal
 import { AnalystProfileModal } from './components/layout/AnalystProfileModal';
 import { AnalystProvider } from './context/AnalystContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { OITLoginView } from './views/OITLoginView';
+import { VigilAuthView } from './views/VigilAuthView';
 import { AuditTrailView } from './views/AuditTrailView';
 import { ArchiveIngestView } from './views/ArchiveIngestView';
 import { EvaluationView } from './views/EvaluationView';
@@ -178,13 +178,25 @@ const VigilPlatform: React.FC = () => {
   const [selectedResult, setSelectedResult] = useState<SearchResultItem>(GROUND_TRUTH_TARGETS[0]);
   const [scenes, setScenes] = useState<Scene[]>([]);
 
+  const [isGuestExploring, setIsGuestExploring] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'forgot_password' | null>(null);
+
   // Route Synchronization with Browser History & Popstate
   useEffect(() => {
     const handlePopState = () => {
       const currentPath = window.location.pathname;
-      if (currentPath === '/login' && isAuthenticated) {
-        window.history.replaceState(null, '', pathForTab(activeTab));
-      } else if (currentPath !== '/login') {
+      const isAuth = ['/login', '/signin', '/signup', '/register', '/forgot-password', '/reset-password'].some(p =>
+        currentPath.toLowerCase().startsWith(p)
+      );
+
+      if (isAuth) {
+        if (isAuthenticated) {
+          window.history.replaceState(null, '', pathForTab(activeTab));
+        } else {
+          setIsGuestExploring(false);
+          setAuthModalMode(null);
+        }
+      } else {
         setActiveTab(tabFromPath(currentPath));
       }
     };
@@ -196,20 +208,26 @@ const VigilPlatform: React.FC = () => {
   // Route protection redirect effect
   useEffect(() => {
     const currentPath = window.location.pathname;
+    const isAuth = ['/login', '/signin', '/signup', '/register', '/forgot-password', '/reset-password'].some(p =>
+      currentPath.toLowerCase().startsWith(p)
+    );
+
     if (!isAuthenticated) {
-      if (currentPath !== '/login') {
+      if (isAuth) {
+        setIsGuestExploring(false);
+      } else if (!isGuestExploring) {
         sessionStorage.setItem('vigil_intended_path', currentPath);
         window.history.replaceState(null, '', '/login');
       }
     } else {
-      if (currentPath === '/login') {
+      if (isAuth) {
         const intended = sessionStorage.getItem('vigil_intended_path') || '/dashboard';
         sessionStorage.removeItem('vigil_intended_path');
         setActiveTab(tabFromPath(intended));
         window.history.replaceState(null, '', intended);
       }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isGuestExploring]);
 
   const handleTabChange = useCallback((tab: OrbitalTab) => {
     setActiveTab(tab);
@@ -277,25 +295,38 @@ const VigilPlatform: React.FC = () => {
     }
   };
 
-  // 1. Unauthenticated -> Render OIT Login Screen
-  if (!isAuthenticated) {
+  // 1. Unauthenticated and not in guest preview -> Render Public Auth Portal
+  if (!isAuthenticated && !isGuestExploring) {
+    const cleanPath = (typeof window !== 'undefined' ? window.location.pathname : '/login').toLowerCase();
+    const mode = cleanPath.includes('signup') || cleanPath.includes('register')
+      ? 'signup'
+      : cleanPath.includes('forgot') || cleanPath.includes('reset')
+      ? 'forgot_password'
+      : 'signin';
+
     return (
-      <OITLoginView
+      <VigilAuthView
+        initialMode={mode}
         onSuccess={() => {
           const intended = sessionStorage.getItem('vigil_intended_path') || '/dashboard';
           sessionStorage.removeItem('vigil_intended_path');
           setActiveTab(tabFromPath(intended));
           window.history.replaceState(null, '', intended);
         }}
+        onExploreAsGuest={() => {
+          setIsGuestExploring(true);
+          setActiveTab('semantic-search');
+          window.history.replaceState(null, '', '/dashboard');
+        }}
       />
     );
   }
 
-  // 2. Authenticated -> Render Authorized VIGIL Workstation
+  // 2. Authenticated or Guest Preview -> Render VIGIL Platform
   return (
     <div className="flex flex-col h-screen w-screen bg-[#070D16] text-white overflow-hidden font-sans select-none">
-      {/* 1. Top Header (Fixed Height with OIT Account Section) */}
-      <OrbitalHeader />
+      {/* 1. Top Header with User Account & Public Login/Signup actions */}
+      <OrbitalHeader onOpenAuth={(mode) => setAuthModalMode(mode)} />
 
       {/* 2. Main Workstation Area: Left Sidebar + Content Workspace */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
@@ -425,6 +456,28 @@ const VigilPlatform: React.FC = () => {
 
       {/* Operator Profile Modal */}
       <AnalystProfileModal />
+
+      {/* Public Auth Modal (when triggered in guest preview) */}
+      {authModalMode && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setAuthModalMode(null)}
+        >
+          <div
+            className="w-full max-w-4xl relative max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <VigilAuthView
+              initialMode={authModalMode}
+              onSuccess={() => {
+                setAuthModalMode(null);
+                setIsGuestExploring(false);
+              }}
+              onExploreAsGuest={() => setAuthModalMode(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

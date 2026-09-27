@@ -5,18 +5,25 @@ import {
   LogOut,
   Settings,
   ShieldAlert,
-  ChevronDown
+  ChevronDown,
+  UserCheck
 } from 'lucide-react';
 import { useAnalyst } from '../../context/AnalystContext';
 import { useAuth } from '../../context/AuthContext';
 import { OITAdminModal } from './OITAdminModal';
+import { UserProfileModal } from './UserProfileModal';
 
-export const OrbitalHeader: React.FC = () => {
+interface OrbitalHeaderProps {
+  onOpenAuth?: (mode: 'signin' | 'signup') => void;
+}
+
+export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth }) => {
   const { profile, setIsProfileModalOpen } = useAnalyst();
-  const { user, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -31,10 +38,10 @@ export const OrbitalHeader: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const displayName = user?.name || profile.name || 'Debarghya';
-  const displayId = user?.oit_user_id || 'OIT-IMINT-804';
-  const role = user?.role || 'oit_user';
-  const isAdmin = role === 'oit_admin';
+  const displayName = user?.full_name || user?.name || profile.name || 'Analyst';
+  const displayId = user?.username ? `@${user.username}` : (user?.oit_user_id || 'USR-2026');
+  const role = user?.role || 'user';
+  const isAdmin = role === 'admin' || role === 'oit_admin';
 
   const initials = displayName
     .split(' ')
@@ -129,121 +136,150 @@ export const OrbitalHeader: React.FC = () => {
           </div>
         </div>
 
-        {/* Authenticated OIT User Badge & Dropdown */}
-        <div className="relative" ref={dropdownRef}>
-          <div
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="group relative flex items-center space-x-3 pl-3 border-l border-[#182A40] cursor-pointer hover:opacity-95 transition"
-            title="Click to view OIT account, permissions, and session options"
-          >
-            <div className="relative">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center font-mono font-bold text-xs shadow-md transition border-2 ${
-                  isAdmin
-                    ? 'bg-[#A855F7]/15 border-[#A855F7] text-[#C084FC] shadow-[0_0_10px_rgba(168,85,247,0.25)]'
-                    : 'bg-[#0E1A2B] border-[#00E5FF] text-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.2)]'
-                }`}
-              >
-                {initials || <User className="w-4 h-4" />}
-              </div>
-              {/* Active beacon indicator */}
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#10B981] border-2 border-[#070D16]" />
-            </div>
-
-            <div className="text-left leading-tight">
-              <div className="text-xs font-semibold text-white group-hover:text-[#38BDF8] transition flex items-center space-x-1.5">
-                <span className="truncate max-w-[120px]">{displayName}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-[#64748B] group-hover:text-white transition" />
-              </div>
-              <div className="flex items-center space-x-1.5 mt-0.5">
-                <span className="text-[10px] font-mono text-[#94A3B8]">{displayId}</span>
-                <span
-                  className={`text-[9px] px-1 py-0.2 rounded font-mono font-medium uppercase ${
+        {/* Authenticated User Badge & Dropdown or Public Sign In/Up */}
+        {isAuthenticated ? (
+          <div className="relative" ref={dropdownRef}>
+            <div
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="group relative flex items-center space-x-3 pl-3 border-l border-[#182A40] cursor-pointer hover:opacity-95 transition"
+              title="Click to view user account, profile, and session options"
+            >
+              <div className="relative">
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center font-mono font-bold text-xs shadow-md transition border-2 ${
                     isAdmin
-                      ? 'bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/40'
-                      : 'bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/40'
+                      ? 'bg-[#A855F7]/15 border-[#A855F7] text-[#C084FC] shadow-[0_0_10px_rgba(168,85,247,0.25)]'
+                      : 'bg-[#0E1A2B] border-[#00E5FF] text-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.2)]'
                   }`}
                 >
-                  {isAdmin ? 'Admin' : 'User'}
-                </span>
+                  {initials || <User className="w-4 h-4" />}
+                </div>
+                {/* Active beacon indicator */}
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#10B981] border-2 border-[#070D16]" />
               </div>
-            </div>
-          </div>
 
-          {/* OIT User Account Dropdown Menu */}
-          {isDropdownOpen && (
-            <div className="absolute right-0 top-12 w-64 bg-[#0B1523] border border-[#182A40] rounded-xl shadow-2xl py-2 z-50 text-xs font-sans animate-in fade-in duration-150">
-              {/* User Identity Info Header */}
-              <div className="px-3.5 py-2.5 border-b border-[#182A40]/80 space-y-1">
-                <div className="font-semibold text-white text-xs">{displayName}</div>
-                <div className="text-[11px] font-mono text-[#94A3B8]">{user?.email || 'debarghya.imint@dgis.mod.gov.in'}</div>
-                <div className="flex items-center space-x-2 pt-1">
+              <div className="text-left leading-tight">
+                <div className="text-xs font-semibold text-white group-hover:text-[#38BDF8] transition flex items-center space-x-1.5">
+                  <span className="truncate max-w-[120px]">{displayName}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-[#64748B] group-hover:text-white transition" />
+                </div>
+                <div className="flex items-center space-x-1.5 mt-0.5">
+                  <span className="text-[10px] font-mono text-[#94A3B8]">{displayId}</span>
                   <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
+                    className={`text-[9px] px-1 py-0.2 rounded font-mono font-medium uppercase ${
                       isAdmin
-                        ? 'bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/50'
-                        : 'bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/50'
+                        ? 'bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/40'
+                        : 'bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/40'
                     }`}
                   >
-                    {isAdmin ? 'OIT Administrator' : 'OIT Analyst'}
-                  </span>
-                  <span className="text-[10px] text-[#10B981] font-mono bg-[#063327] px-1.5 py-0.5 rounded border border-[#10B981]/40">
-                    Active Session
+                    {isAdmin ? 'Admin' : 'User'}
                   </span>
                 </div>
               </div>
+            </div>
 
-              {/* Menu Actions */}
-              <div className="py-1">
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    setIsProfileModalOpen(true);
-                  }}
-                  className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
-                >
-                  <User className="w-3.5 h-3.5 text-[#38BDF8]" />
-                  <span>Operator Profile & Clearance</span>
-                </button>
+            {/* User Account Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute right-0 top-12 w-64 bg-[#0B1523] border border-[#182A40] rounded-xl shadow-2xl py-2 z-50 text-xs font-sans animate-in fade-in duration-150">
+                {/* User Identity Info Header */}
+                <div className="px-3.5 py-2.5 border-b border-[#182A40]/80 space-y-1">
+                  <div className="font-semibold text-white text-xs">{displayName}</div>
+                  <div className="text-[11px] font-mono text-[#94A3B8]">{user?.email || 'user@vigil.org'}</div>
+                  <div className="flex items-center space-x-2 pt-1">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
+                        isAdmin
+                          ? 'bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/50'
+                          : 'bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/50'
+                      }`}
+                    >
+                      {isAdmin ? 'Administrator' : 'Standard User'}
+                    </span>
+                    <span className="text-[10px] text-[#10B981] font-mono bg-[#063327] px-1.5 py-0.5 rounded border border-[#10B981]/40">
+                      Active Session
+                    </span>
+                  </div>
+                </div>
 
-                {isAdmin && (
+                {/* Menu Actions */}
+                <div className="py-1">
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false);
-                      setIsAdminModalOpen(true);
+                      setIsUserProfileModalOpen(true);
                     }}
-                    className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#C084FC] hover:text-white transition cursor-pointer"
+                    className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
                   >
-                    <ShieldAlert className="w-3.5 h-3.5 text-[#A855F7]" />
-                    <span>OIT Administration Console</span>
+                    <User className="w-3.5 h-3.5 text-[#38BDF8]" />
+                    <span>User Profile & Account</span>
                   </button>
-                )}
 
-                <button
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    setIsProfileModalOpen(true);
-                  }}
-                  className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
-                >
-                  <Settings className="w-3.5 h-3.5 text-[#64748B]" />
-                  <span>Workstation Settings</span>
-                </button>
-              </div>
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsProfileModalOpen(true);
+                    }}
+                    className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
+                  >
+                    <UserCheck className="w-3.5 h-3.5 text-[#00E5FF]" />
+                    <span>Operator Clearance (DGIS)</span>
+                  </button>
 
-              {/* Sign Out Option */}
-              <div className="pt-1 border-t border-[#182A40]/80">
-                <button
-                  onClick={() => setShowLogoutConfirm(true)}
-                  className="w-full px-3.5 py-2 hover:bg-[#2D1215]/60 text-left flex items-center space-x-2.5 text-[#EF4444] transition cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sign Out</span>
-                </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        setIsAdminModalOpen(true);
+                      }}
+                      className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#C084FC] hover:text-white transition cursor-pointer"
+                    >
+                      <ShieldAlert className="w-3.5 h-3.5 text-[#A855F7]" />
+                      <span>Administration Console</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      setIsUserProfileModalOpen(true);
+                    }}
+                    className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-[#64748B]" />
+                    <span>Workstation Settings</span>
+                  </button>
+                </div>
+
+                {/* Sign Out Option */}
+                <div className="pt-1 border-t border-[#182A40]/80">
+                  <button
+                    onClick={() => setShowLogoutConfirm(true)}
+                    className="w-full px-3.5 py-2 hover:bg-[#2D1215]/60 text-left flex items-center space-x-2.5 text-[#EF4444] transition cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center space-x-2 pl-3 border-l border-[#182A40]">
+            <button
+              onClick={() => onOpenAuth?.('signin')}
+              className="h-8 px-3 rounded-lg bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-xs font-semibold text-white hover:text-[#00E5FF] transition cursor-pointer flex items-center space-x-1.5"
+            >
+              <User className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <span>Sign In</span>
+            </button>
+            <button
+              onClick={() => onOpenAuth?.('signup')}
+              className="h-8 px-3.5 rounded-lg bg-gradient-to-r from-[#0284C7] to-[#00E5FF] hover:from-[#0369A1] hover:to-[#00B4D8] text-xs font-semibold text-black transition cursor-pointer shadow-md shadow-[#00E5FF]/20"
+            >
+              <span>Create Account</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Logout Confirmation Dialog */}
@@ -283,6 +319,12 @@ export const OrbitalHeader: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={isUserProfileModalOpen}
+        onClose={() => setIsUserProfileModalOpen(false)}
+      />
 
       {/* Admin User Management Modal */}
       {isAdminModalOpen && (

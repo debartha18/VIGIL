@@ -54,9 +54,9 @@ export const AnalystProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (user) {
       setProfile((prev) => ({
         ...prev,
-        name: user.name,
+        name: user.full_name || user.name || prev.name,
         email: user.email,
-        role: user.role === 'oit_admin' ? 'OIT Administrator' : 'Imagery Intelligence',
+        role: user.role === 'admin' || user.role === 'oit_admin' ? 'Administrator' : 'Imagery Intelligence',
         callSign: user.call_sign || prev.callSign,
         clearance: user.clearance || prev.clearance,
         department: user.organization || prev.department,

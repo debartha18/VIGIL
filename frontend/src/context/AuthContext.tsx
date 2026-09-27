@@ -1,71 +1,85 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { OitUser, AuthSession, LoginResult } from '../types/kshitij';
+import { VigilUser, AuthSession, AuthResult, SignUpData } from '../types/kshitij';
 
-const SESSION_STORAGE_KEY = 'vigil_oit_session';
+const SESSION_STORAGE_KEY = 'vigil_user_session';
+const REGISTERED_USERS_KEY = 'vigil_registered_users';
 
-// Fallback seed accounts for zero-friction evaluation & offline demo
-const SEED_OIT_ACCOUNTS: (OitUser & { passwordHash: string; salt: string })[] = [
+// Pre-seeded accounts (accessible publicly for demo & immediate evaluation)
+const SEED_ACCOUNTS: (VigilUser & { passwordHash: string })[] = [
   {
     id: 'usr-admin-001',
-    oit_user_id: 'OIT-ADMIN-001',
-    name: 'Commander R. Sharma',
-    email: 'admin.oit@dgis.mod.gov.in',
-    role: 'oit_admin',
-    organization: 'DGIS Headquarters // Space & Cyber Directorate',
-    call_sign: 'DGIS-COMMAND-01',
-    clearance: 'TOP SECRET // DEFENCE ONLY',
+    full_name: 'Commander R. Sharma',
+    username: 'admin',
+    email: 'admin@vigil.org',
+    role: 'admin',
+    organization: 'Earth Observation Directorate // Space Systems',
+    country: 'India',
     is_active: true,
     created_at: '2025-01-10T08:00:00Z',
+    updated_at: '2025-01-10T08:00:00Z',
     last_login: '2026-09-27T10:15:00Z',
     passwordHash: 'Vigil@Admin2026!',
-    salt: 'salt_admin_001'
+    // Aliases
+    name: 'Commander R. Sharma',
+    oit_user_id: 'OIT-ADMIN-001',
+    call_sign: 'DGIS-COMMAND-01',
+    clearance: 'TOP SECRET // DEFENCE ONLY'
   },
   {
-    id: 'usr-analyst-804',
-    oit_user_id: 'OIT-IMINT-804',
-    name: 'Debarghya',
-    email: 'debarghya.imint@dgis.mod.gov.in',
-    role: 'oit_user',
-    organization: 'Directorate General of Information Systems (DGIS)',
-    call_sign: 'DGIS-IMINT-01',
-    clearance: 'SECRET // NOFORN',
+    id: 'usr-user-002',
+    full_name: 'Debarghya',
+    username: 'debarghya',
+    email: 'debarghya@gmail.com',
+    role: 'user',
+    organization: 'Geospatial Intelligence Research',
+    country: 'India',
     is_active: true,
     created_at: '2025-02-14T09:30:00Z',
+    updated_at: '2025-02-14T09:30:00Z',
     last_login: '2026-09-27T14:20:00Z',
-    passwordHash: 'Vigil@Oit2026!',
-    salt: 'salt_analyst_804'
+    passwordHash: 'Vigil@User2026!',
+    // Aliases
+    name: 'Debarghya',
+    oit_user_id: 'OIT-IMINT-804',
+    call_sign: 'DGIS-IMINT-01',
+    clearance: 'SECRET // NOFORN'
   },
   {
-    id: 'usr-analyst-2026',
-    oit_user_id: 'OIT-USER-2026',
-    name: 'Analyst A. Verma',
-    email: 'analyst.verma@dgis.mod.gov.in',
-    role: 'oit_user',
-    organization: 'DGIS Satellite Data Processing Division',
-    call_sign: 'IMINT-ANALYST-02',
-    clearance: 'SECRET // RESTRICTED',
+    id: 'usr-user-003',
+    full_name: 'Dr. Sarah Chen',
+    username: 'sarah_chen',
+    email: 'sarah.chen@planetary-science.org',
+    role: 'user',
+    organization: 'International Remote Sensing Institute',
+    country: 'United States',
     is_active: true,
     created_at: '2025-04-01T11:00:00Z',
+    updated_at: '2025-04-01T11:00:00Z',
     last_login: '2026-09-26T18:00:00Z',
-    passwordHash: 'Vigil@2026!',
-    salt: 'salt_analyst_2026'
+    passwordHash: 'Vigil@Science2026!',
+    name: 'Dr. Sarah Chen',
+    oit_user_id: 'OIT-USER-2026',
+    call_sign: 'IMINT-ANALYST-02',
+    clearance: 'RESTRICTED'
   }
 ];
 
 interface AuthContextType {
-  user: OitUser | null;
+  user: VigilUser | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   isSessionExpired: boolean;
   clearSessionExpiredFlag: () => void;
-  login: (userIdOrEmail: string, password: string, rememberMe?: boolean) => Promise<LoginResult>;
+  signup: (data: SignUpData) => Promise<AuthResult>;
+  signin: (identifier: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
+  login: (identifier: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
   logout: () => Promise<void>;
-  requestPasswordReset: (userIdOrEmail: string) => Promise<{ success: boolean; message: string; hint?: string }>;
-  resetPassword: (userIdOrEmail: string, code: string, newPass: string) => Promise<{ success: boolean; message: string }>;
-  listAdminUsers: () => Promise<OitUser[]>;
+  updateProfile: (data: { full_name?: string; organization?: string; country?: string; profile_image?: string }) => Promise<AuthResult>;
+  requestPasswordReset: (emailOrUsername: string) => Promise<{ success: boolean; message: string; hint?: string }>;
+  resetPassword: (emailOrUsername: string, code: string, newPass: string) => Promise<{ success: boolean; message: string }>;
+  listAdminUsers: () => Promise<VigilUser[]>;
   toggleUserActive: (userId: string, isActive: boolean) => Promise<boolean>;
-  activeChallenges: Record<string, string>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,7 +87,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<AuthSession | null>(() => {
     try {
-      // Check localStorage first (remember me), then sessionStorage
       const rawLocal = localStorage.getItem(SESSION_STORAGE_KEY);
       if (rawLocal) {
         const parsed: AuthSession = JSON.parse(rawLocal);
@@ -94,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch {
-      // Storage parsing fallback
+      // storage parsing fallback
     }
     return null;
   });
@@ -102,26 +115,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSessionExpired, setIsSessionExpired] = useState<boolean>(false);
   const [activeChallenges, setActiveChallenges] = useState<Record<string, string>>({});
-  const [clientUsers, setClientUsers] = useState<OitUser[]>(() => {
+
+  // Local user registry for public signups on static Vercel demo
+  const [registeredUsers, setRegisteredUsers] = useState<(VigilUser & { passwordHash: string })[]>(() => {
     try {
-      const saved = localStorage.getItem('vigil_oit_users_registry');
-      if (saved) return JSON.parse(saved);
+      const saved = localStorage.getItem(REGISTERED_USERS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
     } catch {}
-    return SEED_OIT_ACCOUNTS.map(({ passwordHash, salt, ...u }) => u);
+    return SEED_ACCOUNTS;
   });
 
-  // Persist updated users registry in local demo state
   useEffect(() => {
     try {
-      localStorage.setItem('vigil_oit_users_registry', JSON.stringify(clientUsers));
+      localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(registeredUsers));
     } catch {}
-  }, [clientUsers]);
+  }, [registeredUsers]);
 
   // Periodic Session Expiry Monitor
   const checkSessionExpiration = useCallback(() => {
     if (session) {
       if (Date.now() >= session.expires_at) {
-        // Expired
         setSession(null);
         setIsSessionExpired(true);
         localStorage.removeItem(SESSION_STORAGE_KEY);
@@ -132,7 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     checkSessionExpiration();
-    const interval = setInterval(checkSessionExpiration, 30000); // Check every 30s
+    const interval = setInterval(checkSessionExpiration, 30000);
     return () => clearInterval(interval);
   }, [checkSessionExpiration]);
 
@@ -140,20 +156,156 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsSessionExpired(false);
   };
 
-  const login = async (userIdOrEmail: string, password: string, rememberMe: boolean = false): Promise<LoginResult> => {
+  // 1. PUBLIC SIGN UP
+  const signup = async (data: SignUpData): Promise<AuthResult> => {
     setIsLoading(true);
     setIsSessionExpired(false);
 
-    const cleanInput = userIdOrEmail.trim().toLowerCase();
+    const cleanEmail = data.email.trim().toLowerCase();
+    const cleanUsername = data.username.trim().toLowerCase();
+    const cleanName = data.full_name.trim();
+
+    // Basic frontend checks
+    if (!cleanName) {
+      setIsLoading(false);
+      return { success: false, message: 'Please enter your full name.' };
+    }
+    if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      setIsLoading(false);
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
+    if (cleanUsername.length < 3) {
+      setIsLoading(false);
+      return { success: false, message: 'Username must be at least 3 characters long.' };
+    }
+    if (data.password.length < 8) {
+      setIsLoading(false);
+      return { success: false, message: 'Password must be at least 8 characters long.' };
+    }
+    if (data.confirm_password && data.password !== data.confirm_password) {
+      setIsLoading(false);
+      return { success: false, message: 'Passwords do not match.' };
+    }
+
     const API_BASE = ((import.meta as any).env?.VITE_API_URL as string) || '/api';
 
     try {
-      // 1. Try real FastAPI backend
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      // Attempt backend API
+      const res = await fetch(`${API_BASE}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id_or_email: userIdOrEmail.trim(),
+          full_name: cleanName,
+          username: cleanUsername,
+          email: cleanEmail,
+          password: data.password,
+          confirm_password: data.confirm_password,
+          organization: data.organization || '',
+          country: data.country || ''
+        })
+      });
+
+      if (res.ok) {
+        const resData = await res.json();
+        const newSession: AuthSession = {
+          token: resData.token,
+          user: resData.user,
+          expires_at: resData.expires_at || (Date.now() + 8 * 3600 * 1000),
+          remember_me: false
+        };
+        sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(newSession));
+        setSession(newSession);
+        setIsLoading(false);
+        return { success: true, user: resData.user, token: resData.token };
+      } else {
+        const err = await res.json();
+        setIsLoading(false);
+        return { success: false, message: err.detail || 'Sign up failed. Please try again.' };
+      }
+    } catch {
+      // Backend unavailable (static Vercel hosting) -> Execute client-side registry
+    }
+
+    await new Promise((r) => setTimeout(r, 600));
+
+    // Check duplicate email
+    if (registeredUsers.some((u) => u.email.toLowerCase() === cleanEmail)) {
+      setIsLoading(false);
+      return { success: false, message: 'An account with this email address already exists.' };
+    }
+
+    // Check duplicate username
+    if (registeredUsers.some((u) => u.username.toLowerCase() === cleanUsername)) {
+      setIsLoading(false);
+      return { success: false, message: 'Username is already taken. Please choose another username.' };
+    }
+
+    const nowIso = new Date().toISOString();
+    const newUser: VigilUser = {
+      id: `usr-${Date.now().toString(36)}`,
+      full_name: cleanName,
+      username: cleanUsername,
+      email: cleanEmail,
+      role: 'user', // strictly normal user
+      organization: data.organization?.trim() || '',
+      country: data.country?.trim() || '',
+      profile_image: '',
+      is_active: true,
+      created_at: nowIso,
+      updated_at: nowIso,
+      last_login: nowIso,
+      name: cleanName,
+      call_sign: `EO-${cleanUsername.substring(0, 4).toUpperCase()}`,
+      clearance: 'STANDARD // PUBLIC'
+    };
+
+    // Store in registered users
+    setRegisteredUsers((prev) => [...prev, { ...newUser, passwordHash: data.password }]);
+
+    // Auto sign-in
+    const token = `vigil_tok_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+    const newSession: AuthSession = {
+      token,
+      user: newUser,
+      expires_at: Date.now() + 8 * 3600 * 1000,
+      remember_me: false
+    };
+
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(newSession));
+    setSession(newSession);
+    setIsLoading(false);
+
+    return {
+      success: true,
+      user: newUser,
+      token,
+      message: 'Account created successfully! Welcome to VIGIL.'
+    };
+  };
+
+  // 2. PUBLIC SIGN IN
+  const signin = async (identifier: string, password: string, rememberMe: boolean = false): Promise<AuthResult> => {
+    setIsLoading(true);
+    setIsSessionExpired(false);
+
+    const cleanInput = identifier.trim().toLowerCase();
+    if (!cleanInput) {
+      setIsLoading(false);
+      return { success: false, message: 'Please enter your email address or username.' };
+    }
+    if (!password) {
+      setIsLoading(false);
+      return { success: false, message: 'Please enter your password.' };
+    }
+
+    const API_BASE = ((import.meta as any).env?.VITE_API_URL as string) || '/api';
+
+    try {
+      const res = await fetch(`${API_BASE}/auth/signin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: identifier.trim(),
           password,
           remember_me: rememberMe
         })
@@ -180,64 +332,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (res.status === 401 || res.status === 403) {
         const errData = await res.json();
         setIsLoading(false);
-        return { success: false, message: errData.detail || 'Invalid OIT User ID or password.' };
+        return { success: false, message: errData.detail || 'Invalid email/username or password.' };
       }
     } catch {
-      // Backend not running on local port or running on static Vercel host -> Use seamless cryptographically validated demo engine
+      // Backend not running on local port -> Client-side verification
     }
 
-    // 2. Client-side Fallback Verification for Vercel demo
-    await new Promise((r) => setTimeout(r, 650)); // Realistic authentication network latency
+    await new Promise((r) => setTimeout(r, 550));
 
-    const foundSeed = SEED_OIT_ACCOUNTS.find(
-      (u) => u.oit_user_id.toLowerCase() === cleanInput || u.email.toLowerCase() === cleanInput
+    // Search registered users & seed accounts
+    const foundUser = registeredUsers.find(
+      (u) =>
+        u.email.toLowerCase() === cleanInput ||
+        u.username.toLowerCase() === cleanInput ||
+        (u.oit_user_id && u.oit_user_id.toLowerCase() === cleanInput)
     );
 
-    if (!foundSeed) {
+    if (!foundUser) {
       setIsLoading(false);
       return {
         success: false,
-        message: 'Invalid OIT User ID or password. Please check your credentials and try again.'
+        message: 'Invalid email/username or password. Please check your credentials and try again.'
       };
     }
 
-    // Check account active status
-    const currentActiveRecord = clientUsers.find((u) => u.id === foundSeed.id);
-    if (currentActiveRecord && !currentActiveRecord.is_active) {
+    if (!foundUser.is_active) {
       setIsLoading(false);
       return {
         success: false,
-        message: 'Your OIT account is deactivated. Contact your OIT Administrator.'
+        message: 'Your account is deactivated. Please contact support.'
       };
     }
 
-    // Password comparison
-    if (password !== foundSeed.passwordHash) {
+    if (password !== foundUser.passwordHash) {
       setIsLoading(false);
       return {
         success: false,
-        message: 'Invalid OIT User ID or password. Please check your credentials and try again.'
+        message: 'Invalid email/username or password. Please check your credentials and try again.'
       };
     }
 
-    // Authenticated successfully!
-    const token = `oit_sec_v2_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+    // Success
+    const token = `vigil_tok_${Math.random().toString(36).substring(2)}_${Date.now()}`;
     const ttlMs = rememberMe ? 30 * 86400 * 1000 : 8 * 3600 * 1000;
     const expiresAt = Date.now() + ttlMs;
 
-    const safeUser: OitUser = {
-      id: foundSeed.id,
-      oit_user_id: foundSeed.oit_user_id,
-      name: foundSeed.name,
-      email: foundSeed.email,
-      role: foundSeed.role,
-      organization: foundSeed.organization,
-      call_sign: foundSeed.call_sign,
-      clearance: foundSeed.clearance,
-      is_active: currentActiveRecord ? currentActiveRecord.is_active : true,
-      created_at: foundSeed.created_at,
-      last_login: new Date().toISOString()
-    };
+    const { passwordHash, ...safeUser } = foundUser;
+    safeUser.last_login = new Date().toISOString();
 
     const newSession: AuthSession = {
       token,
@@ -257,6 +398,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true, user: safeUser, token };
   };
 
+  const login = signin;
+
+  // 3. SIGN OUT
   const logout = async () => {
     const API_BASE = ((import.meta as any).env?.VITE_API_URL as string) || '/api';
     if (session?.token) {
@@ -273,15 +417,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSession(null);
   };
 
-  const requestPasswordReset = async (userIdOrEmail: string) => {
-    const clean = userIdOrEmail.trim().toLowerCase();
+  // 4. UPDATE USER PROFILE
+  const updateProfile = async (data: {
+    full_name?: string;
+    organization?: string;
+    country?: string;
+    profile_image?: string;
+  }): Promise<AuthResult> => {
+    if (!session?.user) return { success: false, message: 'Not authenticated' };
+
+    const API_BASE = ((import.meta as any).env?.VITE_API_URL as string) || '/api';
+    if (session.token) {
+      try {
+        const res = await fetch(`${API_BASE}/auth/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.token}`
+          },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) {
+          const resData = await res.json();
+          const updatedUser = resData.user;
+          const updatedSession = { ...session, user: updatedUser };
+          setSession(updatedSession);
+          if (session.remember_me) {
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedSession));
+          } else {
+            sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedSession));
+          }
+          return { success: true, user: updatedUser, message: 'Profile updated successfully' };
+        }
+      } catch {}
+    }
+
+    // Local state fallback
+    const updatedUser: VigilUser = {
+      ...session.user,
+      full_name: data.full_name !== undefined ? data.full_name : session.user.full_name,
+      organization: data.organization !== undefined ? data.organization : session.user.organization,
+      country: data.country !== undefined ? data.country : session.user.country,
+      profile_image: data.profile_image !== undefined ? data.profile_image : session.user.profile_image,
+      name: data.full_name !== undefined ? data.full_name : session.user.full_name,
+      updated_at: new Date().toISOString()
+    };
+
+    const updatedSession = { ...session, user: updatedUser };
+    setSession(updatedSession);
+
+    if (session.remember_me) {
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedSession));
+    } else {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedSession));
+    }
+
+    setRegisteredUsers((prev) =>
+      prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
+    );
+
+    return { success: true, user: updatedUser, message: 'Profile updated successfully' };
+  };
+
+  // 5. FORGOT PASSWORD
+  const requestPasswordReset = async (emailOrUsername: string) => {
+    const clean = emailOrUsername.trim().toLowerCase();
     const API_BASE = ((import.meta as any).env?.VITE_API_URL as string) || '/api';
 
     try {
       const res = await fetch(`${API_BASE}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id_or_email: userIdOrEmail })
+        body: JSON.stringify({ email: emailOrUsername })
       });
       if (res.ok) {
         const data = await res.json();
@@ -293,31 +500,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch {}
 
-    // Fallback simulation
     await new Promise((r) => setTimeout(r, 500));
-    const target = SEED_OIT_ACCOUNTS.find(
-      (u) => u.oit_user_id.toLowerCase() === clean || u.email.toLowerCase() === clean
+    const target = registeredUsers.find(
+      (u) => u.email.toLowerCase() === clean || u.username.toLowerCase() === clean
     );
 
     if (!target) {
       return {
         success: true,
-        message: 'If an active account matches the details, a security verification code has been dispatched.'
+        message: 'If an account exists with that email/username, password reset instructions have been generated.'
       };
     }
 
-    const code = `OIT-SEC-${Math.floor(100000 + Math.random() * 900000)}`;
+    const code = `VIGIL-${Math.floor(100000 + Math.random() * 900000)}`;
     setActiveChallenges((prev) => ({ ...prev, [target.id]: code }));
 
     return {
       success: true,
-      message: `Security challenge dispatched to registered OIT channel for ${target.oit_user_id}.`,
-      hint: `Verification Code: ${code} (Valid 15m for demo/testing)`
+      message: `Password reset verification code generated for ${target.email}.`,
+      hint: `Reset Code: ${code} (Valid 15m for demo/testing)`
     };
   };
 
-  const resetPassword = async (userIdOrEmail: string, code: string, newPass: string) => {
-    const clean = userIdOrEmail.trim().toLowerCase();
+  // 6. RESET PASSWORD
+  const resetPassword = async (emailOrUsername: string, code: string, newPass: string) => {
+    const clean = emailOrUsername.trim().toLowerCase();
     const API_BASE = ((import.meta as any).env?.VITE_API_URL as string) || '/api';
 
     try {
@@ -325,7 +532,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id_or_email: userIdOrEmail,
+          email: emailOrUsername,
           verification_code: code,
           new_password: newPass
         })
@@ -339,10 +546,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch {}
 
-    // Fallback verification
     await new Promise((r) => setTimeout(r, 600));
-    const target = SEED_OIT_ACCOUNTS.find(
-      (u) => u.oit_user_id.toLowerCase() === clean || u.email.toLowerCase() === clean
+    const target = registeredUsers.find(
+      (u) => u.email.toLowerCase() === clean || u.username.toLowerCase() === clean
     );
 
     if (!target) {
@@ -350,16 +556,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const expectedCode = activeChallenges[target.id];
-    if (code.trim() !== expectedCode && code.trim() !== 'OIT-SEC-123456') {
+    if (code.trim() !== expectedCode && code.trim() !== 'VIGIL-123456') {
       return { success: false, message: 'Incorrect verification code. Please check and retry.' };
     }
 
     // Update password
-    target.passwordHash = newPass;
+    setRegisteredUsers((prev) =>
+      prev.map((u) => (u.id === target.id ? { ...u, passwordHash: newPass } : u))
+    );
+
     return { success: true, message: 'Password updated successfully. You may now sign in.' };
   };
 
-  const listAdminUsers = async (): Promise<OitUser[]> => {
+  // 7. ADMIN USER MANAGEMENT
+  const listAdminUsers = async (): Promise<VigilUser[]> => {
     const API_BASE = ((import.meta as any).env?.VITE_API_URL as string) || '/api';
     if (session?.token) {
       try {
@@ -372,7 +582,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch {}
     }
-    return clientUsers;
+    return registeredUsers.map(({ passwordHash, ...u }) => u);
   };
 
   const toggleUserActive = async (userId: string, isActive: boolean): Promise<boolean> => {
@@ -388,7 +598,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           body: JSON.stringify({ user_id: userId, is_active: isActive })
         });
         if (res.ok) {
-          setClientUsers((prev) =>
+          setRegisteredUsers((prev) =>
             prev.map((u) => (u.id === userId ? { ...u, is_active: isActive } : u))
           );
           return true;
@@ -396,7 +606,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {}
     }
 
-    setClientUsers((prev) =>
+    setRegisteredUsers((prev) =>
       prev.map((u) => (u.id === userId ? { ...u, is_active: isActive } : u))
     );
     return true;
@@ -411,13 +621,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         isSessionExpired,
         clearSessionExpiredFlag,
+        signup,
+        signin,
         login,
         logout,
+        updateProfile,
         requestPasswordReset,
         resetPassword,
         listAdminUsers,
-        toggleUserActive,
-        activeChallenges
+        toggleUserActive
       }}
     >
       {children}

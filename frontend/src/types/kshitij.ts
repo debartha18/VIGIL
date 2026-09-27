@@ -163,35 +163,59 @@ export interface SystemHealth {
   };
 }
 
-// OIT User & Authentication Types
-export type OitRole = 'oit_user' | 'oit_admin';
+// Public User & Authentication Types
+export type UserRole = 'user' | 'admin' | 'oit_user' | 'oit_admin';
 
-export interface OitUser {
+export interface VigilUser {
   id: string;
-  oit_user_id: string; // e.g. "OIT-IMINT-804"
-  name: string;
+  full_name: string;
+  username: string;
   email: string;
-  role: OitRole;
-  organization: string;
-  call_sign?: string;
-  clearance?: string;
+  role: UserRole;
+  organization?: string;
+  country?: string;
+  profile_image?: string;
   is_active: boolean;
   created_at: string;
+  updated_at?: string;
   last_login?: string;
+
+  // Compatibility aliases
+  name?: string;
+  oit_user_id?: string;
+  call_sign?: string;
+  clearance?: string;
+}
+
+// Backward compatibility alias
+export type OitUser = VigilUser;
+export type OitRole = UserRole;
+
+export interface SignUpData {
+  full_name: string;
+  username: string;
+  email: string;
+  password: string;
+  confirm_password?: string;
+  organization?: string;
+  country?: string;
 }
 
 export interface AuthSession {
   token: string;
-  user: OitUser;
+  user: VigilUser;
   expires_at: number; // millisecond timestamp
   remember_me: boolean;
 }
 
-export interface LoginResult {
+export interface AuthResult {
   success: boolean;
   token?: string;
-  user?: OitUser;
+  user?: VigilUser;
   expires_at?: number;
   message?: string;
 }
+
+export type LoginResult = AuthResult;
+
 

@@ -161,12 +161,12 @@ export const OITAdminModal: React.FC<OITAdminModalProps> = ({ isOpen, onClose })
                             : 'bg-[#0284C7]/15 border-[#0284C7]/50 text-[#38BDF8]'
                         }`}
                       >
-                        {u.name.substring(0, 2).toUpperCase()}
+                        {(u.full_name || u.name || u.username || 'User').substring(0, 2).toUpperCase()}
                       </div>
 
                       <div className="leading-tight truncate">
                         <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-white text-xs">{u.name}</span>
+                          <span className="font-semibold text-white text-xs">{u.full_name || u.name || u.username}</span>
                           <span
                             className={`px-1.5 py-0.2 rounded text-[9px] font-mono uppercase ${
                               isAdmin
