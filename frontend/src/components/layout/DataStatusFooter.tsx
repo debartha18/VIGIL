@@ -49,7 +49,7 @@ export const DataStatusFooter: React.FC<DataStatusFooterProps> = ({ health }) =>
           <span className="text-white font-mono font-medium">{data.storage}</span>
         </div>
         <span className="text-[#182A40]">|</span>
-        <span className="text-[10px] text-[#64748B] font-mono">SIH26227 // EVAL PROTOCOL</span>
+        <span className="text-[10px] text-[#64748B] font-mono">DGIS // EVAL PROTOCOL</span>
       </div>
     </footer>
   );

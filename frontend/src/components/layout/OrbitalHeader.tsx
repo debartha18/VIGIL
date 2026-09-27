@@ -64,7 +64,7 @@ export const OrbitalHeader: React.FC = () => {
 
         <div className="text-left">
           <div className="text-xs font-bold text-white tracking-wide">
-            SIH26227 &nbsp;•&nbsp; DGIS
+            DGIS Ground Station
           </div>
           <div className="text-[11px] text-[#94A3B8]">
             Ministry of Defence
@@ -77,7 +77,7 @@ export const OrbitalHeader: React.FC = () => {
         {/* Prototype / Demonstration Notice */}
         <div className="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-[#0F2238] border border-[#1E3A5F] text-[10px] font-mono text-[#38BDF8]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse" />
-          <span>Prototype // SIH26227 Demonstration</span>
+          <span>Operational Prototype // System Demonstration</span>
         </div>
 
         {/* On-Premise Ready Badge */}

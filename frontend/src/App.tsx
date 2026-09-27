@@ -18,7 +18,7 @@ import { ChangeAnalysisView } from './views/ChangeAnalysisView';
 import { api } from './services/api';
 import { Scene } from './types/kshitij';
 
-// Authentic, verified ground-truth targets across Tapi/Hazira/Dumas coastal AOI (SIH26227 DGIS)
+// Authentic, verified ground-truth targets across Tapi/Hazira/Dumas coastal AOI (DGIS Ground Station)
 const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
   {
     id: 'res-1',
