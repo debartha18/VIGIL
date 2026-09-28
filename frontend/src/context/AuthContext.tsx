@@ -162,7 +162,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsSessionExpired(false);
 
     const cleanEmail = data.email.trim().toLowerCase();
-    const cleanUsername = data.username.trim().toLowerCase();
+    const cleanUsername = data.username.trim();
+    const cleanUsernameLower = cleanUsername.toLowerCase();
     const cleanName = data.full_name.trim();
 
     // Basic frontend checks
@@ -234,8 +235,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, message: 'An account with this email address already exists.' };
     }
 
-    // Check duplicate username
-    if (registeredUsers.some((u) => u.username.toLowerCase() === cleanUsername)) {
+    // Check duplicate username (case-insensitive)
+    if (registeredUsers.some((u) => u.username.toLowerCase() === cleanUsernameLower)) {
       setIsLoading(false);
       return { success: false, message: 'Username is already taken. Please choose another username.' };
     }

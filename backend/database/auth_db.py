@@ -143,7 +143,8 @@ def create_user(
     Role is always 'user' by default.
     Raises ValueError on duplicates or invalid inputs.
     """
-    clean_username = username.strip().lower()
+    clean_username = username.strip()
+    clean_username_lower = clean_username.lower()
     clean_email = email.strip().lower()
     clean_name = full_name.strip()
 
@@ -155,8 +156,8 @@ def create_user(
         if cursor.fetchone():
             raise ValueError("An account with this email address already exists.")
 
-        # Check existing username
-        cursor.execute("SELECT id FROM users WHERE LOWER(username) = ? LIMIT 1", (clean_username,))
+        # Check existing username (case-insensitive)
+        cursor.execute("SELECT id FROM users WHERE LOWER(username) = ? LIMIT 1", (clean_username_lower,))
         if cursor.fetchone():
             raise ValueError("This username is already taken. Please choose another username.")
 

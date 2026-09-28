@@ -56,6 +56,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
   const [signUpOrg, setSignUpOrg] = useState('');
   const [signUpCountry, setSignUpCountry] = useState('');
   const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState(false);
 
   // Forgot Password State
   const [resetStep, setResetStep] = useState<1 | 2>(1);
@@ -64,6 +65,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
   const [resetHint, setResetHint] = useState<string | null>(null);
 
   // Feedback Messages
@@ -218,7 +220,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-screen bg-[#060D17] text-white flex flex-col justify-between font-sans select-none relative overflow-x-hidden">
+    <div className="min-h-screen min-h-[100dvh] w-full bg-[#060D17] text-white flex flex-col justify-between font-sans relative overflow-x-hidden overflow-y-auto">
       {/* Background Geospatial Ambient Elements */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-[#0284C7]/10 blur-[130px] rounded-full" />
@@ -227,7 +229,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
       </div>
 
       {/* Top Header Bar */}
-      <header className="relative z-10 h-16 border-b border-[#182A40]/80 px-6 flex items-center justify-between bg-[#070E18]/85 backdrop-blur-md">
+      <header className="relative z-10 shrink-0 h-16 border-b border-[#182A40]/80 px-4 sm:px-6 flex items-center justify-between bg-[#070E18]/85 backdrop-blur-md">
         <div className="flex items-center space-x-3.5">
           <div className="relative flex items-center justify-center w-9 h-9">
             <svg className="w-8 h-8 text-[#00E5FF]" viewBox="0 0 36 36" fill="none">
@@ -287,8 +289,8 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
       </header>
 
       {/* Main Center Canvas */}
-      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 my-auto">
-        <div className="w-full max-w-[480px] bg-[#0B1523]/95 border border-[#182A40] rounded-2xl shadow-2xl backdrop-blur-xl p-6 sm:p-8 space-y-5">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center p-3 sm:p-6 py-6 sm:py-10 w-full min-h-0">
+        <div className="w-full max-w-[480px] bg-[#0B1523]/95 border border-[#182A40] rounded-2xl shadow-2xl backdrop-blur-xl p-5 sm:p-8 space-y-5 my-auto shrink-0">
           {/* Top Pill Switcher: Sign In vs Sign Up */}
           <div className="flex items-center p-1 rounded-xl bg-[#070D16] border border-[#182A40]">
             <button
@@ -405,7 +407,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                     Forgot Password?
                   </button>
                 </div>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#64748B]">
                     <Lock className="w-4 h-4" />
                   </div>
@@ -418,12 +420,20 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                     }}
                     placeholder="Enter your password"
                     autoComplete="current-password"
-                    className="w-full pl-9 pr-10 py-2.5 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7] rounded-lg text-sm text-white placeholder-[#475569] font-sans transition outline-none"
+                    className="w-full pl-9 pr-11 py-2.5 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] focus:ring-1 focus:ring-[#0284C7] rounded-lg text-sm text-white placeholder-[#475569] font-sans transition outline-none"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowSignInPassword(!showSignInPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#64748B] hover:text-white transition cursor-pointer"
+                    tabIndex={-1}
+                    aria-label={showSignInPassword ? 'Hide password' : 'Show password'}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowSignInPassword((prev) => !prev);
+                    }}
+                    className="absolute inset-y-0 right-0 w-11 h-full flex items-center justify-center text-[#64748B] hover:text-[#00E5FF] active:text-[#00E5FF] transition-colors cursor-pointer z-20 touch-manipulation focus:outline-none"
                   >
                     {showSignInPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -502,8 +512,11 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                   <input
                     type="text"
                     value={signUpUsername}
-                    onChange={(e) => setSignUpUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_\-\.]/g, ''))}
-                    placeholder="e.g. alex_geo"
+                    onChange={(e) => setSignUpUsername(e.target.value.replace(/[^a-zA-Z0-9_\-\.]/g, ''))}
+                    placeholder="e.g. Alex_Geo"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
                     className="w-full px-3 py-2 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white font-mono outline-none"
                   />
                 </div>
@@ -535,20 +548,28 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                   <label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#94A3B8]">
                     Password (min 8 chars) *
                   </label>
-                  <div className="relative">
+                  <div className="relative flex items-center">
                     <input
                       type={showSignUpPassword ? 'text' : 'password'}
                       value={signUpPassword}
                       onChange={(e) => setSignUpPassword(e.target.value)}
                       placeholder="At least 8 chars"
-                      className="w-full pl-3 pr-8 py-2 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white font-sans outline-none"
+                      className="w-full pl-3 pr-11 py-2 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white font-sans outline-none"
                     />
                     <button
                       type="button"
-                      onClick={() => setShowSignUpPassword(!showSignUpPassword)}
-                      className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#64748B] hover:text-white"
+                      tabIndex={-1}
+                      aria-label={showSignUpPassword ? 'Hide password' : 'Show password'}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowSignUpPassword((prev) => !prev);
+                      }}
+                      className="absolute inset-y-0 right-0 w-11 h-full flex items-center justify-center text-[#64748B] hover:text-[#00E5FF] active:text-[#00E5FF] transition-colors cursor-pointer z-20 touch-manipulation focus:outline-none"
                     >
-                      {showSignUpPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      {showSignUpPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
@@ -557,13 +578,30 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                   <label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#94A3B8]">
                     Confirm Password *
                   </label>
-                  <input
-                    type={showSignUpPassword ? 'text' : 'password'}
-                    value={signUpConfirmPassword}
-                    onChange={(e) => setSignUpConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    className="w-full px-3 py-2 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white font-sans outline-none"
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      type={showSignUpConfirmPassword ? 'text' : 'password'}
+                      value={signUpConfirmPassword}
+                      onChange={(e) => setSignUpConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      className="w-full pl-3 pr-11 py-2 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white font-sans outline-none"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-label={showSignUpConfirmPassword ? 'Hide password' : 'Show password'}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowSignUpConfirmPassword((prev) => !prev);
+                      }}
+                      className="absolute inset-y-0 right-0 w-11 h-full flex items-center justify-center text-[#64748B] hover:text-[#00E5FF] active:text-[#00E5FF] transition-colors cursor-pointer z-20 touch-manipulation focus:outline-none"
+                    >
+                      {showSignUpConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -577,7 +615,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                     type="text"
                     value={signUpOrg}
                     onChange={(e) => setSignUpOrg(e.target.value)}
-                    placeholder="e.g. University or Lab"
+                    placeholder="e.g. ISRO SAC, IIT Lab, or University"
                     className="w-full px-3 py-1.5 bg-[#070D16] border border-[#182A40] rounded-lg text-xs text-white font-sans outline-none"
                   />
                 </div>
@@ -698,18 +736,26 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                     <label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#94A3B8]">
                       New Password (min 8 chars)
                     </label>
-                    <div className="relative">
+                    <div className="relative flex items-center">
                       <input
                         type={showNewPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="At least 8 chars"
-                        className="w-full px-3 py-2 pr-10 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white outline-none"
+                        className="w-full px-3 py-2 pr-11 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white outline-none"
                       />
                       <button
                         type="button"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#64748B] hover:text-white"
+                        tabIndex={-1}
+                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowNewPassword((prev) => !prev);
+                        }}
+                        className="absolute inset-y-0 right-0 w-11 h-full flex items-center justify-center text-[#64748B] hover:text-[#00E5FF] active:text-[#00E5FF] transition-colors cursor-pointer z-20 touch-manipulation focus:outline-none"
                       >
                         {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -720,13 +766,30 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                     <label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#94A3B8]">
                       Confirm New Password
                     </label>
-                    <input
-                      type={showNewPassword ? 'text' : 'password'}
-                      value={confirmNewPassword}
-                      onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      placeholder="Re-enter new password"
-                      className="w-full px-3 py-2 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white outline-none"
-                    />
+                    <div className="relative flex items-center">
+                      <input
+                        type={showConfirmNewPassword ? 'text' : 'password'}
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Re-enter new password"
+                        className="w-full px-3 py-2 pr-11 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white outline-none"
+                      />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        aria-label={showConfirmNewPassword ? 'Hide password' : 'Show password'}
+                        onMouseDown={(e) => e.preventDefault()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowConfirmNewPassword((prev) => !prev);
+                        }}
+                        className="absolute inset-y-0 right-0 w-11 h-full flex items-center justify-center text-[#64748B] hover:text-[#00E5FF] active:text-[#00E5FF] transition-colors cursor-pointer z-20 touch-manipulation focus:outline-none"
+                      >
+                        {showConfirmNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
 
                   <button
@@ -784,20 +847,22 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
       </main>
 
       {/* Bottom Footer Information Bar */}
-      <footer className="relative z-10 h-10 border-t border-[#182A40]/80 px-6 flex items-center justify-between text-[11px] text-[#64748B] font-mono bg-[#070E18]/85 backdrop-blur-md">
-        <div className="flex items-center space-x-4">
+      <footer className="relative z-10 shrink-0 min-h-10 border-t border-[#182A40]/80 px-4 sm:px-6 py-2.5 sm:py-0 flex flex-col sm:flex-row items-center justify-between text-[11px] text-[#64748B] font-mono bg-[#070E18]/85 backdrop-blur-md gap-2 pb-6 sm:pb-2">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1 text-center sm:text-left">
           <span className="flex items-center space-x-1.5">
             <Globe className="w-3.5 h-3.5 text-[#38BDF8]" />
-            <span>AOI: Tapi Estuary Sector (21.4587° N, 72.7812° E)</span>
+            <span>AOI: Tapi Estuary & Hazira Coastal Sector (21.4587° N, 72.7812° E)</span>
           </span>
           <span className="hidden sm:inline text-[#182A40]">|</span>
-          <span className="hidden sm:inline">Sensors: Sentinel-2 Optical (10m) · Sentinel-1 SAR Radar (10m)</span>
+          <span className="text-[10px] text-[#94A3B8]">
+            Sensors: Sentinel-2 MSI (10m) · Sentinel-1 SAR (10m) · Landsat-8/9 OLI (15m)
+          </span>
         </div>
 
-        <div className="flex items-center space-x-2 text-[10px]">
-          <span className="text-[#10B981]">100% PUBLIC ACCESS</span>
+        <div className="flex items-center space-x-2 text-[10px] shrink-0">
+          <span className="text-[#10B981] font-semibold">100% PUBLIC ACCESS</span>
           <span>·</span>
-          <span>EARTH OBSERVATION</span>
+          <span>VIGIL SATELLITE INTELLIGENCE</span>
         </div>
       </footer>
     </div>

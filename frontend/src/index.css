@@ -21,8 +21,20 @@ body {
   background-color: var(--bg-0);
   color: var(--text-0);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  overflow: hidden;
-  user-select: none;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Ensure inputs and textareas allow normal text selection and touch interaction */
+input, textarea, select, [contenteditable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+/* Suppress default Edge / IE password reveal button to prevent collision with custom eye toggle */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
 }
 
 code, pre, .font-mono {
