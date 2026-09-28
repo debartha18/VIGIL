@@ -104,10 +104,10 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
       </div>
 
       {/* Subtab Navigation Pills */}
-      <div className="flex items-center space-x-1 py-1.5 border-b border-[#182A40]/60 text-[11px] overflow-x-auto shrink-0 font-sans">
+      <div className="flex items-center space-x-1 py-1.5 border-b border-[#182A40]/60 text-[11px] overflow-x-auto no-scrollbar shrink-0 font-sans">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`h-6 px-2.5 rounded-md transition font-medium cursor-pointer ${
+          className={`h-6 px-2.5 rounded-md transition font-medium cursor-pointer shrink-0 ${
             activeTab === 'overview'
               ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
               : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
@@ -117,7 +117,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('explanation')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer ${
+          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
             activeTab === 'explanation'
               ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
               : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
@@ -128,7 +128,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('false-change')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer ${
+          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
             activeTab === 'false-change'
               ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
               : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
@@ -139,7 +139,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('quantification')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer ${
+          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
             activeTab === 'quantification'
               ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
               : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
@@ -150,7 +150,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('provenance')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer ${
+          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
             activeTab === 'provenance'
               ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
               : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
@@ -161,7 +161,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer ${
+          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
             activeTab === 'analytics'
               ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
               : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
@@ -177,13 +177,13 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         {activeTab === 'overview' && (
           <div className="space-y-3.5">
             {/* Sensor Switcher: Optical vs SAR */}
-            <div className="flex items-center justify-between text-[11px]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[11px]">
               <div className="flex items-center space-x-2 text-[#94A3B8]">
                 <span className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">SENSOR</span>
                 <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
                   <button
                     onClick={() => setSensorMode('OPTICAL')}
-                    className={`h-6 px-2.5 rounded-md text-[10px] font-medium transition cursor-pointer ${
+                    className={`h-6 px-2 sm:px-2.5 rounded-md text-[10px] font-medium transition cursor-pointer ${
                       sensorMode === 'OPTICAL' ? 'bg-[#0284C7] text-white' : 'text-[#94A3B8] hover:text-white'
                     }`}
                   >
@@ -191,7 +191,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                   </button>
                   <button
                     onClick={() => setSensorMode('SAR')}
-                    className={`h-6 px-2.5 rounded-md text-[10px] font-medium transition cursor-pointer ${
+                    className={`h-6 px-2 sm:px-2.5 rounded-md text-[10px] font-medium transition cursor-pointer ${
                       sensorMode === 'SAR' ? 'bg-[#0284C7] text-white' : 'text-[#94A3B8] hover:text-white'
                     }`}
                   >
@@ -201,7 +201,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               </div>
 
               {/* Image Quality Badge */}
-              <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-[#070D16] border border-[#182A40] text-[10px] text-[#10B981]">
+              <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-[#070D16] border border-[#182A40] text-[10px] text-[#10B981] self-start sm:self-auto">
                 <CloudSun className="w-3.5 h-3.5 text-[#38BDF8]" />
                 <span>Cloud 2.1% · High quality</span>
               </div>
@@ -565,7 +565,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         </div>
 
         {/* Bottom Details + Analyst Actions */}
-        <div className="flex items-center justify-between pt-1.5 border-t border-[#182A40]/80 text-xs shrink-0 font-sans">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1.5 border-t border-[#182A40]/80 text-xs shrink-0 font-sans">
           <div className="text-[#94A3B8] flex items-center space-x-1.5">
             <span className="text-[10px] font-sans uppercase tracking-[0.05em] text-[#64748B]">LOCATION</span>
             <span className="text-white font-mono">{coordinates}</span>

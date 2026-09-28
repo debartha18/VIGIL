@@ -180,6 +180,7 @@ const VigilPlatform: React.FC = () => {
 
   const [isGuestExploring, setIsGuestExploring] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'forgot_password' | null>(null);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState<boolean>(false);
 
   // Route Synchronization with Browser History & Popstate
   useEffect(() => {
@@ -231,6 +232,7 @@ const VigilPlatform: React.FC = () => {
 
   const handleTabChange = useCallback((tab: OrbitalTab) => {
     setActiveTab(tab);
+    setIsMobileNavOpen(false);
     const targetPath = pathForTab(tab);
     if (window.location.pathname !== targetPath) {
       window.history.pushState(null, '', targetPath);
@@ -324,17 +326,25 @@ const VigilPlatform: React.FC = () => {
 
   // 2. Authenticated or Guest Preview -> Render VIGIL Platform
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#070D16] text-white overflow-hidden font-sans select-none">
+    <div className="flex flex-col min-h-[100dvh] h-screen w-full max-w-full bg-[#070D16] text-white overflow-hidden font-sans select-none">
       {/* 1. Top Header with User Account & Public Login/Signup actions */}
-      <OrbitalHeader onOpenAuth={(mode) => setAuthModalMode(mode)} />
+      <OrbitalHeader
+        onOpenAuth={(mode) => setAuthModalMode(mode)}
+        onToggleMobileNav={() => setIsMobileNavOpen((prev) => !prev)}
+      />
 
       {/* 2. Main Workstation Area: Left Sidebar + Content Workspace */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Left Sidebar */}
-        <OrbitalSidebar activeTab={activeTab} onSelectTab={handleTabChange} />
+      <div className="flex-1 flex min-h-0 overflow-hidden w-full max-w-full">
+        {/* Left Sidebar (Preserved on Desktop, Slide-in Drawer on Mobile) */}
+        <OrbitalSidebar
+          activeTab={activeTab}
+          onSelectTab={handleTabChange}
+          isMobileOpen={isMobileNavOpen}
+          onCloseMobile={() => setIsMobileNavOpen(false)}
+        />
 
         {/* Content Workspace */}
-        <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070D16]">
+        <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070D16] w-full max-w-full">
           {/* Top Search Filter Bar */}
           <OrbitalSearchBar onSearch={handleSearch} defaultQuery={currentQuery} />
 
@@ -386,11 +396,11 @@ const VigilPlatform: React.FC = () => {
             </div>
           ) : (
             /* Main Signature Grid: Responsive with guaranteed visibility on all screen sizes */
-            <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto min-h-0 pb-20">
+            <div className="flex-1 p-2 sm:p-3 flex flex-col gap-3 overflow-y-auto min-h-0 pb-20 w-full max-w-full">
               {/* Top Row: Central Map (Left) + Change Analysis Panel (Right) */}
-              <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-3 shrink-0 h-[360px] lg:h-[390px] xl:h-[430px]">
+              <div className="flex flex-col lg:grid lg:grid-cols-[1.65fr_1fr] gap-3 shrink-0 h-auto lg:h-[390px] xl:h-[430px]">
                 {/* Central Map with AOI, Controls & India Inset */}
-                <div className="h-full min-h-0">
+                <div className="h-[280px] sm:h-[340px] lg:h-full min-h-0 w-full">
                   <SatelliteMapCanvas
                     coordinates={`Lat: ${selectedResult.coordinates.split(',')[0]}   Lon: ${selectedResult.coordinates.split(',')[1] || ''}`}
                     selectedAOI="AOI-1"
@@ -399,7 +409,7 @@ const VigilPlatform: React.FC = () => {
                 </div>
 
                 {/* Change Analysis Panel with Before/After Crops & Timeline */}
-                <div className="h-full min-h-0">
+                <div className="h-auto lg:h-full min-h-0 w-full">
                   <ChangeAnalysisCard
                     candidateTitle={selectedResult.title}
                     coordinates={selectedResult.coordinates}

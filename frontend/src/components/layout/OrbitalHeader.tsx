@@ -6,7 +6,8 @@ import {
   Settings,
   ShieldAlert,
   ChevronDown,
-  UserCheck
+  UserCheck,
+  Menu
 } from 'lucide-react';
 import { useAnalyst } from '../../context/AnalystContext';
 import { useAuth } from '../../context/AuthContext';
@@ -15,9 +16,10 @@ import { UserProfileModal } from './UserProfileModal';
 
 interface OrbitalHeaderProps {
   onOpenAuth?: (mode: 'signin' | 'signup') => void;
+  onToggleMobileNav?: () => void;
 }
 
-export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth }) => {
+export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onToggleMobileNav }) => {
   const { profile, setIsProfileModalOpen } = useAnalyst();
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -58,12 +60,23 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth }) => {
   };
 
   return (
-    <header className="h-16 bg-[#070D16] border-b border-[#182A40] px-5 flex items-center justify-between select-none z-30 shrink-0 font-sans">
-      {/* Left: Orbital Intel Logo & Subtitle */}
-      <div className="flex items-center space-x-3.5">
-        <div className="relative flex items-center justify-center w-10 h-10">
+    <header className="h-16 bg-[#070D16] border-b border-[#182A40] px-3 sm:px-5 flex items-center justify-between select-none z-30 shrink-0 font-sans">
+      {/* Left: Mobile Drawer Trigger + Orbital Intel Logo & Subtitle */}
+      <div className="flex items-center space-x-2 sm:space-x-3.5">
+        {/* Mobile Hamburger Toggle Button */}
+        <button
+          type="button"
+          onClick={onToggleMobileNav}
+          className="md:hidden p-2 -ml-1 rounded-lg text-slate-300 hover:text-white hover:bg-[#182A40] transition-colors focus:outline-none"
+          aria-label="Toggle navigation drawer"
+          title="Open Navigation Menu"
+        >
+          <Menu className="w-5 h-5 text-[#00E5FF]" />
+        </button>
+
+        <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0">
           {/* Custom Orbital Globe Icon */}
-          <svg className="w-9 h-9 text-[#00E5FF]" viewBox="0 0 36 36" fill="none">
+          <svg className="w-8 h-8 sm:w-9 sm:h-9 text-[#00E5FF]" viewBox="0 0 36 36" fill="none">
             <circle cx="18" cy="18" r="11" fill="#0E2238" stroke="#00E5FF" strokeWidth="1.8" />
             <path
               d="M6 18C6 24.6274 11.3726 30 18 30C24.6274 30 30 24.6274 30 18C30 11.3726 24.6274 6 18 6"
@@ -85,18 +98,18 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth }) => {
         </div>
 
         <div>
-          <h1 className="text-lg font-bold text-white flex items-center space-x-2 font-sans tracking-tight">
+          <h1 className="text-base sm:text-lg font-bold text-white flex items-center space-x-2 font-sans tracking-tight">
             <span>Orbital Intel</span>
           </h1>
-          <p className="text-[11px] font-normal leading-tight text-[#22D3EE] font-sans">
+          <p className="hidden sm:block text-[11px] font-normal leading-tight text-[#22D3EE] font-sans">
             Semantic retrieval & multi-temporal<br />
             change analysis of satellite imagery
           </p>
         </div>
       </div>
 
-      {/* Middle-Left: DGIS Ground Station Emblem */}
-      <div className="flex items-center space-x-3 pl-8 border-l border-[#182A40]/80">
+      {/* Middle-Left: DGIS Ground Station Emblem (Preserved on Desktop, Hidden on Mobile) */}
+      <div className="hidden md:flex items-center space-x-3 pl-8 border-l border-[#182A40]/80">
         <div className="w-8 h-8 flex items-center justify-center">
           <svg className="w-7 h-7 text-[#E2E8F0]" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C10.89 2 10 2.89 10 4V6H7V8H17V6H14V4C14 2.89 13.11 2 12 2ZM6 9V11H18V9H6ZM7 12C6.45 12 6 12.45 6 13V18H9V14H15V18H18V13C18 12.45 17.55 12 17 12H7ZM5 19V21H19V19H5Z" />
@@ -264,17 +277,17 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth }) => {
             )}
           </div>
         ) : (
-          <div className="flex items-center space-x-2 pl-3 border-l border-[#182A40]">
+          <div className="flex items-center space-x-2 pl-2 sm:pl-3 border-l border-[#182A40]">
             <button
               onClick={() => onOpenAuth?.('signin')}
-              className="h-8 px-3 rounded-lg bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-xs font-semibold text-white hover:text-[#00E5FF] transition cursor-pointer flex items-center space-x-1.5"
+              className="h-8 px-2.5 sm:px-3 rounded-lg bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-xs font-semibold text-white hover:text-[#00E5FF] transition cursor-pointer flex items-center space-x-1.5 shrink-0"
             >
               <User className="w-3.5 h-3.5 text-[#00E5FF]" />
               <span>Sign In</span>
             </button>
             <button
               onClick={() => onOpenAuth?.('signup')}
-              className="h-8 px-3.5 rounded-lg bg-gradient-to-r from-[#0284C7] to-[#00E5FF] hover:from-[#0369A1] hover:to-[#00B4D8] text-xs font-semibold text-black transition cursor-pointer shadow-md shadow-[#00E5FF]/20"
+              className="hidden sm:inline-flex h-8 px-3.5 rounded-lg bg-gradient-to-r from-[#0284C7] to-[#00E5FF] hover:from-[#0369A1] hover:to-[#00B4D8] text-xs font-semibold text-black transition cursor-pointer shadow-md shadow-[#00E5FF]/20 shrink-0"
             >
               <span>Create Account</span>
             </button>

@@ -266,62 +266,62 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
 
       {/* Feature 10: AOI Tactical Tools Bar (Top Center) */}
       <div
-        className="absolute top-3 left-1/2 transform -translate-x-1/2 z-20 flex items-center space-x-1 bg-[#0B1523]/95 border border-[#182A40] px-2 py-1 rounded-lg shadow-xl backdrop-blur text-xs font-sans"
+        className="absolute top-3 left-1/2 transform -translate-x-1/2 z-20 flex items-center space-x-1 bg-[#0B1523]/95 border border-[#182A40] px-1.5 sm:px-2 py-1 rounded-lg shadow-xl backdrop-blur text-xs font-sans max-w-[calc(100%-110px)] overflow-x-auto no-scrollbar"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <span className="text-[10px] uppercase tracking-[0.05em] text-[#64748B] px-1 font-semibold">AOI TOOLS</span>
+        <span className="hidden sm:inline text-[10px] uppercase tracking-[0.05em] text-[#64748B] px-1 font-semibold whitespace-nowrap">AOI TOOLS</span>
         <button
           onClick={() => setActiveTool(activeTool === 'RECT' ? 'NONE' : 'RECT')}
-          className={`h-6 px-2 rounded-md flex items-center space-x-1 transition text-xs font-medium cursor-pointer ${
+          className={`h-6 px-1.5 sm:px-2 rounded-md flex items-center space-x-1 transition text-xs font-medium cursor-pointer shrink-0 ${
             activeTool === 'RECT' ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]' : 'text-[#94A3B8] hover:text-white'
           }`}
           title="Draw rectangle"
         >
           <Square className="w-3 h-3" />
-          <span>Rect</span>
+          <span className="hidden sm:inline">Rect</span>
         </button>
         <button
           onClick={() => setActiveTool(activeTool === 'POLY' ? 'NONE' : 'POLY')}
-          className={`h-6 px-2 rounded-md flex items-center space-x-1 transition text-xs font-medium cursor-pointer ${
+          className={`h-6 px-1.5 sm:px-2 rounded-md flex items-center space-x-1 transition text-xs font-medium cursor-pointer shrink-0 ${
             activeTool === 'POLY' ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]' : 'text-[#94A3B8] hover:text-white'
           }`}
           title="Draw polygon"
         >
           <Pentagon className="w-3 h-3" />
-          <span>Poly</span>
+          <span className="hidden sm:inline">Poly</span>
         </button>
         <button
           onClick={() => setActiveTool(activeTool === 'CIRCLE' ? 'NONE' : 'CIRCLE')}
-          className={`h-6 px-2 rounded-md flex items-center space-x-1 transition text-xs font-medium cursor-pointer ${
+          className={`h-6 px-1.5 sm:px-2 rounded-md flex items-center space-x-1 transition text-xs font-medium cursor-pointer shrink-0 ${
             activeTool === 'CIRCLE' ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]' : 'text-[#94A3B8] hover:text-white'
           }`}
           title="Circle radius"
         >
           <Circle className="w-3 h-3" />
-          <span>Circle</span>
+          <span className="hidden sm:inline">Circle</span>
         </button>
         <button
           onClick={() => setShowCoordModal(true)}
-          className="h-6 px-2 rounded-md text-[#94A3B8] hover:text-white flex items-center space-x-1 transition text-xs font-medium cursor-pointer"
+          className="h-6 px-1.5 sm:px-2 rounded-md text-[#94A3B8] hover:text-white flex items-center space-x-1 transition text-xs font-medium cursor-pointer shrink-0"
           title="Enter coordinates"
         >
           <MapPin className="w-3 h-3 text-[#38BDF8]" />
-          <span>Coords</span>
+          <span className="hidden sm:inline">Coords</span>
         </button>
-        <div className="w-[1px] h-3 bg-[#182A40] mx-1" />
+        <div className="w-[1px] h-3 bg-[#182A40] mx-0.5 sm:mx-1 shrink-0" />
         <button
           onClick={handleSaveAOI}
-          className="h-6 px-2.5 rounded-md bg-[#0E2D4A] hover:bg-[#133A5E] text-[#38BDF8] font-medium flex items-center space-x-1 transition cursor-pointer"
+          className="h-6 px-2 sm:px-2.5 rounded-md bg-[#0E2D4A] hover:bg-[#133A5E] text-[#38BDF8] font-medium flex items-center space-x-1 transition cursor-pointer shrink-0"
         >
           <Save className="w-3 h-3" />
-          <span>Save</span>
+          <span className="hidden sm:inline">Save</span>
         </button>
         <button
           onClick={handleStartMonitoring}
-          className="h-6 px-2.5 rounded-md bg-[#063327] hover:bg-[#0E4738] border border-[#10B981]/50 text-[#10B981] font-medium flex items-center space-x-1 transition cursor-pointer"
+          className="h-6 px-2 sm:px-2.5 rounded-md bg-[#063327] hover:bg-[#0E4738] border border-[#10B981]/50 text-[#10B981] font-medium flex items-center space-x-1 transition cursor-pointer shrink-0"
         >
           <Radio className="w-3 h-3" />
-          <span>Monitor</span>
+          <span className="hidden sm:inline">Monitor</span>
         </button>
       </div>
 
@@ -447,10 +447,10 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
           <div className="w-0.5 h-2 bg-[#38BDF8]" />
         </div>
 
-        {/* India Inset Map with Location Pin */}
+        {/* India Inset Map with Location Pin (Hidden on small mobile screens) */}
         <div
           onClick={resetView}
-          className="w-20 h-24 bg-[#0B1523]/95 border border-[#182A40] hover:border-[#0284C7]/60 rounded-lg p-1 shadow-2xl backdrop-blur relative flex items-center justify-center cursor-pointer transition"
+          className="hidden sm:flex w-20 h-24 bg-[#0B1523]/95 border border-[#182A40] hover:border-[#0284C7]/60 rounded-lg p-1 shadow-2xl backdrop-blur relative items-center justify-center cursor-pointer transition"
           title="Click to reset center to target region"
         >
           <img
