@@ -172,7 +172,7 @@ const VigilPlatform: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [currentQuery, setCurrentQuery] = useState<string>('"construction near sea"');
-  const [showBottomAnalytics, setShowBottomAnalytics] = useState<boolean>(true);
+  const [showBottomAnalytics, setShowBottomAnalytics] = useState<boolean>(false);
 
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>(GROUND_TRUTH_TARGETS.slice(0, 5));
   const [selectedResult, setSelectedResult] = useState<SearchResultItem>(GROUND_TRUTH_TARGETS[0]);

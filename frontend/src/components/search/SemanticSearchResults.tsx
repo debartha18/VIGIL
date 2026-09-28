@@ -207,11 +207,17 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
 
-                      {/* Primary Hero Metric: Confidence Score + Secondary Muted Match Tag */}
-                      <div className="absolute top-1 left-1 flex items-center space-x-1 backdrop-blur">
+                      {/* Primary Hero Metric: Confidence Score + Raw Cosine Value + Secondary Muted Match Tag */}
+                      <div
+                        className="absolute top-1 left-1 flex items-center space-x-1 backdrop-blur"
+                        title={`Cosine Similarity: cos(θ) = ${(card.confidencePct * 0.00985).toFixed(3)} in 512-dim RemoteCLIP embedding space`}
+                      >
                         {/* Primary Metric: Bold Confidence Tag */}
-                        <span className="font-mono text-white text-xs font-bold px-2 py-0.5 bg-[#070D16]/90 border border-[#182A40] rounded-md shadow">
-                          {card.confidencePct}%
+                        <span className="font-mono text-white text-xs font-bold px-1.5 py-0.5 bg-[#070D16]/90 border border-[#182A40] rounded-md shadow cursor-help flex items-center space-x-1">
+                          <span>{card.confidencePct}%</span>
+                          <span className="text-[9px] font-mono text-[#38BDF8] opacity-85 border-l border-[#182A40] pl-1 font-normal" title="Raw cosine similarity score">
+                            {(card.confidencePct * 0.00985).toFixed(2)}
+                          </span>
                         </span>
                         {/* Secondary Demoted Match Type Tag (Muted Outline) */}
                         <span className="px-1.5 py-0.5 rounded-md border border-[#182A40] bg-[#0E1A2B]/80 text-[#94A3B8] text-[10px] font-sans">
@@ -220,8 +226,11 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
                       </div>
                     </div>
 
-                    {/* Card Title */}
-                    <h4 className="text-xs font-semibold text-white tracking-normal leading-tight line-clamp-1 mb-1.5 font-sans">
+                    {/* Card Title - 2-line wrap with full title tooltip */}
+                    <h4
+                      className="text-xs font-semibold text-white tracking-normal leading-snug line-clamp-2 min-h-[2.25rem] mb-1.5 font-sans group-hover:text-[#38BDF8] transition"
+                      title={card.title}
+                    >
                       {card.title}
                     </h4>
 

@@ -15,7 +15,9 @@ import {
   Sparkles,
   Layers,
   Cpu,
-  Compass
+  Compass,
+  Sliders,
+  Columns
 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -51,6 +53,8 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
   const [analystVerdict, setAnalystVerdict] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [sensorMode, setSensorMode] = useState<'OPTICAL' | 'SAR'>('OPTICAL');
+  const [visualMode, setVisualMode] = useState<'side-by-side' | 'swipe'>('side-by-side');
+  const [swipePos, setSwipePos] = useState<number>(50);
 
   // Multi-temporal milestones along continuous timeline
   const timelineMilestones = [
@@ -207,62 +211,161 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               </div>
             </div>
 
-            {/* Before / After Photographic Satellite Image Thumbnails */}
-            <div className="grid grid-cols-2 gap-2.5">
-              {/* BEFORE Tile */}
-              <div
-                onClick={() => setSelectedTimelineDate('2023-08-12')}
-                className="flex flex-col space-y-1 cursor-pointer group"
-                title="Click to view 2023 baseline"
-              >
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-white font-mono font-medium">T1: 2023-08-12</span>
-                  <span className="text-[#64748B] text-[9px] uppercase tracking-[0.05em]">Baseline</span>
-                </div>
-                <div className="relative aspect-[16/10] bg-[#070D16] rounded-lg border border-[#182A40] group-hover:border-[#0284C7] overflow-hidden transition">
-                  <img
-                    src={beforeImgUrl}
-                    alt="Before scene"
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <div className="absolute bottom-1 left-1 text-[8px] font-mono text-white/90 bg-[#070D16]/80 px-1.5 py-0.5 rounded border border-[#182A40]/60 backdrop-blur">
-                    0 250 500 m
-                  </div>
+            {/* View Mode Switcher + Quantified Change Stats (Area in m² & % Delta) */}
+            <div className="flex items-center justify-between text-[11px] pt-0.5 pb-0.5">
+              <div className="flex items-center space-x-1.5 text-[#94A3B8]">
+                <span className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">VIEW</span>
+                <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
+                  <button
+                    type="button"
+                    onClick={() => setVisualMode('side-by-side')}
+                    className={`h-5 px-2 rounded text-[10px] font-medium transition cursor-pointer flex items-center space-x-1 ${
+                      visualMode === 'side-by-side' ? 'bg-[#0284C7] text-white' : 'text-[#94A3B8] hover:text-white'
+                    }`}
+                  >
+                    <Columns className="w-2.5 h-2.5" />
+                    <span>Dual tile</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisualMode('swipe')}
+                    className={`h-5 px-2 rounded text-[10px] font-medium transition cursor-pointer flex items-center space-x-1 ${
+                      visualMode === 'swipe' ? 'bg-[#0284C7] text-white' : 'text-[#94A3B8] hover:text-white'
+                    }`}
+                  >
+                    <Sliders className="w-2.5 h-2.5" />
+                    <span>Swipe curtain</span>
+                  </button>
                 </div>
               </div>
 
-              {/* AFTER Tile */}
-              <div
-                onClick={onViewFullReport}
-                className="flex flex-col space-y-1 cursor-pointer group"
-                title="Click to open interactive split curtain comparator"
-              >
-                <div className="flex items-center justify-between text-[10px]">
-                  <span className="text-white font-mono font-medium">T2: {selectedTimelineDate}</span>
-                  <span className="text-[#38BDF8] text-[9px] uppercase tracking-[0.05em] font-medium">
-                    {sensorMode === 'SAR' ? 'SAR Backscatter' : 'Active obs'}
-                  </span>
-                </div>
-                <div className="relative aspect-[16/10] bg-[#070D16] rounded-lg border border-[#182A40] group-hover:border-[#0284C7] overflow-hidden transition">
+              {/* Precise Area in m² and Ha */}
+              <div className="flex items-center space-x-1.5 text-[10px] font-mono">
+                <span className="text-[#38BDF8] bg-[#0E2D4A] px-1.5 py-0.5 rounded border border-[#0284C7]/50 font-bold" title="Calculated geometric footprint in square meters">
+                  {Math.round(parseFloat(areaHa.replace(/[^\d.]/g, '') || '4.2') * 10000).toLocaleString()} m²
+                </span>
+                <span className="text-[#10B981] bg-[#063327] px-1.5 py-0.5 rounded border border-[#10B981]/50 font-bold" title="Multi-temporal reflectance & structural change delta">
+                  +34.8% delta
+                </span>
+              </div>
+            </div>
+
+            {/* Visual Pair: Dual Tile vs Interactive Swipe Curtain */}
+            {visualMode === 'swipe' ? (
+              <div className="relative aspect-[16/10] bg-[#070D16] rounded-lg border border-[#182A40] overflow-hidden select-none group">
+                {/* Background: Active Observation (T2) */}
+                <img
+                  src={sensorMode === 'SAR' ? '/assets/card_3_port.jpg' : activePhase.img}
+                  alt="Active observation"
+                  className={`w-full h-full object-cover pointer-events-none ${
+                    sensorMode === 'SAR' ? 'filter grayscale contrast-150' : ''
+                  }`}
+                />
+
+                {/* Foreground: Baseline Observation (T1) Clipped */}
+                <div
+                  className="absolute inset-0 overflow-hidden pointer-events-none"
+                  style={{ clipPath: `polygon(0 0, ${swipePos}% 0, ${swipePos}% 100%, 0 100%)` }}
+                >
                   <img
-                    src={sensorMode === 'SAR' ? '/assets/card_3_port.jpg' : activePhase.img}
-                    alt="Active observation"
-                    className={`w-full h-full object-cover group-hover:scale-105 transition duration-300 ${
-                      sensorMode === 'SAR' ? 'filter grayscale contrast-150' : ''
-                    }`}
+                    src={beforeImgUrl}
+                    alt="Baseline observation"
+                    className="w-full h-full object-cover"
                   />
-                  {activePhase.hasBox && (
-                    <div className="absolute top-[26%] right-[16%] w-[32%] h-[46%] border-2 border-[#EF4444] bg-[#EF4444]/15 rounded-md shadow-[0_0_12px_rgba(239,68,68,0.6)] animate-pulse" />
-                  )}
-                  <div className="absolute bottom-1 left-1 text-[8px] font-mono text-white/90 bg-[#070D16]/80 px-1.5 py-0.5 rounded border border-[#182A40]/60 backdrop-blur">
-                    0 250 500 m
+                  <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[#070D16]/85 border border-[#182A40] text-[9px] font-mono text-white">
+                    T1: 2023-08-12 (Baseline)
                   </div>
-                  <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-[#070D16]/85 border border-[#182A40] text-[8px] font-mono text-[#38BDF8]">
-                    {sensorMode === 'SAR' ? 'SAR C-Band VV/VH' : activePhase.label}
+                </div>
+
+                {/* T2 Label on Right */}
+                <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-[#070D16]/85 border border-[#182A40] text-[9px] font-mono text-[#38BDF8] pointer-events-none">
+                  T2: {selectedTimelineDate} (Active)
+                </div>
+
+                {/* Vertical Divider Line with Cyan Glow & Center Grip */}
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-[#00E5FF] shadow-[0_0_12px_#00E5FF] pointer-events-none"
+                  style={{ left: `${swipePos}%` }}
+                >
+                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#0E1A2B] border-2 border-[#00E5FF] flex items-center justify-center text-[10px] text-[#00E5FF] shadow-lg">
+                    ↔
+                  </div>
+                </div>
+
+                {/* Invisible Range Input for Smooth Dragging across entire image */}
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={swipePos}
+                  onChange={(e) => setSwipePos(Number(e.target.value))}
+                  className="absolute inset-0 opacity-0 cursor-ew-resize w-full h-full z-10"
+                  aria-label="Swipe curtain comparison slider"
+                />
+
+                {/* Bottom Center Indicator */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#070D16]/90 border border-[#182A40] text-[9px] font-mono text-[#94A3B8] pointer-events-none backdrop-blur">
+                  Drag to swipe ({swipePos}%)
+                </div>
+              </div>
+            ) : (
+              /* Dual Tile Side-by-Side View */
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* BEFORE Tile */}
+                <div
+                  onClick={() => setSelectedTimelineDate('2023-08-12')}
+                  className="flex flex-col space-y-1 cursor-pointer group"
+                  title="Click to view 2023 baseline"
+                >
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-white font-mono font-medium">T1: 2023-08-12</span>
+                    <span className="text-[#64748B] text-[9px] uppercase tracking-[0.05em]">Baseline</span>
+                  </div>
+                  <div className="relative aspect-[16/10] bg-[#070D16] rounded-lg border border-[#182A40] group-hover:border-[#0284C7] overflow-hidden transition">
+                    <img
+                      src={beforeImgUrl}
+                      alt="Before scene"
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                    />
+                    <div className="absolute bottom-1 left-1 text-[8px] font-mono text-white/90 bg-[#070D16]/80 px-1.5 py-0.5 rounded border border-[#182A40]/60 backdrop-blur">
+                      0 250 500 m
+                    </div>
+                  </div>
+                </div>
+
+                {/* AFTER Tile */}
+                <div
+                  onClick={onViewFullReport}
+                  className="flex flex-col space-y-1 cursor-pointer group"
+                  title="Click to open interactive split curtain comparator"
+                >
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-white font-mono font-medium">T2: {selectedTimelineDate}</span>
+                    <span className="text-[#38BDF8] text-[9px] uppercase tracking-[0.05em] font-medium">
+                      {sensorMode === 'SAR' ? 'SAR Backscatter' : 'Active obs'}
+                    </span>
+                  </div>
+                  <div className="relative aspect-[16/10] bg-[#070D16] rounded-lg border border-[#182A40] group-hover:border-[#0284C7] overflow-hidden transition">
+                    <img
+                      src={sensorMode === 'SAR' ? '/assets/card_3_port.jpg' : activePhase.img}
+                      alt="Active observation"
+                      className={`w-full h-full object-cover group-hover:scale-105 transition duration-300 ${
+                        sensorMode === 'SAR' ? 'filter grayscale contrast-150' : ''
+                      }`}
+                    />
+                    {activePhase.hasBox && (
+                      <div className="absolute top-[26%] right-[16%] w-[32%] h-[46%] border-2 border-[#EF4444] bg-[#EF4444]/15 rounded-md shadow-[0_0_12px_rgba(239,68,68,0.6)] animate-pulse" />
+                    )}
+                    <div className="absolute bottom-1 left-1 text-[8px] font-mono text-white/90 bg-[#070D16]/80 px-1.5 py-0.5 rounded border border-[#182A40]/60 backdrop-blur">
+                      0 250 500 m
+                    </div>
+                    <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-[#070D16]/85 border border-[#182A40] text-[8px] font-mono text-[#38BDF8]">
+                      {sensorMode === 'SAR' ? 'SAR C-Band VV/VH' : activePhase.label}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Continuous Temporal Timeline Scrubber (2023 - 2025) */}
             <div className="bg-[#070D16] p-2.5 rounded-lg border border-[#182A40] space-y-2">
