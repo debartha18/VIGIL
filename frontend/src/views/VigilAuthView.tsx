@@ -85,17 +85,20 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Quick Credential Fill for Evaluators
-  const handleQuickFill = (role: 'user' | 'admin') => {
+  // Quick Credential Fill for Evaluators & Multi-Device Testing
+  const handleQuickFill = (role: 'debartha' | 'user' | 'admin') => {
     clearSessionExpiredFlag();
     setErrorMessage(null);
     setMode('signin');
-    if (role === 'user') {
-      setSignInIdentifier('debarghya@gmail.com');
+    if (role === 'debartha') {
+      setSignInIdentifier('debartha18');
       setSignInPassword('Vigil@User2026!');
-    } else {
+    } else if (role === 'admin') {
       setSignInIdentifier('admin@vigil.org');
       setSignInPassword('Vigil@Admin2026!');
+    } else {
+      setSignInIdentifier('debarghya@gmail.com');
+      setSignInPassword('Vigil@User2026!');
     }
   };
 
@@ -803,31 +806,36 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
             </div>
           )}
 
-          {/* Quick Demo Access Bar for SIH Judges & Reviewers */}
+          {/* Quick Multi-Device Access Bar for Evaluators, Reviewers & Debartha */}
           <div className="pt-3 border-t border-[#182A40]/80 space-y-2">
             <div className="flex items-center justify-between text-[11px] text-[#64748B]">
               <span className="uppercase tracking-[0.05em] flex items-center space-x-1">
                 <Sparkles className="w-3 h-3 text-[#38BDF8]" />
-                <span>Instant Demo Access:</span>
+                <span>Instant Multi-Device Access:</span>
               </span>
-              <span className="font-mono text-[10px] text-[#38BDF8]">1-Click Sign In</span>
+              <span className="font-mono text-[10px] text-[#34D399] flex items-center space-x-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                <span>PC & Mobile Ready</span>
+              </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+              {/* Account 1: Debartha Dhara (Primary Owner) */}
               <button
                 type="button"
-                onClick={() => handleQuickFill('user')}
+                onClick={() => handleQuickFill('debartha')}
                 className="p-2 rounded-lg bg-[#070D16] hover:bg-[#0E1A2B] border border-[#182A40] hover:border-[#0284C7] text-left transition cursor-pointer group"
               >
                 <div className="font-medium text-white group-hover:text-[#38BDF8] flex items-center justify-between">
-                  <span>Standard User</span>
-                  <span className="text-[10px] text-[#10B981] font-mono">User</span>
+                  <span>Debartha Dhara</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#0284C7]/20 text-[#38BDF8] font-mono">Lead</span>
                 </div>
                 <div className="text-[10px] font-mono text-[#64748B] truncate mt-0.5">
-                  debarghya@gmail.com
+                  debartha18
                 </div>
               </button>
 
+              {/* Account 2: Platform Admin */}
               <button
                 type="button"
                 onClick={() => handleQuickFill('admin')}
@@ -835,10 +843,25 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
               >
                 <div className="font-medium text-white group-hover:text-[#C084FC] flex items-center justify-between">
                   <span>Platform Admin</span>
-                  <span className="text-[10px] text-[#C084FC] font-mono">Admin</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#A855F7]/20 text-[#C084FC] font-mono">Admin</span>
                 </div>
                 <div className="text-[10px] font-mono text-[#64748B] truncate mt-0.5">
                   admin@vigil.org
+                </div>
+              </button>
+
+              {/* Account 3: Standard Analyst */}
+              <button
+                type="button"
+                onClick={() => handleQuickFill('user')}
+                className="p-2 rounded-lg bg-[#070D16] hover:bg-[#0E1A2B] border border-[#182A40] hover:border-[#10B981] text-left transition cursor-pointer group"
+              >
+                <div className="font-medium text-white group-hover:text-[#34D399] flex items-center justify-between">
+                  <span>Analyst</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#10B981]/20 text-[#34D399] font-mono">User</span>
+                </div>
+                <div className="text-[10px] font-mono text-[#64748B] truncate mt-0.5">
+                  debarghya@gmail.com
                 </div>
               </button>
             </div>

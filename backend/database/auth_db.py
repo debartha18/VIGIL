@@ -78,11 +78,21 @@ def init_auth_tables():
                 {
                     "id": "usr-admin-001",
                     "full_name": "Commander R. Sharma",
-                    "username": "admin_sharma",
+                    "username": "admin",
                     "email": "admin@vigil.org",
                     "password": "Vigil@Admin2026!",
                     "role": "admin",
                     "organization": "Earth Observation Directorate // Space Systems",
+                    "country": "India"
+                },
+                {
+                    "id": "usr-debartha-001",
+                    "full_name": "Debartha Dhara",
+                    "username": "debartha18",
+                    "email": "mstddhara38@gmail.com",
+                    "password": "Vigil@User2026!",
+                    "role": "user",
+                    "organization": "Earth Observation & Geospatial Intelligence",
                     "country": "India"
                 },
                 {
