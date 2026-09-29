@@ -111,6 +111,51 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
     areaHa: '8.4 ha',
     timeGap: '28 months',
     keywords: ['port', 'container', 'storage', 'yard', 'asphalt', 'paving', 'terminal', 'hazira', 'industrial', 'construction']
+  },
+  {
+    id: 'res-7',
+    title: 'Bay of Bengal Deepwater Oceanographic Station',
+    date: '2025-05-12',
+    sensor: 'Sentinel-3 & Sentinel-1 SAR',
+    coordinates: '15.2970° N, 87.8680° E',
+    matchType: 'High Match',
+    confidencePct: 95,
+    imageUrl: '/assets/card_3_port.jpg',
+    beforeImgUrl: '/assets/before_scene.jpg',
+    afterImgUrl: '/assets/card_3_port.jpg',
+    areaHa: '12.4 ha',
+    timeGap: '16 months',
+    keywords: ['bay of bengal', 'bengal', 'ocean', 'altimetry', 'cyclone', 'sea', 'current', 'marine', 'deepwater', 'station']
+  },
+  {
+    id: 'res-8',
+    title: 'Arabian Sea Offshore Energy Corridor',
+    date: '2025-04-18',
+    sensor: 'Sentinel-1 SAR (10m)',
+    coordinates: '18.9220° N, 71.4500° E',
+    matchType: 'High Match',
+    confidencePct: 92,
+    imageUrl: '/assets/card_1_construction.jpg',
+    beforeImgUrl: '/assets/before_scene.jpg',
+    afterImgUrl: '/assets/card_1_construction.jpg',
+    areaHa: '9.8 ha',
+    timeGap: '20 months',
+    keywords: ['arabian sea', 'arabian', 'offshore', 'platform', 'energy', 'oil', 'gas', 'sea', 'marine', 'shipping', 'corridor']
+  },
+  {
+    id: 'res-9',
+    title: 'Gulf of Khambhat Marine Gateway & Tidal Flat',
+    date: '2025-03-22',
+    sensor: 'Sentinel-2 (10m)',
+    coordinates: '21.2000° N, 72.4000° E',
+    matchType: 'High Match',
+    confidencePct: 91,
+    imageUrl: '/assets/card_2_riverside.jpg',
+    beforeImgUrl: '/assets/before_scene.jpg',
+    afterImgUrl: '/assets/card_2_riverside.jpg',
+    areaHa: '15.2 ha',
+    timeGap: '24 months',
+    keywords: ['khambhat', 'gulf', 'tidal', 'estuary', 'delta', 'marine', 'sediment', 'coast', 'water', 'gateway']
   }
 ];
 
@@ -247,6 +292,16 @@ const VigilPlatform: React.FC = () => {
   const handleSelectResult = (item: SearchResultItem) => {
     setSelectedResultId(item.id);
     setSelectedResult(item);
+    setSearchResults((prev) => {
+      if (prev.some((p) => p.id === item.id)) return prev;
+      return [item, ...prev.slice(0, 4)];
+    });
+    setTimeout(() => {
+      const el = document.getElementById(`semantic-card-${item.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }, 100);
   };
 
   // Semantic query ranking
@@ -405,6 +460,9 @@ const VigilPlatform: React.FC = () => {
                     coordinates={`Lat: ${selectedResult.coordinates.split(',')[0]}   Lon: ${selectedResult.coordinates.split(',')[1] || ''}`}
                     selectedAOI="AOI-1"
                     siteName={selectedResult.title}
+                    selectedTargetId={selectedResult.id}
+                    onSelectTarget={(target) => handleSelectResult(target)}
+                    targets={GROUND_TRUTH_TARGETS}
                   />
                 </div>
 

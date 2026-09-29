@@ -191,10 +191,11 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
               return (
                 <div
                   key={card.id}
+                  id={`semantic-card-${card.id}`}
                   onClick={() => onSelectResult && onSelectResult(card)}
-                  className={`bg-[#070D16] rounded-xl border p-2 flex flex-col justify-between transition-all cursor-pointer group ${
+                  className={`bg-[#070D16] rounded-xl border p-2 flex flex-col justify-between transition-all duration-200 cursor-pointer group ${
                     isSelected
-                      ? 'border-[#0284C7] shadow-[0_0_15px_rgba(2,132,199,0.25)] ring-1 ring-[#0284C7]/50 bg-[#0E1E30]'
+                      ? 'border-[#00E5FF] shadow-[0_0_20px_rgba(0,229,255,0.35)] ring-2 ring-[#00E5FF]/70 bg-[#0E2238] scale-[1.01]'
                       : 'border-[#182A40] hover:border-[#223A57] hover:bg-[#0A1422]'
                   }`}
                 >
