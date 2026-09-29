@@ -454,3 +454,78 @@ def get_rivers():
 @app.get("/api/layers/roads")
 def get_roads():
     return geo_engine.get_road_geojson()
+
+
+import os
+import urllib.request
+import urllib.error
+from pydantic import BaseModel
+
+class AssistantChatPayload(BaseModel):
+    message: str
+    context: Optional[Dict[str, Any]] = None
+    language: Optional[str] = "en"
+    analystMode: Optional[bool] = False
+    history: Optional[List[Dict[str, str]]] = None
+
+@app.post("/api/assistant/chat")
+def assistant_chat(payload: AssistantChatPayload):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    ctx = payload.context or {}
+    aoi = ctx.get("aoi", {})
+    imagery = ctx.get("imagery", {})
+    temporal = ctx.get("temporalComparison", {})
+    change = ctx.get("changeAnalysis", {})
+    msg = payload.message.lower().strip()
+
+    if api_key:
+        try:
+            system_prompt = (
+                f"You are VIGIL Assistant, a professional satellite imagery analysis copilot.\\n"
+                f"Analyze context-aware satellite data with ZERO hallucination. Never invent coordinates or values.\\n"
+                f"Use neutral terminology. Never state hostile/military conclusions.\\n"
+                f"Current Context: AOI={json.dumps(aoi)}, Imagery={json.dumps(imagery)}, Temporal={json.dumps(temporal)}, Change={json.dumps(change)}.\\n"
+                f"Language: {payload.language}. AnalystMode: {payload.analystMode}."
+            )
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+            body = json.dumps({
+                "contents": [
+                    {"role": "user", "parts": [{"text": f"System Context:\\n{system_prompt}\\n\\nAnalyst Query: {payload.message}"}]}
+                ],
+                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 600}
+            }).encode('utf-8')
+            req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                result = json.loads(response.read().decode('utf-8'))
+                text = result["candidates"][0]["content"]["parts"][0]["text"]
+                return {"reply": text, "source": "GEMINI_SERVER"}
+        except Exception:
+            pass
+
+    ui_action = None
+    if "mask" in msg:
+        ui_action = {"type": "SET_VIEW_MODE", "payload": "change-map", "description": "Enable change mask mode"}
+    elif "compare" in msg or "two dates" in msg:
+        ui_action = {"type": "SET_VIEW_MODE", "payload": "comparison", "description": "Switch to before/after comparison mode"}
+    elif "visual" in msg:
+        ui_action = {"type": "SET_VIEW_MODE", "payload": "visual", "description": "Switch to visual mode"}
+    elif "report" in msg:
+        ui_action = {"type": "VIEW_FULL_REPORT", "description": "Open comprehensive dossier"}
+
+    reply_text = (
+        f"A structural change was detected at {aoi.get('name', 'selected target')} between "
+        f"{temporal.get('baselineDate', '2023-08-12')} and {temporal.get('currentDate', '2025-04-28')}.\\n\\n"
+        f"• Sensor: {imagery.get('sensor', 'Sentinel-2 (10m)')}\\n"
+        f"• Type: {change.get('changeType', 'New Construction')}\\n"
+        f"• Changed Area: {change.get('changedArea', '4.2 ha')}\\n"
+        f"• Delta: {change.get('changePercentage', '+34.8%')}\\n"
+        f"• Confidence Score: {change.get('confidenceScore', '94%')}\\n\\n"
+        f"AI-assisted visual analysis. Analyst verification required."
+    )
+
+    return {
+        "reply": reply_text,
+        "uiAction": ui_action,
+        "source": "DEMO_AI_SERVER"
+    }
+

@@ -37,6 +37,12 @@ interface ChangeAnalysisCardProps {
   resolution?: string;
   changePercentage?: string;
   sensor?: string;
+  externalViewMode?: ChangeViewMode;
+  onViewModeChange?: (mode: ChangeViewMode) => void;
+  externalShowChangeMask?: boolean;
+  onToggleChangeMask?: (show: boolean) => void;
+  externalSpectralMode?: SpectralBandMode;
+  onSpectralModeChange?: (mode: SpectralBandMode) => void;
 }
 
 export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
@@ -58,20 +64,47 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
   afterDate = '2025-04-28',
   resolution = '10 m',
   changePercentage = '+34.8%',
-  sensor = 'Sentinel-2 Optical (10m)'
+  sensor = 'Sentinel-2 Optical (10m)',
+  externalViewMode,
+  onViewModeChange,
+  externalShowChangeMask,
+  onToggleChangeMask,
+  externalSpectralMode,
+  onSpectralModeChange
 }) => {
   // 1. Primary Viewing Mode: A. Visual | B. Before / After (Comparison) | C. Change Map
-  const [viewMode, setViewMode] = useState<ChangeViewMode>('comparison');
+  const [viewMode, setViewMode] = useState<ChangeViewMode>(externalViewMode || 'comparison');
   const [comparisonType, setComparisonType] = useState<'swipe' | 'side-by-side'>('swipe');
   const [swipePos, setSwipePos] = useState<number>(50);
 
   // 2. Change Mask & Bounding Box Toggles
-  const [showChangeMask, setShowChangeMask] = useState<boolean>(true);
+  const [showChangeMask, setShowChangeMask] = useState<boolean>(
+    externalShowChangeMask !== undefined ? externalShowChangeMask : true
+  );
   const [showBoundingBox, setShowBoundingBox] = useState<boolean>(true);
   const [maskOpacity, setMaskOpacity] = useState<number>(65); // percentage
 
   // 3. Spectral Band Mode (RGB, False Color, NDVI, NDWI)
-  const [spectralMode, setSpectralMode] = useState<SpectralBandMode>('RGB');
+  const [spectralMode, setSpectralMode] = useState<SpectralBandMode>(externalSpectralMode || 'RGB');
+
+  // Synchronize external prop overrides
+  React.useEffect(() => {
+    if (externalViewMode && externalViewMode !== viewMode) {
+      setViewMode(externalViewMode);
+    }
+  }, [externalViewMode]);
+
+  React.useEffect(() => {
+    if (externalShowChangeMask !== undefined && externalShowChangeMask !== showChangeMask) {
+      setShowChangeMask(externalShowChangeMask);
+    }
+  }, [externalShowChangeMask]);
+
+  React.useEffect(() => {
+    if (externalSpectralMode && externalSpectralMode !== spectralMode) {
+      setSpectralMode(externalSpectralMode);
+    }
+  }, [externalSpectralMode]);
 
   // 4. Image Enhancement Adjustments (Brightness, Contrast, Sharpness)
   const [showAdjustments, setShowAdjustments] = useState<boolean>(false);
@@ -169,7 +202,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         <div className="flex items-center space-x-1.5 shrink-0">
           <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
             <button
-              onClick={() => setViewMode('visual')}
+              onClick={() => { setViewMode('visual'); onViewModeChange?.('visual'); }}
               className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
                 viewMode === 'visual'
                   ? 'bg-[#0284C7] text-white shadow font-semibold'
@@ -181,7 +214,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             </button>
 
             <button
-              onClick={() => setViewMode('comparison')}
+              onClick={() => { setViewMode('comparison'); onViewModeChange?.('comparison'); }}
               className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
                 viewMode === 'comparison'
                   ? 'bg-[#0284C7] text-white shadow font-semibold'
@@ -193,7 +226,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             </button>
 
             <button
-              onClick={() => setViewMode('change-map')}
+              onClick={() => { setViewMode('change-map'); onViewModeChange?.('change-map'); }}
               className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
                 viewMode === 'change-map'
                   ? 'bg-[#0284C7] text-white shadow font-semibold'
@@ -224,7 +257,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           <span className="text-[10px] uppercase font-bold text-[#64748B] mr-1 hidden sm:inline">Band:</span>
           <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
             <button
-              onClick={() => setSpectralMode('RGB')}
+              onClick={() => { setSpectralMode('RGB'); onSpectralModeChange?.('RGB'); }}
               className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
                 spectralMode === 'RGB' ? 'bg-[#00E5FF] text-[#070D16] font-bold shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
@@ -233,7 +266,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               RGB
             </button>
             <button
-              onClick={() => setSpectralMode('FALSE_COLOR')}
+              onClick={() => { setSpectralMode('FALSE_COLOR'); onSpectralModeChange?.('FALSE_COLOR'); }}
               className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
                 spectralMode === 'FALSE_COLOR' ? 'bg-[#A855F7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
@@ -242,7 +275,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               False Color <span className="text-[8px] opacity-75">(DEMO)</span>
             </button>
             <button
-              onClick={() => setSpectralMode('NDVI')}
+              onClick={() => { setSpectralMode('NDVI'); onSpectralModeChange?.('NDVI'); }}
               className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
                 spectralMode === 'NDVI' ? 'bg-[#10B981] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
@@ -251,7 +284,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               NDVI <span className="text-[8px] opacity-75">(DEMO)</span>
             </button>
             <button
-              onClick={() => setSpectralMode('NDWI')}
+              onClick={() => { setSpectralMode('NDWI'); onSpectralModeChange?.('NDWI'); }}
               className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
                 spectralMode === 'NDWI' ? 'bg-[#0284C7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
@@ -266,7 +299,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         <div className="flex items-center space-x-1.5 ml-auto">
           {/* Change Mask Toggle */}
           <button
-            onClick={() => setShowChangeMask(!showChangeMask)}
+            onClick={() => { const next = !showChangeMask; setShowChangeMask(next); onToggleChangeMask?.(next); }}
             className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer ${
               showChangeMask
                 ? 'bg-[#EF4444]/20 border-[#EF4444] text-[#EF4444] font-semibold shadow'
