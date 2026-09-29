@@ -8,12 +8,14 @@ import {
   Crosshair,
   Grid,
   FileText,
+  ShieldAlert,
   X
 } from 'lucide-react';
 
 export type OrbitalTab =
   | 'overview'
   | 'semantic-search'
+  | 'border-analysis'
   | 'satellite-map'
   | 'image-search'
   | 'change-analysis'
@@ -37,6 +39,7 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
   const menuItems: { id: OrbitalTab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Mission Overview', icon: <Home className="w-4 h-4" /> },
     { id: 'semantic-search', label: 'Semantic Search', icon: <Search className="w-4 h-4" /> },
+    { id: 'border-analysis', label: 'Border & Strategic Analysis', icon: <ShieldAlert className="w-4 h-4" /> },
     { id: 'satellite-map', label: 'Satellite Altimetry Map', icon: <Globe className="w-4 h-4" /> },
     { id: 'image-search', label: 'Image Search', icon: <ImageIcon className="w-4 h-4" /> },
     { id: 'change-analysis', label: 'Change Analysis', icon: <GitCompare className="w-4 h-4" /> },

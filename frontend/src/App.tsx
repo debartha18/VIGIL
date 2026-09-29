@@ -18,6 +18,7 @@ import { ImageSearchView } from './views/ImageSearchView';
 import { AOIMonitorView } from './views/AOIMonitorView';
 import { ChangeAnalysisView } from './views/ChangeAnalysisView';
 import { SatelliteAltimetryMapView } from './views/SatelliteAltimetryMapView';
+import { BorderStrategicAnalysisView } from './views/BorderStrategicAnalysisView';
 import { api } from './services/api';
 import { Scene } from './types/kshitij';
 
@@ -407,13 +408,21 @@ const VigilPlatform: React.FC = () => {
 
         {/* Content Workspace */}
         <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070D16] w-full max-w-full">
-          {/* Top Search Filter Bar */}
-          <OrbitalSearchBar onSearch={handleSearch} defaultQuery={currentQuery} />
+          {/* Top Search Filter Bar (hidden on dedicated fullscreen map & border analysis) */}
+          {activeTab !== 'border-analysis' && activeTab !== 'satellite-map' && (
+            <OrbitalSearchBar onSearch={handleSearch} defaultQuery={currentQuery} />
+          )}
 
           {/* Conditional View Rendering */}
           {activeTab === 'overview' ? (
             <div className="flex-1 min-h-0 overflow-y-auto">
               <EvaluationView />
+            </div>
+          ) : activeTab === 'border-analysis' ? (
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <BorderStrategicAnalysisView
+                onNavigateToSemanticSearch={() => handleTabChange('semantic-search')}
+              />
             </div>
           ) : activeTab === 'satellite-map' ? (
             <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
