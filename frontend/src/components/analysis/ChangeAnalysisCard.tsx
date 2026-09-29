@@ -1,30 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ExternalLink,
-  Check,
   AlertCircle,
   TrendingUp,
   CheckCircle2,
   XCircle,
-  HelpCircle,
-  ShieldCheck,
-  Ruler,
-  Database,
-  CloudSun,
-  BarChart2,
-  Sparkles,
-  Layers,
-  Cpu,
-  Compass,
   Sliders,
-  Columns
+  Columns,
+  Eye,
+  EyeOff,
+  RotateCcw
 } from 'lucide-react';
 import { api } from '../../services/api';
+
+export type ChangeViewMode = 'visual' | 'comparison' | 'change-map';
+
+export type SpectralBandMode = 'RGB' | 'FALSE_COLOR' | 'NDVI' | 'NDWI';
 
 interface ChangeAnalysisCardProps {
   onViewFullReport?: () => void;
   candidateTitle?: string;
   changeType?: string;
+  locationName?: string;
   coordinates?: string;
   areaHa?: string;
   timeGap?: string;
@@ -32,36 +29,71 @@ interface ChangeAnalysisCardProps {
   beforeImgUrl?: string;
   afterImgUrl?: string;
   candidateId?: string;
+  observationPeriod?: string;
+  cloudCover?: string;
+  beforeCloudCover?: string;
+  beforeDate?: string;
+  afterDate?: string;
+  resolution?: string;
+  changePercentage?: string;
+  sensor?: string;
 }
-
-type CardSubTab = 'overview' | 'explanation' | 'false-change' | 'quantification' | 'provenance' | 'analytics';
 
 export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
   onViewFullReport,
   candidateTitle = 'Hazira Deepwater Wharf & Piling Deck',
-  changeType = 'New construction',
+  changeType = 'New Construction',
+  locationName = 'Hazira Coastal Sector',
   coordinates = '21.4587° N, 72.7812° E',
-  areaHa = '4.2 ha',
-  timeGap = '32 months',
+  areaHa = '4.2 ha (42,000 m²)',
+  timeGap = '20 months',
   confidence = 94,
   beforeImgUrl = '/assets/before_scene.jpg',
   afterImgUrl = '/assets/after_scene.jpg',
   candidateId = 'CAND-2026-001',
+  observationPeriod = '2023 → 2025',
+  cloudCover = '1.8%',
+  beforeCloudCover = '2.1%',
+  beforeDate = '2023-08-12',
+  afterDate = '2025-04-28',
+  resolution = '10 m',
+  changePercentage = '+34.8%',
+  sensor = 'Sentinel-2 Optical (10m)'
 }) => {
-  const [activeTab, setActiveTab] = useState<CardSubTab>('overview');
-  const [selectedTimelineDate, setSelectedTimelineDate] = useState<string>('2025-04-28');
-  const [analystVerdict, setAnalystVerdict] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [sensorMode, setSensorMode] = useState<'OPTICAL' | 'SAR'>('OPTICAL');
-  const [visualMode, setVisualMode] = useState<'side-by-side' | 'swipe'>('side-by-side');
+  // 1. Primary Viewing Mode: A. Visual | B. Before / After (Comparison) | C. Change Map
+  const [viewMode, setViewMode] = useState<ChangeViewMode>('comparison');
+  const [comparisonType, setComparisonType] = useState<'swipe' | 'side-by-side'>('swipe');
   const [swipePos, setSwipePos] = useState<number>(50);
+
+  // 2. Change Mask & Bounding Box Toggles
+  const [showChangeMask, setShowChangeMask] = useState<boolean>(true);
+  const [showBoundingBox, setShowBoundingBox] = useState<boolean>(true);
+  const [maskOpacity, setMaskOpacity] = useState<number>(65); // percentage
+
+  // 3. Spectral Band Mode (RGB, False Color, NDVI, NDWI)
+  const [spectralMode, setSpectralMode] = useState<SpectralBandMode>('RGB');
+
+  // 4. Image Enhancement Adjustments (Brightness, Contrast, Sharpness)
+  const [showAdjustments, setShowAdjustments] = useState<boolean>(false);
+  const [brightness, setBrightness] = useState<number>(0); // -50 to +50
+  const [contrast, setContrast] = useState<number>(0); // -50 to +50
+  const [sharpness, setSharpness] = useState<'normal' | 'enhanced' | 'crisp'>('normal');
+
+  // 5. Active Timeline Milestone
+  const [selectedTimelineDate, setSelectedTimelineDate] = useState<string>(afterDate);
+
+  // 6. Analyst Verdict & Workflow state
+  const [analystVerdict, setAnalystVerdict] = useState<'CONFIRMED' | 'REJECTED' | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Multi-temporal milestones along continuous timeline
   const timelineMilestones = [
-    { date: '2023-08-12', label: 'Baseline', month: 'Aug 2023', img: beforeImgUrl, hasBox: false },
-    { date: '2024-02-18', label: 'Excavation', month: 'Feb 2024', img: '/assets/card_5_land.jpg', hasBox: false },
-    { date: '2024-08-19', label: 'Piling', month: 'Aug 2024', img: '/assets/card_4_bridge.jpg', hasBox: true },
-    { date: '2025-04-28', label: 'Superstructure', month: 'Apr 2025', img: afterImgUrl, hasBox: true },
+    { date: beforeDate, label: 'Baseline', month: 'Aug 2023', img: beforeImgUrl, hasChange: false },
+    { date: '2024-02-18', label: 'Excavation', month: 'Feb 2024', img: '/assets/card_5_land.jpg', hasChange: false },
+    { date: '2024-08-19', label: 'Piling Works', month: 'Aug 2024', img: '/assets/card_4_bridge.jpg', hasChange: true },
+    { date: afterDate, label: 'Superstructure', month: 'Apr 2025', img: afterImgUrl, hasChange: true },
   ];
 
   const activePhase = timelineMilestones.find((p) => p.date === selectedTimelineDate) || timelineMilestones[3];
@@ -71,9 +103,9 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
     try {
       await api.submitReviewDecision({
         candidateId,
-        analyst: 'Analyst // DGIS Ground Station',
+        analyst: 'Lead Analyst // DGIS Ground Station',
         verdict,
-        comment: `Recorded from Change Analysis Console: ${verdict}`,
+        comment: `Recorded from Change Analysis Console: ${verdict} on ${candidateTitle}`,
       });
       setAnalystVerdict(verdict);
     } catch {
@@ -83,216 +115,448 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
     }
   };
 
-  const isHighConfidence = confidence >= 75;
-  const isMarginal = confidence >= 65 && confidence < 75;
+  const resetEnhancements = () => {
+    setBrightness(0);
+    setContrast(0);
+    setSharpness('normal');
+    setMaskOpacity(65);
+    setSpectralMode('RGB');
+  };
+
+  // Compute CSS filter string for active enhancements & spectral band simulations
+  const getFilterStyle = (_isAfter?: boolean) => {
+    let base = `brightness(${1 + brightness / 100}) contrast(${1 + contrast / 100})`;
+
+    if (sharpness === 'enhanced') {
+      base += ' contrast(1.15) saturate(1.1)';
+    } else if (sharpness === 'crisp') {
+      base += ' contrast(1.3) saturate(1.25)';
+    }
+
+    if (spectralMode === 'FALSE_COLOR') {
+      // Color Infrared simulation (NIR->Red, Red->Green, Green->Blue)
+      base += ' saturate(2.4) hue-rotate(310deg) contrast(1.25)';
+    } else if (spectralMode === 'NDVI') {
+      // Normalized Difference Vegetation Index simulation (Vegetation highlighted in emerald green)
+      base += ' saturate(2.8) hue-rotate(85deg) contrast(1.4)';
+    } else if (spectralMode === 'NDWI') {
+      // Normalized Difference Water Index simulation (Water bodies highlighted in electric cyan/navy)
+      base += ' saturate(2.6) hue-rotate(185deg) contrast(1.35)';
+    }
+
+    return base;
+  };
 
   return (
-    <div className="w-full h-full bg-[#0B1523] border border-[#182A40] rounded-xl p-3 flex flex-col justify-between select-none overflow-y-auto font-sans text-white text-xs">
-      {/* 1. Header with Tab Switcher */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#182A40]/80 shrink-0">
-        <div className="flex items-center space-x-2">
-          <TrendingUp className="w-4 h-4 text-[#38BDF8]" />
-          <h2 className="text-xs font-semibold text-white tracking-normal font-sans">
-            Change analysis
+    <div className="w-full h-full bg-[#0B1523] border border-[#182A40] rounded-xl p-3 flex flex-col justify-between select-none overflow-hidden font-sans text-white text-xs shadow-2xl">
+      {/* 1. TOP HEADER BAR: Viewing Modes & Quick Actions */}
+      <div className="flex items-center justify-between pb-2 border-b border-[#182A40]/80 shrink-0 gap-2">
+        {/* Left: Mode Title + Target Name */}
+        <div className="flex items-center space-x-2 min-w-0">
+          <TrendingUp className="w-4 h-4 text-[#00E5FF] shrink-0" />
+          <h2 className="text-xs font-semibold text-white tracking-normal font-sans truncate">
+            {candidateTitle}
           </h2>
+          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-[#070D16] border border-[#182A40] text-[10px] font-mono text-[#38BDF8] shrink-0">
+            {coordinates.split(',')[0]}
+          </span>
+          <span className="hidden md:inline-block px-1.5 py-0.5 rounded bg-[#070D16] border border-[#182A40] text-[10px] font-sans text-[#94A3B8] shrink-0">
+            {locationName}
+          </span>
         </div>
 
-        {/* View Full Report trigger */}
-        <button
-          onClick={onViewFullReport}
-          className="h-7 flex items-center space-x-1.5 px-2.5 rounded-lg border border-[#0284C7]/50 text-xs text-[#38BDF8] hover:bg-[#0E2D4A] hover:border-[#38BDF8] transition cursor-pointer font-sans"
-        >
-          <span>Full report</span>
-          <ExternalLink className="w-3 h-3" />
-        </button>
+        {/* Center/Right: 3 Primary Viewing Modes (A. Visual | B. Before / After | C. Change Map) */}
+        <div className="flex items-center space-x-1.5 shrink-0">
+          <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
+            <button
+              onClick={() => setViewMode('visual')}
+              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
+                viewMode === 'visual'
+                  ? 'bg-[#0284C7] text-white shadow font-semibold'
+                  : 'text-[#94A3B8] hover:text-white'
+              }`}
+              title="A. Visual Mode: Normal high-resolution satellite imagery"
+            >
+              <span>Visual</span>
+            </button>
+
+            <button
+              onClick={() => setViewMode('comparison')}
+              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
+                viewMode === 'comparison'
+                  ? 'bg-[#0284C7] text-white shadow font-semibold'
+                  : 'text-[#94A3B8] hover:text-white'
+              }`}
+              title="B. Before / After Mode: Multi-temporal comparative analysis"
+            >
+              <span>Before / After</span>
+            </button>
+
+            <button
+              onClick={() => setViewMode('change-map')}
+              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
+                viewMode === 'change-map'
+                  ? 'bg-[#0284C7] text-white shadow font-semibold'
+                  : 'text-[#94A3B8] hover:text-white'
+              }`}
+              title="C. Change Map Mode: Semi-transparent detected change mask"
+            >
+              <span>Change Map</span>
+            </button>
+          </div>
+
+          {/* Full Report Dossier Button */}
+          <button
+            onClick={onViewFullReport}
+            className="h-6 hidden md:flex items-center space-x-1 px-2 rounded-lg border border-[#0284C7]/50 text-[11px] text-[#38BDF8] hover:bg-[#0E2D4A] hover:border-[#38BDF8] transition cursor-pointer font-sans"
+            title="Open comprehensive intelligence dossier"
+          >
+            <span>Dossier</span>
+            <ExternalLink className="w-3 h-3" />
+          </button>
+        </div>
       </div>
 
-      {/* Subtab Navigation Pills */}
-      <div className="flex items-center space-x-1 py-1.5 border-b border-[#182A40]/60 text-[11px] overflow-x-auto no-scrollbar shrink-0 font-sans">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`h-6 px-2.5 rounded-md transition font-medium cursor-pointer shrink-0 ${
-            activeTab === 'overview'
-              ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
-              : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
-          }`}
-        >
-          Visual pair
-        </button>
-        <button
-          onClick={() => setActiveTab('explanation')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
-            activeTab === 'explanation'
-              ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
-              : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
-          }`}
-        >
-          <HelpCircle className="w-3 h-3 text-[#38BDF8]" />
-          <span>Why detected?</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('false-change')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
-            activeTab === 'false-change'
-              ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
-              : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
-          }`}
-        >
-          <ShieldCheck className="w-3 h-3 text-[#10B981]" />
-          <span>False-change check</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('quantification')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
-            activeTab === 'quantification'
-              ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
-              : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
-          }`}
-        >
-          <Ruler className="w-3 h-3 text-[#38BDF8]" />
-          <span>Metrics</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('provenance')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
-            activeTab === 'provenance'
-              ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
-              : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
-          }`}
-        >
-          <Database className="w-3 h-3" />
-          <span>Provenance</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('analytics')}
-          className={`h-6 px-2.5 rounded-md flex items-center space-x-1.5 transition font-medium cursor-pointer shrink-0 ${
-            activeTab === 'analytics'
-              ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]'
-              : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]'
-          }`}
-        >
-          <BarChart2 className="w-3 h-3 text-[#10B981]" />
-          <span>Analytics</span>
-        </button>
+      {/* 2. IMAGE TOOLBAR & ENHANCEMENT CONTROLS (Directly above the satellite imagery) */}
+      <div className="flex flex-wrap items-center justify-between py-1.5 border-b border-[#182A40]/60 gap-1.5 shrink-0 text-[11px]">
+        {/* Left: Spectral Band Switcher */}
+        <div className="flex items-center space-x-1">
+          <span className="text-[10px] uppercase font-bold text-[#64748B] mr-1 hidden sm:inline">Band:</span>
+          <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
+            <button
+              onClick={() => setSpectralMode('RGB')}
+              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
+                spectralMode === 'RGB' ? 'bg-[#00E5FF] text-[#070D16] font-bold shadow' : 'text-[#94A3B8] hover:text-white'
+              }`}
+              title="True Color RGB (B04, B03, B02)"
+            >
+              RGB
+            </button>
+            <button
+              onClick={() => setSpectralMode('FALSE_COLOR')}
+              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
+                spectralMode === 'FALSE_COLOR' ? 'bg-[#A855F7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
+              }`}
+              title="Color Infrared (NIR/Red/Green) - Vegetation & boundary contrast [DEMO simulation]"
+            >
+              False Color <span className="text-[8px] opacity-75">(DEMO)</span>
+            </button>
+            <button
+              onClick={() => setSpectralMode('NDVI')}
+              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
+                spectralMode === 'NDVI' ? 'bg-[#10B981] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
+              }`}
+              title="Normalized Difference Vegetation Index [DEMO radiometric simulation]"
+            >
+              NDVI <span className="text-[8px] opacity-75">(DEMO)</span>
+            </button>
+            <button
+              onClick={() => setSpectralMode('NDWI')}
+              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
+                spectralMode === 'NDWI' ? 'bg-[#0284C7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
+              }`}
+              title="Normalized Difference Water Index [DEMO water delineation]"
+            >
+              NDWI <span className="text-[8px] opacity-75">(DEMO)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Change Mask / Bounding Box & Enhancement Toggles */}
+        <div className="flex items-center space-x-1.5 ml-auto">
+          {/* Change Mask Toggle */}
+          <button
+            onClick={() => setShowChangeMask(!showChangeMask)}
+            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer ${
+              showChangeMask
+                ? 'bg-[#EF4444]/20 border-[#EF4444] text-[#EF4444] font-semibold shadow'
+                : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
+            }`}
+            title="Toggle semi-transparent change mask overlay"
+          >
+            {showChangeMask ? <Eye className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
+            <span>Change Mask</span>
+          </button>
+
+          {/* Bounding Box Secondary Toggle */}
+          <button
+            onClick={() => setShowBoundingBox(!showBoundingBox)}
+            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer ${
+              showBoundingBox
+                ? 'bg-[#00E5FF]/20 border-[#00E5FF] text-[#00E5FF] font-semibold'
+                : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
+            }`}
+            title="Toggle secondary AOI bounding box frame"
+          >
+            <span>Box Ref</span>
+          </button>
+
+          {/* Comparison Slider vs Dual Tile (When in comparison mode) */}
+          {viewMode === 'comparison' && (
+            <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
+              <button
+                onClick={() => setComparisonType('swipe')}
+                className={`h-5 px-1.5 rounded text-[10px] transition cursor-pointer flex items-center space-x-1 ${
+                  comparisonType === 'swipe' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
+                }`}
+                title="Draggable comparison slider"
+              >
+                <Sliders className="w-2.5 h-2.5" />
+                <span className="hidden sm:inline">Slider</span>
+              </button>
+              <button
+                onClick={() => setComparisonType('side-by-side')}
+                className={`h-5 px-1.5 rounded text-[10px] transition cursor-pointer flex items-center space-x-1 ${
+                  comparisonType === 'side-by-side' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
+                }`}
+                title="Side-by-side dual tile comparison"
+              >
+                <Columns className="w-2.5 h-2.5" />
+                <span className="hidden sm:inline">Dual</span>
+              </button>
+            </div>
+          )}
+
+          {/* Adjustments Tray Toggle */}
+          <button
+            onClick={() => setShowAdjustments(!showAdjustments)}
+            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer ${
+              showAdjustments || brightness !== 0 || contrast !== 0 || sharpness !== 'normal'
+                ? 'bg-[#F59E0B]/20 border-[#F59E0B] text-[#F59E0B] font-semibold'
+                : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
+            }`}
+            title="Image enhancement controls (Brightness, Contrast, Sharpness)"
+          >
+            <Sliders className="w-2.5 h-2.5" />
+            <span className="hidden sm:inline">Enhance</span>
+          </button>
+
+          {/* Reset View Button */}
+          <button
+            onClick={resetEnhancements}
+            className="w-5 h-5 rounded bg-[#070D16] hover:bg-[#15273F] border border-[#182A40] text-[#94A3B8] hover:text-white flex items-center justify-center transition cursor-pointer"
+            title="Reset enhancements and views"
+          >
+            <RotateCcw className="w-2.5 h-2.5" />
+          </button>
+        </div>
       </div>
 
-      {/* Main Tab Content with 16px Spacing */}
-      <div className="flex-1 flex flex-col justify-between py-2 min-h-0 space-y-4">
-        {activeTab === 'overview' && (
-          <div className="space-y-3.5">
-            {/* Sensor Switcher: Optical vs SAR */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[11px]">
-              <div className="flex items-center space-x-2 text-[#94A3B8]">
-                <span className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">SENSOR</span>
-                <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
-                  <button
-                    onClick={() => setSensorMode('OPTICAL')}
-                    className={`h-6 px-2 sm:px-2.5 rounded-md text-[10px] font-medium transition cursor-pointer ${
-                      sensorMode === 'OPTICAL' ? 'bg-[#0284C7] text-white' : 'text-[#94A3B8] hover:text-white'
-                    }`}
-                  >
-                    Sentinel-2 Optical (10m)
-                  </button>
-                  <button
-                    onClick={() => setSensorMode('SAR')}
-                    className={`h-6 px-2 sm:px-2.5 rounded-md text-[10px] font-medium transition cursor-pointer ${
-                      sensorMode === 'SAR' ? 'bg-[#0284C7] text-white' : 'text-[#94A3B8] hover:text-white'
-                    }`}
-                  >
-                    Sentinel-1 SAR Radar
-                  </button>
-                </div>
-              </div>
-
-              {/* Image Quality Badge */}
-              <div className="flex items-center space-x-1.5 px-2 py-1 rounded-md bg-[#070D16] border border-[#182A40] text-[10px] text-[#10B981] self-start sm:self-auto">
-                <CloudSun className="w-3.5 h-3.5 text-[#38BDF8]" />
-                <span>Cloud 2.1% · High quality</span>
-              </div>
+      {/* 3. OPTIONAL EXPANDABLE ENHANCEMENT CONTROLS TRAY */}
+      {showAdjustments && (
+        <div className="bg-[#070D16] p-2.5 rounded-lg border border-[#182A40] my-1 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[10px] shrink-0 animate-in fade-in">
+          <div>
+            <div className="flex justify-between text-[#94A3B8] mb-1">
+              <span>Brightness:</span>
+              <span className="font-mono text-white">{brightness > 0 ? `+${brightness}` : brightness}%</span>
             </div>
+            <input
+              type="range"
+              min="-50"
+              max="50"
+              value={brightness}
+              onChange={(e) => setBrightness(Number(e.target.value))}
+              className="w-full accent-[#00E5FF] h-1.5 bg-[#182A40] rounded-lg cursor-pointer"
+            />
+          </div>
 
-            {/* View Mode Switcher + Quantified Change Stats (Area in m² & % Delta) */}
-            <div className="flex items-center justify-between text-[11px] pt-0.5 pb-0.5">
-              <div className="flex items-center space-x-1.5 text-[#94A3B8]">
-                <span className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">VIEW</span>
-                <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
-                  <button
-                    type="button"
-                    onClick={() => setVisualMode('side-by-side')}
-                    className={`h-5 px-2 rounded text-[10px] font-medium transition cursor-pointer flex items-center space-x-1 ${
-                      visualMode === 'side-by-side' ? 'bg-[#0284C7] text-white' : 'text-[#94A3B8] hover:text-white'
-                    }`}
-                  >
-                    <Columns className="w-2.5 h-2.5" />
-                    <span>Dual tile</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVisualMode('swipe')}
-                    className={`h-5 px-2 rounded text-[10px] font-medium transition cursor-pointer flex items-center space-x-1 ${
-                      visualMode === 'swipe' ? 'bg-[#0284C7] text-white' : 'text-[#94A3B8] hover:text-white'
-                    }`}
-                  >
-                    <Sliders className="w-2.5 h-2.5" />
-                    <span>Swipe curtain</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Precise Area in m² and Ha */}
-              <div className="flex items-center space-x-1.5 text-[10px] font-mono">
-                <span className="text-[#38BDF8] bg-[#0E2D4A] px-1.5 py-0.5 rounded border border-[#0284C7]/50 font-bold" title="Calculated geometric footprint in square meters">
-                  {Math.round(parseFloat(areaHa.replace(/[^\d.]/g, '') || '4.2') * 10000).toLocaleString()} m²
-                </span>
-                <span className="text-[#10B981] bg-[#063327] px-1.5 py-0.5 rounded border border-[#10B981]/50 font-bold" title="Multi-temporal reflectance & structural change delta">
-                  +34.8% delta
-                </span>
-              </div>
+          <div>
+            <div className="flex justify-between text-[#94A3B8] mb-1">
+              <span>Contrast:</span>
+              <span className="font-mono text-white">{contrast > 0 ? `+${contrast}` : contrast}%</span>
             </div>
+            <input
+              type="range"
+              min="-50"
+              max="50"
+              value={contrast}
+              onChange={(e) => setContrast(Number(e.target.value))}
+              className="w-full accent-[#00E5FF] h-1.5 bg-[#182A40] rounded-lg cursor-pointer"
+            />
+          </div>
 
-            {/* Visual Pair: Dual Tile vs Interactive Swipe Curtain */}
-            {visualMode === 'swipe' ? (
-              <div className="relative aspect-[16/10] bg-[#070D16] rounded-lg border border-[#182A40] overflow-hidden select-none group">
-                {/* Background: Active Observation (T2) */}
-                <img
-                  src={sensorMode === 'SAR' ? '/assets/card_3_port.jpg' : activePhase.img}
-                  alt="Active observation"
-                  className={`w-full h-full object-cover pointer-events-none ${
-                    sensorMode === 'SAR' ? 'filter grayscale contrast-150' : ''
+          <div>
+            <div className="flex justify-between text-[#94A3B8] mb-1">
+              <span>Mask Opacity:</span>
+              <span className="font-mono text-white">{maskOpacity}%</span>
+            </div>
+            <input
+              type="range"
+              min="10"
+              max="100"
+              value={maskOpacity}
+              onChange={(e) => setMaskOpacity(Number(e.target.value))}
+              className="w-full accent-[#EF4444] h-1.5 bg-[#182A40] rounded-lg cursor-pointer"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-[#94A3B8]">Sharpness:</span>
+            <div className="flex items-center space-x-1">
+              {(['normal', 'enhanced', 'crisp'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSharpness(s)}
+                  className={`px-1.5 py-0.5 rounded text-[9px] uppercase font-mono ${
+                    sharpness === s ? 'bg-[#00E5FF] text-[#070D16] font-bold' : 'bg-[#0E1A2B] text-[#94A3B8]'
                   }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. HERO SATELLITE IMAGERY WORKSPACE (Maximum Visual Focus) */}
+      <div className="flex-1 min-h-[220px] sm:min-h-[240px] relative rounded-xl border border-[#182A40] bg-[#020617] overflow-hidden my-1.5 flex flex-col justify-center">
+        {/* VIEW MODE A: VISUAL (Single Full-Size High-Resolution Viewport) */}
+        {viewMode === 'visual' && (
+          <div className="w-full h-full relative group">
+            <img
+              src={activePhase.img}
+              alt="Satellite observation"
+              className="w-full h-full object-cover select-none transition-transform duration-300"
+              style={{
+                filter: getFilterStyle(true),
+                imageRendering: 'auto'
+              }}
+            />
+
+            {/* Change Mask Overlay if enabled in Visual mode */}
+            {showChangeMask && activePhase.hasChange && (
+              <div
+                className="absolute inset-0 pointer-events-none transition-opacity"
+                style={{ opacity: maskOpacity / 100 }}
+              >
+                {/* Vector Change Polygon Mask */}
+                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <polygon
+                    points="32,24 68,22 74,68 34,72"
+                    fill="rgba(239, 68, 68, 0.45)"
+                    stroke="#EF4444"
+                    strokeWidth="1.2"
+                    strokeDasharray="3 2"
+                  />
+                </svg>
+              </div>
+            )}
+
+            {/* Bounding Box Frame (Secondary Reference) */}
+            {showBoundingBox && activePhase.hasChange && (
+              <div className="absolute top-[22%] left-[32%] w-[42%] h-[48%] border-2 border-dashed border-[#00E5FF] rounded-lg pointer-events-none shadow-[0_0_15px_rgba(0,229,255,0.4)] animate-pulse">
+                <span className="absolute -top-3 left-1 bg-[#00E5FF] text-[#070D16] text-[8px] font-mono font-bold px-1 rounded">
+                  AOI DETECTED CHANGE
+                </span>
+              </div>
+            )}
+
+            {/* Metadata Tag directly on image (Top Left) */}
+            <div className="absolute top-2.5 left-2.5 z-20 bg-[#070D16]/90 border border-[#182A40] rounded-lg px-2.5 py-1 backdrop-blur-md text-[10px] font-mono space-y-0.5 shadow-lg">
+              <div className="text-white font-bold flex items-center space-x-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                <span>ACTIVE OBSERVATION</span>
+              </div>
+              <div className="text-[#94A3B8] flex items-center space-x-2">
+                <span>{sensor}</span>
+                <span>•</span>
+                <span className="text-[#00E5FF]">{selectedTimelineDate}</span>
+                <span>•</span>
+                <span>{resolution}</span>
+                <span>•</span>
+                <span>Cloud: {cloudCover}</span>
+              </div>
+            </div>
+
+            {/* Orientation & Scale Overlay (Bottom) */}
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20">
+              {/* Metric Scale Bar */}
+              <div className="bg-[#070D16]/85 border border-[#182A40] px-2 py-0.5 rounded text-[9px] font-mono text-white/90 backdrop-blur flex items-center space-x-1.5">
+                <div className="w-16 h-1 border-b-2 border-l-2 border-r-2 border-[#00E5FF]" />
+                <span>0 100 250 m</span>
+              </div>
+
+              {/* North Compass Arrow */}
+              <div className="w-7 h-7 rounded-full bg-[#070D16]/90 border border-[#182A40] flex flex-col items-center justify-center text-[9px] font-mono text-white backdrop-blur shadow">
+                <span className="text-[#00E5FF] font-bold leading-none">N</span>
+                <div className="w-0.5 h-2 bg-[#00E5FF]" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW MODE B: BEFORE / AFTER COMPARISON (Slider vs Dual Tile) */}
+        {viewMode === 'comparison' && (
+          <div className="w-full h-full relative flex flex-col justify-center">
+            {comparisonType === 'swipe' ? (
+              /* SMOOTH DRAGGABLE COMPARISON SLIDER */
+              <div
+                ref={containerRef}
+                className="relative w-full h-full select-none cursor-ew-resize overflow-hidden"
+              >
+                {/* Underneath: AFTER / ACTIVE OBSERVATION (T2) */}
+                <img
+                  src={activePhase.img}
+                  alt="After scene"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  style={{ filter: getFilterStyle(true) }}
                 />
 
-                {/* Foreground: Baseline Observation (T1) Clipped */}
+                {/* Optional Change Mask Layer on After */}
+                {showChangeMask && activePhase.hasChange && (
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ opacity: maskOpacity / 100 }}
+                  >
+                    <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                      <polygon
+                        points="32,24 68,22 74,68 34,72"
+                        fill="rgba(239, 68, 68, 0.45)"
+                        stroke="#EF4444"
+                        strokeWidth="1.2"
+                      />
+                    </svg>
+                  </div>
+                )}
+
+                {/* Top Clipped: BEFORE / BASELINE OBSERVATION (T1) */}
                 <div
-                  className="absolute inset-0 overflow-hidden pointer-events-none"
-                  style={{ clipPath: `polygon(0 0, ${swipePos}% 0, ${swipePos}% 100%, 0 100%)` }}
+                  className="absolute inset-0 overflow-hidden pointer-events-none border-r-2 border-[#00E5FF]"
+                  style={{ width: `${swipePos}%` }}
                 >
                   <img
                     src={beforeImgUrl}
-                    alt="Baseline observation"
-                    className="w-full h-full object-cover"
+                    alt="Before scene"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{
+                      width: '100%',
+                      maxWidth: 'none',
+                      filter: getFilterStyle(false)
+                    }}
                   />
-                  <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-[#070D16]/85 border border-[#182A40] text-[9px] font-mono text-white">
-                    T1: 2023-08-12 (Baseline)
+                  {/* BEFORE Metadata Tag on Left */}
+                  <div className="absolute top-2 left-2 z-20 bg-[#070D16]/95 border border-[#182A40] rounded px-2 py-0.5 text-[9px] font-mono text-white backdrop-blur">
+                    <span className="font-bold text-[#94A3B8]">BEFORE:</span> {beforeDate} • {resolution} • Cloud: {beforeCloudCover}
                   </div>
                 </div>
 
-                {/* T2 Label on Right */}
-                <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-[#070D16]/85 border border-[#182A40] text-[9px] font-mono text-[#38BDF8] pointer-events-none">
-                  T2: {selectedTimelineDate} (Active)
+                {/* AFTER Metadata Tag on Right */}
+                <div className="absolute top-2 right-2 z-20 bg-[#070D16]/95 border border-[#182A40] rounded px-2 py-0.5 text-[9px] font-mono text-white backdrop-blur">
+                  <span className="font-bold text-[#00E5FF]">AFTER:</span> {selectedTimelineDate} • {resolution} • Cloud: {cloudCover}
                 </div>
 
-                {/* Vertical Divider Line with Cyan Glow & Center Grip */}
+                {/* Draggable Divider Handle with Glow & Grip */}
                 <div
                   className="absolute top-0 bottom-0 w-0.5 bg-[#00E5FF] shadow-[0_0_12px_#00E5FF] pointer-events-none"
                   style={{ left: `${swipePos}%` }}
                 >
-                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#0E1A2B] border-2 border-[#00E5FF] flex items-center justify-center text-[10px] text-[#00E5FF] shadow-lg">
-                    ↔
+                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#0E1A2B] border-2 border-[#00E5FF] flex items-center justify-center text-[10px] text-[#00E5FF] font-bold shadow-2xl">
+                    ⇄
                   </div>
                 </div>
 
-                {/* Invisible Range Input for Smooth Dragging across entire image */}
+                {/* Smooth Range Input Controller */}
                 <input
                   type="range"
                   min="0"
@@ -303,407 +567,246 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                   aria-label="Swipe curtain comparison slider"
                 />
 
-                {/* Bottom Center Indicator */}
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#070D16]/90 border border-[#182A40] text-[9px] font-mono text-[#94A3B8] pointer-events-none backdrop-blur">
-                  Drag to swipe ({swipePos}%)
+                {/* Scale Bar & North Indicator in Slider View */}
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-20">
+                  <div className="bg-[#070D16]/85 border border-[#182A40] px-2 py-0.5 rounded text-[8px] font-mono text-white/90 backdrop-blur">
+                    0 100 250 m
+                  </div>
+                  <div className="text-[9px] font-mono text-[#94A3B8] bg-[#070D16]/90 px-2 py-0.5 rounded border border-[#182A40]">
+                    Drag slider to compare ({swipePos}%)
+                  </div>
+                  <div className="w-5 h-5 rounded-full bg-[#070D16]/90 border border-[#182A40] flex flex-col items-center justify-center text-[7px] font-mono text-white">
+                    <span className="text-[#00E5FF] font-bold leading-none">N</span>
+                  </div>
                 </div>
               </div>
             ) : (
-              /* Dual Tile Side-by-Side View */
-              <div className="grid grid-cols-2 gap-2.5">
-                {/* BEFORE Tile */}
-                <div
-                  onClick={() => setSelectedTimelineDate('2023-08-12')}
-                  className="flex flex-col space-y-1 cursor-pointer group"
-                  title="Click to view 2023 baseline"
-                >
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-white font-mono font-medium">T1: 2023-08-12</span>
-                    <span className="text-[#64748B] text-[9px] uppercase tracking-[0.05em]">Baseline</span>
+              /* LARGE SIDE-BY-SIDE DUAL TILE COMPARISON */
+              <div className="grid grid-cols-2 gap-2 w-full h-full p-1.5">
+                {/* Left: BEFORE Tile */}
+                <div className="relative rounded-lg overflow-hidden border border-[#182A40] bg-[#070D16] flex flex-col">
+                  {/* BEFORE Metadata directly above/on image */}
+                  <div className="bg-[#070D16] px-2 py-1 border-b border-[#182A40] text-[9px] font-mono flex items-center justify-between">
+                    <span className="text-white font-bold">BEFORE OBSERVATION</span>
+                    <span className="text-[#94A3B8]">{beforeDate}</span>
                   </div>
-                  <div className="relative aspect-[16/10] bg-[#070D16] rounded-lg border border-[#182A40] group-hover:border-[#0284C7] overflow-hidden transition">
+                  <div className="relative flex-1 min-h-0">
                     <img
                       src={beforeImgUrl}
-                      alt="Before scene"
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      alt="Before observation"
+                      className="w-full h-full object-cover"
+                      style={{ filter: getFilterStyle(false) }}
                     />
-                    <div className="absolute bottom-1 left-1 text-[8px] font-mono text-white/90 bg-[#070D16]/80 px-1.5 py-0.5 rounded border border-[#182A40]/60 backdrop-blur">
-                      0 250 500 m
+                    <div className="absolute bottom-1.5 left-1.5 bg-[#070D16]/90 border border-[#182A40] px-1.5 py-0.5 rounded text-[8px] font-mono text-[#94A3B8]">
+                      Sentinel-2 • {resolution} • Cloud: {beforeCloudCover}
                     </div>
                   </div>
                 </div>
 
-                {/* AFTER Tile */}
-                <div
-                  onClick={onViewFullReport}
-                  className="flex flex-col space-y-1 cursor-pointer group"
-                  title="Click to open interactive split curtain comparator"
-                >
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="text-white font-mono font-medium">T2: {selectedTimelineDate}</span>
-                    <span className="text-[#38BDF8] text-[9px] uppercase tracking-[0.05em] font-medium">
-                      {sensorMode === 'SAR' ? 'SAR Backscatter' : 'Active obs'}
-                    </span>
+                {/* Right: AFTER Tile */}
+                <div className="relative rounded-lg overflow-hidden border border-[#182A40] bg-[#070D16] flex flex-col">
+                  {/* AFTER Metadata directly above/on image */}
+                  <div className="bg-[#070D16] px-2 py-1 border-b border-[#182A40] text-[9px] font-mono flex items-center justify-between">
+                    <span className="text-[#00E5FF] font-bold">AFTER OBSERVATION</span>
+                    <span className="text-[#00E5FF]">{selectedTimelineDate}</span>
                   </div>
-                  <div className="relative aspect-[16/10] bg-[#070D16] rounded-lg border border-[#182A40] group-hover:border-[#0284C7] overflow-hidden transition">
+                  <div className="relative flex-1 min-h-0">
                     <img
-                      src={sensorMode === 'SAR' ? '/assets/card_3_port.jpg' : activePhase.img}
-                      alt="Active observation"
-                      className={`w-full h-full object-cover group-hover:scale-105 transition duration-300 ${
-                        sensorMode === 'SAR' ? 'filter grayscale contrast-150' : ''
-                      }`}
+                      src={activePhase.img}
+                      alt="After observation"
+                      className="w-full h-full object-cover"
+                      style={{ filter: getFilterStyle(true) }}
                     />
-                    {activePhase.hasBox && (
-                      <div className="absolute top-[26%] right-[16%] w-[32%] h-[46%] border-2 border-[#EF4444] bg-[#EF4444]/15 rounded-md shadow-[0_0_12px_rgba(239,68,68,0.6)] animate-pulse" />
+                    {showChangeMask && activePhase.hasChange && (
+                      <div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ opacity: maskOpacity / 100 }}
+                      >
+                        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                          <polygon
+                            points="32,24 68,22 74,68 34,72"
+                            fill="rgba(239, 68, 68, 0.45)"
+                            stroke="#EF4444"
+                            strokeWidth="1.2"
+                          />
+                        </svg>
+                      </div>
                     )}
-                    <div className="absolute bottom-1 left-1 text-[8px] font-mono text-white/90 bg-[#070D16]/80 px-1.5 py-0.5 rounded border border-[#182A40]/60 backdrop-blur">
-                      0 250 500 m
-                    </div>
-                    <div className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-[#070D16]/85 border border-[#182A40] text-[8px] font-mono text-[#38BDF8]">
-                      {sensorMode === 'SAR' ? 'SAR C-Band VV/VH' : activePhase.label}
+                    {showBoundingBox && activePhase.hasChange && (
+                      <div className="absolute top-[24%] left-[30%] w-[42%] h-[48%] border-2 border-[#EF4444] rounded pointer-events-none animate-pulse" />
+                    )}
+                    <div className="absolute bottom-1.5 left-1.5 bg-[#070D16]/90 border border-[#182A40] px-1.5 py-0.5 rounded text-[8px] font-mono text-[#00E5FF]">
+                      Sentinel-2 • {resolution} • Cloud: {cloudCover}
                     </div>
                   </div>
                 </div>
               </div>
             )}
-
-            {/* Continuous Temporal Timeline Scrubber (2023 - 2025) */}
-            <div className="bg-[#070D16] p-2.5 rounded-lg border border-[#182A40] space-y-2">
-              <div className="flex items-center justify-between text-[10px] text-[#94A3B8]">
-                <span className="font-mono text-white/80">2023</span>
-                <span className="text-[#64748B] text-[9px] uppercase tracking-[0.05em]">SCRUB SATELLITE MILESTONES</span>
-                <span className="font-mono text-white/80">2025</span>
-              </div>
-              <div className="relative flex items-center justify-between px-3 pt-1 pb-1 before:content-[''] before:absolute before:left-4 before:right-4 before:h-0.5 before:bg-[#1E3A5F]">
-                {timelineMilestones.map((milestone) => {
-                  const isSelected = selectedTimelineDate === milestone.date;
-                  return (
-                    <button
-                      key={milestone.date}
-                      onClick={() => setSelectedTimelineDate(milestone.date)}
-                      className="relative z-10 flex flex-col items-center group cursor-pointer focus:outline-none"
-                    >
-                      <div
-                        className={`w-3.5 h-3.5 rounded-full border-2 transition-all ${
-                          isSelected
-                            ? 'bg-[#0284C7] border-white shadow-[0_0_8px_#0284C7] scale-125'
-                            : 'bg-[#0B1523] border-[#182A40] group-hover:border-[#0284C7]'
-                        }`}
-                      />
-                      <span className={`text-[9px] mt-1 transition font-mono ${isSelected ? 'text-[#38BDF8] font-medium' : 'text-[#64748B]'}`}>
-                        {milestone.month}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         )}
 
-        {/* Tab 2: Why was this detected? (Explainable AI Panel - Structured 3-Second Scannable Rows) */}
-        {activeTab === 'explanation' && (
-          <div className="bg-[#070D16] p-3 rounded-lg border border-[#182A40] space-y-3 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-[#182A40] pb-2">
-              <span className="text-[10px] font-sans uppercase tracking-[0.05em] text-[#64748B]">WHY DETECTED?</span>
-              <span className="text-xs font-semibold text-[#10B981]">{changeType}</span>
-            </div>
+        {/* VIEW MODE C: CHANGE MAP (Semi-Transparent Change Mask Focused View) */}
+        {viewMode === 'change-map' && (
+          <div className="w-full h-full relative group">
+            <img
+              src={activePhase.img}
+              alt="Detected change scene"
+              className="w-full h-full object-cover select-none"
+              style={{ filter: getFilterStyle(true) }}
+            />
 
-            <div className="space-y-2 text-xs">
-              {/* Row 1 */}
-              <div className="flex items-center justify-between p-2 rounded-lg bg-[#0B1523] border border-[#182A40]/80">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-5 h-5 rounded-md bg-[#0284C7]/20 border border-[#0284C7]/40 flex items-center justify-center text-[#38BDF8] shrink-0">
-                    <Sparkles className="w-3 h-3" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">Spectral albedo shift</div>
-                    <div className="text-[10px] text-[#94A3B8]">High reflectance deck construction</div>
-                  </div>
-                </div>
-                <span className="font-mono text-xs font-semibold text-[#10B981]">+0.28 NDBI</span>
+            {/* High-Definition Change Mask Overlay */}
+            {showChangeMask && (
+              <div
+                className="absolute inset-0 pointer-events-none transition-opacity"
+                style={{ opacity: maskOpacity / 100 }}
+              >
+                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  {/* Subtle Grid Hatching Pattern */}
+                  <defs>
+                    <pattern id="changeHatch" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                      <line x1="0" y1="0" x2="0" y2="4" stroke="#EF4444" strokeWidth="1" />
+                    </pattern>
+                  </defs>
+                  {/* Outer Diff Contour */}
+                  <polygon
+                    points="30,22 70,20 76,70 32,74"
+                    fill="url(#changeHatch)"
+                    stroke="#EF4444"
+                    strokeWidth="1.5"
+                  />
+                  <polygon
+                    points="30,22 70,20 76,70 32,74"
+                    fill="rgba(239, 68, 68, 0.35)"
+                  />
+                </svg>
               </div>
+            )}
 
-              {/* Row 2 */}
-              <div className="flex items-center justify-between p-2 rounded-lg bg-[#0B1523] border border-[#182A40]/80">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-5 h-5 rounded-md bg-[#10B981]/20 border border-[#10B981]/40 flex items-center justify-center text-[#10B981] shrink-0">
-                    <Check className="w-3 h-3" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">Temporal persistence</div>
-                    <div className="text-[10px] text-[#94A3B8]">Consistent across consecutive passes</div>
-                  </div>
-                </div>
-                <span className="font-mono text-xs text-white">4 passes</span>
-              </div>
-
-              {/* Row 3 */}
-              <div className="flex items-center justify-between p-2 rounded-lg bg-[#0B1523] border border-[#182A40]/80">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-5 h-5 rounded-md bg-[#38BDF8]/20 border border-[#38BDF8]/40 flex items-center justify-center text-[#38BDF8] shrink-0">
-                    <Layers className="w-3 h-3" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">Scene classification purity</div>
-                    <div className="text-[10px] text-[#94A3B8]">Excludes cloud, shadow & haze</div>
-                  </div>
-                </div>
-                <span className="font-mono text-xs text-[#10B981]">98.4% valid</span>
-              </div>
-
-              {/* Row 4 */}
-              <div className="flex items-center justify-between p-2 rounded-lg bg-[#0B1523] border border-[#182A40]/80">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-5 h-5 rounded-md bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 flex items-center justify-center text-[#A78BFA] shrink-0">
-                    <Compass className="w-3 h-3" />
-                  </div>
-                  <div>
-                    <div className="font-medium text-white">Co-registration error</div>
-                    <div className="text-[10px] text-[#94A3B8]">Sub-pixel alignment residual</div>
-                  </div>
-                </div>
-                <span className="font-mono text-xs text-white">0.18 px</span>
-              </div>
-            </div>
-
-            {/* Model Architecture Footer */}
-            <div className="pt-2 border-t border-[#182A40] flex items-center justify-between text-[10px] text-[#64748B]">
-              <div className="flex items-center space-x-1.5">
-                <Cpu className="w-3 h-3 text-[#38BDF8]" />
-                <span>Detection model: FC-Siam-diff v1.2</span>
-              </div>
-              <span>Anchor: RemoteCLIP-RS</span>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: False-Change Analysis Panel (8-Tier Structured Grid) */}
-        {activeTab === 'false-change' && (
-          <div className="bg-[#070D16] p-3 rounded-lg border border-[#182A40] space-y-2.5 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-[#182A40] pb-1.5">
-              <span className="text-[10px] font-sans uppercase tracking-[0.05em] text-[#64748B]">FALSE-CHANGE CHECK (8-TIER)</span>
-              <span className="text-xs font-semibold text-[#10B981]">All 8 gates passed</span>
-            </div>
-
-            <div className="space-y-1.5 text-xs">
-              {[
-                { label: 'Cloud & shadow contamination', val: '2.1% ≤ 15% threshold', pass: true },
-                { label: 'Seasonal vegetation cycle', val: 'Anniversary NDVI delta normal', pass: true },
-                { label: 'Geometric co-registration shift', val: '0.18 px ≤ 0.80 px limit', pass: true },
-                { label: 'Solar illumination angle', val: 'Solar zenith diff < 2.4°', pass: true },
-                { label: 'Atmospheric optical depth', val: 'AOD normalized (S2 BOA)', pass: true },
-                { label: 'Sensor look-angle difference', val: 'Sentinel-1 & 2 cross-aligned', pass: true },
-                { label: 'Tidal stage / water level flux', val: 'Low-tide baseline applied', pass: true },
-                { label: 'Transient maritime vessel motion', val: 'Ship kinematic filter active', pass: true },
-              ].map((tier, idx) => (
-                <div key={idx} className="flex items-center justify-between py-1 px-2 rounded bg-[#0B1523]/80 border border-[#182A40]/40">
-                  <div className="flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
-                    <span className="text-[#94A3B8] text-[11px]">{tier.label}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono text-[10px] text-[#64748B]">{tier.val}</span>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#063327] border border-[#10B981]/40 text-[#10B981]">
-                      Pass
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-2 p-1.5 bg-[#063327]/60 border border-[#10B981]/40 rounded-lg text-center text-[#10B981] font-medium text-xs">
-              Overall status: Real change confirmed
-            </div>
-          </div>
-        )}
-
-        {/* Tab 4: Change Quantification Metrics */}
-        {activeTab === 'quantification' && (
-          <div className="bg-[#070D16] p-3 rounded-lg border border-[#182A40] space-y-2.5 animate-in fade-in">
-            <div className="flex items-center justify-between border-b border-[#182A40] pb-1.5">
-              <span className="text-[10px] font-sans uppercase tracking-[0.05em] text-[#64748B]">QUANTIFICATION METRICS</span>
-              <span className="text-xs font-mono text-[#38BDF8]">{candidateTitle.slice(0, 24)}</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">CHANGED AREA</div>
-                <div className="text-sm font-bold font-mono text-white mt-0.5">{areaHa}</div>
-              </div>
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">NEW STRUCTURES</div>
-                <div className="text-sm font-bold font-mono text-[#10B981] mt-0.5">17 units</div>
-              </div>
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">ROAD EXPANSION</div>
-                <div className="text-sm font-bold font-mono text-[#38BDF8] mt-0.5">1.8 km</div>
-              </div>
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">CHANGE DENSITY</div>
-                <div className="text-sm font-bold font-mono text-[#F59E0B] mt-0.5">14.6%</div>
-              </div>
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">CONFIDENCE</div>
-                <div className="text-sm font-bold font-mono text-[#10B981] mt-0.5">{confidence}%</div>
-              </div>
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">TIME DIFFERENCE</div>
-                <div className="text-sm font-bold font-mono text-white mt-0.5">{timeGap}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 5: Data Provenance */}
-        {activeTab === 'provenance' && (
-          <div className="bg-[#070D16] p-3 rounded-lg border border-[#182A40] space-y-2 animate-in fade-in text-xs">
-            <div className="flex items-center justify-between border-b border-[#182A40] pb-1.5">
-              <span className="text-[10px] font-sans uppercase tracking-[0.05em] text-[#64748B]">DATA PROVENANCE</span>
-              <span className="text-xs font-mono text-[#38BDF8]">Sentinel-2A L2A</span>
-            </div>
-
-            <div className="space-y-1.5 text-[#94A3B8]">
-              <div className="flex justify-between py-0.5 border-b border-[#182A40]/40">
-                <span className="text-[#64748B]">Satellite</span>
-                <span className="text-white font-medium">Sentinel-2A MSI / Sentinel-1B SAR</span>
-              </div>
-              <div className="flex justify-between py-0.5 border-b border-[#182A40]/40">
-                <span className="text-[#64748B]">Acquisition</span>
-                <span className="text-white font-mono">28 Apr 2025 · 05:46:51 UTC</span>
-              </div>
-              <div className="flex justify-between py-0.5 border-b border-[#182A40]/40">
-                <span className="text-[#64748B]">Processing level</span>
-                <span className="text-[#10B981]">L2A (Bottom-Of-Atmosphere)</span>
-              </div>
-              <div className="flex justify-between py-0.5 border-b border-[#182A40]/40">
-                <span className="text-[#64748B]">Resolution</span>
-                <span className="text-white font-mono">10 m (B2, B3, B4, B8)</span>
-              </div>
-              <div className="flex justify-between py-0.5 border-b border-[#182A40]/40">
-                <span className="text-[#64748B]">CRS projection</span>
-                <span className="text-white font-mono">EPSG:32644 (UTM Zone 44N)</span>
-              </div>
-              <div className="flex justify-between py-0.5 border-b border-[#182A40]/40">
-                <span className="text-[#64748B]">Tile ID</span>
-                <span className="text-white font-mono truncate max-w-[150px]">S2A_MSIL2A_20250428_017</span>
-              </div>
-              <div className="flex justify-between py-0.5">
-                <span className="text-[#64748B]">SHA-256 hash</span>
-                <span className="text-[#38BDF8] font-mono truncate max-w-[150px]">e3b0c44298fc1c149afbf4c8...</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 6: System Analytics (Directly Embedded in Card for Flexible Viewing) */}
-        {activeTab === 'analytics' && (
-          <div className="bg-[#070D16] p-3 rounded-lg border border-[#182A40] space-y-3 animate-in fade-in text-xs">
-            <div className="flex items-center justify-between border-b border-[#182A40] pb-1.5">
-              <span className="text-[10px] font-sans uppercase tracking-[0.05em] text-[#64748B]">SYSTEM ANALYTICS</span>
-              <span className="text-xs font-semibold text-[#10B981]">Engine status: Optimal</span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">GPU COMPUTE</div>
-                <div className="text-lg font-bold font-mono text-[#10B981] mt-1">42%</div>
-                <div className="text-[9px] text-[#64748B] mt-0.5">RTX 4090 DGIS</div>
-              </div>
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">PRECISION</div>
-                <div className="text-lg font-bold font-mono text-[#38BDF8] mt-1">94.8%</div>
-                <div className="text-[9px] text-[#64748B] mt-0.5">Verified F1: 0.91</div>
-              </div>
-              <div className="bg-[#0B1523] p-2 rounded-lg border border-[#182A40]">
-                <div className="text-[10px] uppercase tracking-[0.05em] text-[#64748B]">THROUGHPUT</div>
-                <div className="text-lg font-bold font-mono text-[#F59E0B] mt-1">1.4s</div>
-                <div className="text-[9px] text-[#64748B] mt-0.5">Avg tile latency</div>
-              </div>
-            </div>
-
-            <div className="p-2 rounded-lg bg-[#0B1523] border border-[#182A40] space-y-1.5">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-[#94A3B8]">Memory buffer</span>
-                <span className="font-mono text-white">4.8 GB / 24 GB</span>
-              </div>
-              <div className="w-full bg-[#182A40] h-1.5 rounded-full overflow-hidden">
-                <div className="bg-[#0284C7] h-full rounded-full" style={{ width: '20%' }} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Detection Alert Bar with Primary Confidence Hero Metric and Demoted Secondary Badges */}
-        <div className="flex items-center justify-between bg-[#0E1B2D] border border-[#182A40] rounded-xl px-3 py-2 shrink-0">
-          <div className="flex items-center space-x-2.5 truncate">
-            <div className="w-6 h-6 rounded-full bg-[#EF4444]/15 border border-[#EF4444]/40 flex items-center justify-center text-[#EF4444] shrink-0">
-              <AlertCircle className="w-3.5 h-3.5" />
-            </div>
-            <div className="leading-tight truncate font-sans">
-              <div className="text-xs font-semibold text-white truncate max-w-[190px]">{candidateTitle}</div>
-              <div className="text-[10px] text-[#94A3B8] flex items-center space-x-1 mt-0.5">
-                <span className="text-[#64748B]">Verification:</span>
-                <span className="text-[#10B981] font-medium flex items-center space-x-0.5">
-                  <Check className="w-2.5 h-2.5 stroke-[3]" />
-                  <span>Pass</span>
+            {/* Bounding Box Frame (Secondary Reference) */}
+            {showBoundingBox && (
+              <div className="absolute top-[20%] left-[30%] w-[46%] h-[54%] border-2 border-dashed border-[#00E5FF] rounded-lg pointer-events-none shadow-[0_0_15px_rgba(0,229,255,0.4)]">
+                <span className="absolute -top-3 left-2 bg-[#00E5FF] text-[#070D16] text-[8px] font-mono font-bold px-1 rounded">
+                  DIFF FOOTPRINT: {areaHa} ({changePercentage})
                 </span>
-                <span className="text-[#64748B]">·</span>
-                <span className="text-[#94A3B8]">{changeType}</span>
+              </div>
+            )}
+
+            {/* Change Map Legend Overlay (Top Left) */}
+            <div className="absolute top-2.5 left-2.5 z-20 bg-[#070D16]/95 border border-[#182A40] rounded-lg p-2 backdrop-blur text-[10px] font-mono space-y-1 shadow-xl">
+              <div className="text-white font-bold flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#EF4444] animate-ping" />
+                <span>SEMI-TRANSPARENT CHANGE MASK</span>
+              </div>
+              <div className="text-[#94A3B8] text-[9px]">
+                Detected Feature: <b className="text-white">{changeType}</b>
+              </div>
+              <div className="text-[#10B981] font-bold text-[9px]">
+                Delta: {changePercentage} • Area: {areaHa}
+              </div>
+            </div>
+
+            {/* Scale Bar & North Indicator */}
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20">
+              <div className="bg-[#070D16]/85 border border-[#182A40] px-2 py-0.5 rounded text-[9px] font-mono text-white/90 backdrop-blur">
+                0 100 250 m
+              </div>
+              <div className="w-7 h-7 rounded-full bg-[#070D16]/90 border border-[#182A40] flex flex-col items-center justify-center text-[9px] font-mono text-white backdrop-blur shadow">
+                <span className="text-[#00E5FF] font-bold leading-none">N</span>
+                <div className="w-0.5 h-2 bg-[#00E5FF]" />
               </div>
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Primary Hero Metric: Confidence Score */}
-          <div className={`px-3 py-1 rounded-lg border text-right shrink-0 ${
-            isHighConfidence
-              ? 'border-[#10B981]/40 bg-[#063327]/60 text-[#10B981]'
-              : isMarginal
-              ? 'border-[#F59E0B]/40 bg-[#2D1E07]/60 text-[#F59E0B]'
-              : 'border-[#EF4444]/40 bg-[#2D1215]/60 text-[#EF4444]'
-          }`}>
-            <div className="text-[9px] font-sans uppercase tracking-[0.05em] text-[#64748B]">Confidence</div>
-            <div className="text-xl font-mono font-bold leading-none mt-0.5">{confidence}%</div>
+      {/* 5. MULTI-TEMPORAL CONTINUOUS MILESTONES SCRUBBER */}
+      <div className="bg-[#070D16] px-3 py-1.5 rounded-lg border border-[#182A40] flex items-center justify-between gap-2 shrink-0 text-[10px] font-mono">
+        <span className="text-[#64748B] uppercase font-bold shrink-0">Passes:</span>
+        <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-0.5">
+          {timelineMilestones.map((m) => {
+            const isSel = selectedTimelineDate === m.date;
+            return (
+              <button
+                key={m.date}
+                onClick={() => setSelectedTimelineDate(m.date)}
+                className={`px-2 py-0.5 rounded transition cursor-pointer flex items-center space-x-1 shrink-0 ${
+                  isSel
+                    ? 'bg-[#00E5FF] text-[#070D16] font-bold shadow'
+                    : 'bg-[#0B1523] text-[#94A3B8] hover:text-white border border-[#182A40]'
+                }`}
+              >
+                <span>{m.month}</span>
+                <span className="text-[8px] opacity-80">({m.label})</span>
+              </button>
+            );
+          })}
+        </div>
+        <span className="text-[#38BDF8] shrink-0 font-medium hidden sm:inline">
+          Period: {observationPeriod} ({timeGap})
+        </span>
+      </div>
+
+      {/* 6. QUANTIFIED CHANGE METRICS & MANDATORY ANALYST BANNER */}
+      <div className="pt-2 border-t border-[#182A40]/80 space-y-1.5 shrink-0 font-sans">
+        {/* Change Metrics Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
+          <div className="p-1.5 rounded bg-[#070D16] border border-[#182A40]">
+            <span className="text-[#64748B] block uppercase text-[8px]">Changed Area</span>
+            <span className="text-[#38BDF8] font-bold">{areaHa}</span>
+          </div>
+
+          <div className="p-1.5 rounded bg-[#070D16] border border-[#182A40]">
+            <span className="text-[#64748B] block uppercase text-[8px]">Change Delta</span>
+            <span className="text-[#10B981] font-bold">{changePercentage}</span>
+          </div>
+
+          <div className="p-1.5 rounded bg-[#070D16] border border-[#182A40]">
+            <span className="text-[#64748B] block uppercase text-[8px]">Confidence Score</span>
+            <span className="text-[#F59E0B] font-bold">{confidence}% Match</span>
+          </div>
+
+          <div className="p-1.5 rounded bg-[#070D16] border border-[#182A40]">
+            <span className="text-[#64748B] block uppercase text-[8px]">Coordinates</span>
+            <span className="text-white truncate block">{coordinates}</span>
           </div>
         </div>
 
-        {/* Bottom Details + Analyst Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1.5 border-t border-[#182A40]/80 text-xs shrink-0 font-sans">
-          <div className="text-[#94A3B8] flex items-center space-x-1.5">
-            <span className="text-[10px] font-sans uppercase tracking-[0.05em] text-[#64748B]">LOCATION</span>
-            <span className="text-white font-mono">{coordinates}</span>
+        {/* Mandatory Intelligence Notice & Analyst Workflow Decision Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 text-[11px]">
+          <div className="flex items-center space-x-1.5 text-[#F59E0B] text-[10px] font-sans">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span>AI-assisted detection. Analyst verification required.</span>
           </div>
 
           {/* Quick Review Buttons */}
-          {analystVerdict ? (
-            <div className={`h-7 px-3 rounded-lg font-medium flex items-center space-x-1.5 text-xs font-sans ${
-              analystVerdict === 'CONFIRMED'
-                ? 'bg-[#063327] text-[#10B981] border border-[#10B981]/50'
-                : 'bg-[#2D1215] text-[#EF4444] border border-[#EF4444]/50'
-            }`}>
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>{analystVerdict === 'CONFIRMED' ? 'Confirmed' : 'Suppressed'}</span>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2 font-sans">
-              <button
-                onClick={() => handleQuickReview('CONFIRMED')}
-                disabled={isSubmitting}
-                className="h-7 px-3.5 rounded-lg bg-[#063327] hover:bg-[#0E4738] border border-[#10B981]/60 text-[#10B981] font-medium transition flex items-center space-x-1.5 cursor-pointer text-xs"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Confirm</span>
-              </button>
-              <button
-                onClick={() => handleQuickReview('REJECTED')}
-                disabled={isSubmitting}
-                className="h-7 px-3.5 rounded-lg bg-[#2D1215] hover:bg-[#451B21] border border-[#EF4444]/60 text-[#EF4444] font-medium transition flex items-center space-x-1.5 cursor-pointer text-xs"
-              >
-                <XCircle className="w-3.5 h-3.5" />
-                <span>Suppress</span>
-              </button>
-            </div>
-          )}
+          <div className="flex items-center space-x-1.5 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => handleQuickReview('CONFIRMED')}
+              disabled={isSubmitting || analystVerdict === 'CONFIRMED'}
+              className={`h-6 px-2.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition cursor-pointer ${
+                analystVerdict === 'CONFIRMED'
+                  ? 'bg-[#10B981] text-white shadow'
+                  : 'bg-[#0E355A] hover:bg-[#10B981]/80 text-[#38BDF8] hover:text-white border border-[#0284C7]'
+              }`}
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              <span>{analystVerdict === 'CONFIRMED' ? 'Confirmed' : 'Confirm Change'}</span>
+            </button>
+
+            <button
+              onClick={() => handleQuickReview('REJECTED')}
+              disabled={isSubmitting || analystVerdict === 'REJECTED'}
+              className={`h-6 px-2 rounded-lg text-xs font-medium flex items-center space-x-1 transition cursor-pointer ${
+                analystVerdict === 'REJECTED'
+                  ? 'bg-[#EF4444] text-white'
+                  : 'bg-[#070D16] hover:bg-[#EF4444]/20 text-[#94A3B8] hover:text-[#EF4444] border border-[#182A40]'
+              }`}
+            >
+              <XCircle className="w-3 h-3" />
+              <span>Flag False</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, ChevronDown, Calendar, Satellite, MapPin, ChevronRight, Check } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Check } from 'lucide-react';
 
 export interface SearchResultItem {
   id: string;
@@ -14,6 +14,15 @@ export interface SearchResultItem {
   afterImgUrl?: string;
   areaHa?: string;
   timeGap?: string;
+  locationName?: string;
+  changeType?: string;
+  observationPeriod?: string;
+  cloudCover?: string;
+  beforeCloudCover?: string;
+  beforeDate?: string;
+  resolution?: string;
+  changePercentage?: string;
+  changeMaskUrl?: string;
 }
 
 interface SemanticSearchResultsProps {
@@ -36,72 +45,112 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
     {
       id: 'res-1',
       title: 'Hazira Deepwater Wharf & Piling Deck',
+      locationName: 'Hazira',
+      changeType: 'New Construction',
       date: '2025-04-28',
+      observationPeriod: '2023 → 2025',
       sensor: 'Sentinel-2 (10m)',
+      resolution: '10 m',
+      cloudCover: '1.8%',
+      beforeCloudCover: '2.1%',
+      beforeDate: '2023-08-12',
       coordinates: '21.4587° N, 72.7812° E',
-      matchType: 'High match',
+      matchType: 'High Match',
       confidencePct: 96,
+      changePercentage: '+34.8%',
       imageUrl: '/assets/card_1_construction.jpg',
       beforeImgUrl: '/assets/before_scene.jpg',
-      afterImgUrl: '/assets/after_scene.jpg',
-      areaHa: '4.2 ha',
-      timeGap: '32 months',
+      afterImgUrl: '/assets/card_1_construction.jpg',
+      areaHa: '4.2 ha (42,000 m²)',
+      timeGap: '20 months',
     },
     {
       id: 'res-2',
       title: 'Dumas Coastal Bund & Sea Embankment',
+      locationName: 'Dumas Shoreline',
+      changeType: 'Coastal Bund Extension',
       date: '2024-11-18',
+      observationPeriod: '2023 → 2024',
       sensor: 'Sentinel-2 (10m)',
+      resolution: '10 m',
+      cloudCover: '1.4%',
+      beforeCloudCover: '2.1%',
+      beforeDate: '2023-08-12',
       coordinates: '21.4632° N, 72.7845° E',
-      matchType: 'High match',
+      matchType: 'High Match',
       confidencePct: 93,
+      changePercentage: '+28.4%',
       imageUrl: '/assets/card_2_riverside.jpg',
       beforeImgUrl: '/assets/before_scene.jpg',
       afterImgUrl: '/assets/card_2_riverside.jpg',
-      areaHa: '3.1 ha',
-      timeGap: '24 months',
+      areaHa: '3.1 ha (31,000 m²)',
+      timeGap: '15 months',
     },
     {
       id: 'res-3',
       title: 'Adani Marine Logistics Berth Extension',
+      locationName: 'Adani Port',
+      changeType: 'Structural Berth Expansion',
       date: '2024-06-15',
+      observationPeriod: '2023 → 2024',
       sensor: 'Sentinel-1 SAR (10m)',
+      resolution: '10 m',
+      cloudCover: '0.0% (SAR Radar)',
+      beforeCloudCover: '2.1%',
+      beforeDate: '2023-08-12',
       coordinates: '21.4521° N, 72.7763° E',
-      matchType: 'Medium match',
+      matchType: 'Medium Match',
       confidencePct: 89,
+      changePercentage: '+41.2%',
       imageUrl: '/assets/card_3_port.jpg',
       beforeImgUrl: '/assets/before_scene.jpg',
       afterImgUrl: '/assets/card_3_port.jpg',
-      areaHa: '4.8 ha',
-      timeGap: '18 months',
+      areaHa: '4.8 ha (48,000 m²)',
+      timeGap: '10 months',
     },
     {
       id: 'res-4',
       title: 'Tapi Rivermouth Pier Piling & Riprap',
+      locationName: 'Tapi Rivermouth',
+      changeType: 'Pier & Bridge Works',
       date: '2023-12-03',
+      observationPeriod: '2023 → 2024',
       sensor: 'Sentinel-2 (10m)',
+      resolution: '10 m',
+      cloudCover: '2.4%',
+      beforeCloudCover: '2.1%',
+      beforeDate: '2023-08-12',
       coordinates: '21.4550° N, 72.7801° E',
-      matchType: 'Medium match',
+      matchType: 'Medium Match',
       confidencePct: 85,
+      changePercentage: '+18.5%',
       imageUrl: '/assets/card_4_bridge.jpg',
       beforeImgUrl: '/assets/before_scene.jpg',
       afterImgUrl: '/assets/card_4_bridge.jpg',
-      areaHa: '1.8 ha',
-      timeGap: '12 months',
+      areaHa: '1.8 ha (18,000 m²)',
+      timeGap: '4 months',
     },
     {
       id: 'res-5',
       title: 'Coastal Mudflat Landfill & Earthworks',
-      date: '2023-05-17',
-      sensor: 'Landsat-8 (15m)',
+      locationName: 'Dumas Mudflats',
+      changeType: 'Land Clearance & Leveling',
+      date: '2024-03-22',
+      observationPeriod: '2023 → 2024',
+      sensor: 'Landsat-8/9 (15m)',
+      resolution: '15 m',
+      cloudCover: '1.1%',
+      beforeCloudCover: '2.1%',
+      beforeDate: '2023-08-12',
       coordinates: '21.4617° N, 72.7890° E',
-      matchType: 'Medium match',
+      matchType: 'Medium Match',
       confidencePct: 81,
+      changePercentage: '+52.0%',
       imageUrl: '/assets/card_5_land.jpg',
       beforeImgUrl: '/assets/before_scene.jpg',
       afterImgUrl: '/assets/card_5_land.jpg',
-      areaHa: '5.6 ha',
-      timeGap: '8 months',
+      areaHa: '5.6 ha (56,000 m²)',
+      timeGap: '7 months',
     },
   ];
 
@@ -117,7 +166,7 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
   return (
     <div className="w-full h-full bg-[#0B1523] border border-[#182A40] rounded-xl p-3 flex flex-col justify-between select-none">
       {/* Header */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#182A40]/80 font-sans">
+      <div className="flex items-center justify-between pb-2 border-b border-[#182A40]/80 font-sans shrink-0">
         <div className="flex items-center space-x-2">
           <div className="w-4 h-4 rounded-full border border-[#0284C7]/60 flex items-center justify-center text-[#38BDF8]">
             <Search className="w-2.5 h-2.5" />
@@ -165,7 +214,7 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
         </div>
       </div>
 
-      {/* 5 Photographic Result Cards or Loading Shimmer */}
+      {/* 5 Distinct Photographic Result Cards or Loading Shimmer */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-2 flex-1 min-h-0 overflow-y-auto">
         {isSearching
           ? Array.from({ length: 5 }).map((_, i) => (
@@ -186,7 +235,9 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
             ))
           : searchResults.map((card) => {
               const isSelected = selectedId === card.id;
-              const cleanMatchType = card.matchType.toLowerCase().includes('high') ? 'High match' : 'Medium match';
+              const locationStr = card.locationName || card.title.split(' ')[0] || 'Hazira';
+              const changeTypeStr = card.changeType || 'Detected Change';
+              const obsPeriodStr = card.observationPeriod || '2023 → 2025';
 
               return (
                 <div
@@ -200,61 +251,66 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
                   }`}
                 >
                   <div>
-                    {/* Real Photographic Satellite Crop Thumbnail */}
+                    {/* Genuine Distinct Satellite Crop Thumbnail with Lazy Loading & Correct Aspect Ratio */}
                     <div className="relative aspect-[16/10] bg-[#0E1B2D] rounded-lg overflow-hidden border border-[#182A40] mb-2">
                       <img
                         src={card.imageUrl}
                         alt={card.title}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        style={{ imageRendering: 'auto' }}
                       />
 
-                      {/* Primary Hero Metric: Confidence Score + Raw Cosine Value + Secondary Muted Match Tag */}
-                      <div
-                        className="absolute top-1 left-1 flex items-center space-x-1 backdrop-blur"
-                        title={`Cosine Similarity: cos(θ) = ${(card.confidencePct * 0.00985).toFixed(3)} in 512-dim RemoteCLIP embedding space`}
-                      >
-                        {/* Primary Metric: Bold Confidence Tag */}
-                        <span className="font-mono text-white text-xs font-bold px-1.5 py-0.5 bg-[#070D16]/90 border border-[#182A40] rounded-md shadow cursor-help flex items-center space-x-1">
-                          <span>{card.confidencePct}%</span>
-                          <span className="text-[9px] font-mono text-[#38BDF8] opacity-85 border-l border-[#182A40] pl-1 font-normal" title="Raw cosine similarity score">
-                            {(card.confidencePct * 0.00985).toFixed(2)}
-                          </span>
+                      {/* Top Overlay: Match Score & Location Badge */}
+                      <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between pointer-events-none">
+                        {/* Primary Match Score */}
+                        <span className="font-mono text-white text-[11px] font-bold px-1.5 py-0.5 bg-[#070D16]/95 border border-[#182A40] rounded shadow-md backdrop-blur flex items-center space-x-1">
+                          <span className="text-[#00E5FF]">{card.confidencePct}%</span>
+                          <span className="text-[9px] text-[#94A3B8] font-normal border-l border-[#182A40] pl-1">match</span>
                         </span>
-                        {/* Secondary Demoted Match Type Tag (Muted Outline) */}
-                        <span className="px-1.5 py-0.5 rounded-md border border-[#182A40] bg-[#0E1A2B]/80 text-[#94A3B8] text-[10px] font-sans">
-                          {cleanMatchType}
+
+                        {/* Location Tag */}
+                        <span className="px-1.5 py-0.5 rounded bg-[#0E1A2B]/90 border border-[#182A40] text-[10px] font-medium text-white truncate max-w-[90px] shadow backdrop-blur">
+                          {locationStr}
+                        </span>
+                      </div>
+
+                      {/* Bottom Overlay: Change Type Badge */}
+                      <div className="absolute bottom-1.5 left-1.5 right-1.5 pointer-events-none">
+                        <span className="inline-block px-1.5 py-0.5 rounded bg-[#070D16]/90 border border-[#0284C7]/60 text-[9px] font-semibold text-[#38BDF8] truncate max-w-full shadow backdrop-blur">
+                          {changeTypeStr}
                         </span>
                       </div>
                     </div>
 
-                    {/* Card Title - 2-line wrap with full title tooltip */}
+                    {/* Card Title */}
                     <h4
-                      className="text-xs font-semibold text-white tracking-normal leading-snug line-clamp-2 min-h-[2.25rem] mb-1.5 font-sans group-hover:text-[#38BDF8] transition"
+                      className="text-xs font-semibold text-white tracking-normal leading-snug line-clamp-1 mb-1 font-sans group-hover:text-[#38BDF8] transition"
                       title={card.title}
                     >
                       {card.title}
                     </h4>
 
-                    {/* Card Metadata list */}
+                    {/* Card Forensic Metadata list */}
                     <div className="space-y-0.5 text-[10px] text-[#94A3B8] font-sans">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="w-2.5 h-2.5 text-[#64748B] shrink-0" />
-                        <span className="font-mono text-white/90">{card.date}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#64748B]">Observation:</span>
+                        <span className="font-mono text-white font-medium">{obsPeriodStr}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Satellite className="w-2.5 h-2.5 text-[#64748B] shrink-0" />
-                        <span className="truncate">{card.sensor}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#64748B]">Sensor / Res:</span>
+                        <span className="font-mono text-[#38BDF8] truncate max-w-[120px]">{card.sensor}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="w-2.5 h-2.5 text-[#64748B] shrink-0" />
-                        <span className="truncate font-mono text-[#94A3B8] group-hover:text-white transition">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[#64748B]">Coordinates:</span>
+                        <span className="font-mono text-[#94A3B8] truncate max-w-[120px] group-hover:text-white transition">
                           {card.coordinates}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Open Analysis Action Button Standardized to h-7 rounded-lg */}
+                  {/* Open Analysis Action Button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -266,7 +322,7 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
                         : 'bg-[#0E1B2D] group-hover:bg-[#132A46] border-[#182A40] text-[#94A3B8] hover:text-white'
                     }`}
                   >
-                    <span>{isSelected ? 'Target active' : 'Focus target'}</span>
+                    <span>{isSelected ? 'Target active' : 'Analyze target'}</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>

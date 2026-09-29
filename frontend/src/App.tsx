@@ -35,8 +35,16 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
     imageUrl: '/assets/card_1_construction.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/after_scene.jpg',
-    areaHa: '4.2 ha',
+    areaHa: '4.2 ha (42,000 m²)',
     timeGap: '32 months',
+    locationName: 'Hazira Industrial Port Sector',
+    changeType: 'New Construction',
+    observationPeriod: 'Apr 2023 → Apr 2025',
+    cloudCover: '1.2%',
+    beforeCloudCover: '0.8%',
+    beforeDate: '2023-04-12',
+    resolution: '10m True Color (B4,B3,B2)',
+    changePercentage: '+34.8%',
     keywords: ['construction', 'wharf', 'port', 'jetty', 'marine', 'deck', 'structure', 'building', 'sea', 'coastal', 'concrete', 'pier']
   },
   {
@@ -50,23 +58,39 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
     imageUrl: '/assets/card_2_riverside.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/card_2_riverside.jpg',
-    areaHa: '3.1 ha',
+    areaHa: '3.1 ha (31,000 m²)',
     timeGap: '24 months',
+    locationName: 'Dumas Shoreline Sector',
+    changeType: 'River / Embankment Work',
+    observationPeriod: 'Nov 2022 → Nov 2024',
+    cloudCover: '0.5%',
+    beforeCloudCover: '1.1%',
+    beforeDate: '2022-11-04',
+    resolution: '10m True Color (B4,B3,B2)',
+    changePercentage: '+21.5%',
     keywords: ['sea', 'coast', 'coastal', 'river', 'riverside', 'bund', 'embankment', 'seawall', 'water', 'boundary', 'shoreline', 'riprap']
   },
   {
     id: 'res-3',
     title: 'Adani Marine Logistics Berth Extension',
     date: '2024-06-15',
-    sensor: 'Sentinel-1 SAR (10m)',
+    sensor: 'Sentinel-1 SAR / Sentinel-2 (10m)',
     coordinates: '21.4521° N, 72.7763° E',
     matchType: 'Medium Match',
     confidencePct: 89,
     imageUrl: '/assets/card_3_port.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/card_3_port.jpg',
-    areaHa: '4.8 ha',
+    areaHa: '4.8 ha (48,000 m²)',
     timeGap: '18 months',
+    locationName: 'Marine Logistics South Wharf',
+    changeType: 'Structural Expansion',
+    observationPeriod: 'Dec 2022 → Jun 2024',
+    cloudCover: '2.1%',
+    beforeCloudCover: '0.4%',
+    beforeDate: '2022-12-10',
+    resolution: '10m Optical / SAR fused',
+    changePercentage: '+28.4%',
     keywords: ['port', 'berth', 'marine', 'dock', 'ships', 'logistics', 'container', 'sar', 'radar', 'sea', 'water']
   },
   {
@@ -80,23 +104,39 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
     imageUrl: '/assets/card_4_bridge.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/card_4_bridge.jpg',
-    areaHa: '1.8 ha',
+    areaHa: '1.8 ha (18,000 m²)',
     timeGap: '12 months',
+    locationName: 'Tapi River Channel Estuary',
+    changeType: 'Road & Pier Development',
+    observationPeriod: 'Dec 2022 → Dec 2023',
+    cloudCover: '0.0%',
+    beforeCloudCover: '0.9%',
+    beforeDate: '2022-12-01',
+    resolution: '10m True Color (B4,B3,B2)',
+    changePercentage: '+14.2%',
     keywords: ['bridge', 'road', 'pier', 'piling', 'highway', 'corridor', 'transport', 'river', 'rivermouth', 'channel']
   },
   {
     id: 'res-5',
     title: 'Coastal Mudflat Landfill & Earthworks',
     date: '2023-05-17',
-    sensor: 'Landsat-8 (15m)',
+    sensor: 'Sentinel-2 / Landsat-8 (15m)',
     coordinates: '21.4617° N, 72.7890° E',
     matchType: 'Medium Match',
     confidencePct: 81,
     imageUrl: '/assets/card_5_land.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/card_5_land.jpg',
-    areaHa: '5.6 ha',
+    areaHa: '5.6 ha (56,000 m²)',
     timeGap: '8 months',
+    locationName: 'East Hazira Tidal Mudflat',
+    changeType: 'Vegetation / Cleared Land',
+    observationPeriod: 'Sep 2022 → May 2023',
+    cloudCover: '1.6%',
+    beforeCloudCover: '0.2%',
+    beforeDate: '2022-09-14',
+    resolution: '10m High-Res Optical',
+    changePercentage: '+39.1%',
     keywords: ['land', 'clearance', 'earthworks', 'soil', 'landfill', 'reclamation', 'vegetation', 'mangrove', 'deforestation', 'sea']
   },
   {
@@ -110,8 +150,16 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
     imageUrl: '/assets/card_1_construction.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/card_3_port.jpg',
-    areaHa: '8.4 ha',
+    areaHa: '8.4 ha (84,000 m²)',
     timeGap: '28 months',
+    locationName: 'North Terminal Staging Zone',
+    changeType: 'Industrial Staging Area',
+    observationPeriod: 'Dec 2022 → Apr 2025',
+    cloudCover: '0.8%',
+    beforeCloudCover: '0.5%',
+    beforeDate: '2022-12-18',
+    resolution: '10m True Color (B4,B3,B2)',
+    changePercentage: '+45.0%',
     keywords: ['port', 'container', 'storage', 'yard', 'asphalt', 'paving', 'terminal', 'hazira', 'industrial', 'construction']
   },
   {
@@ -125,8 +173,16 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
     imageUrl: '/assets/card_3_port.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/card_3_port.jpg',
-    areaHa: '12.4 ha',
+    areaHa: '12.4 ha (124,000 m²)',
     timeGap: '16 months',
+    locationName: 'Central Bay of Bengal',
+    changeType: 'Oceanographic Station',
+    observationPeriod: 'Jan 2024 → May 2025',
+    cloudCover: '4.2%',
+    beforeCloudCover: '2.8%',
+    beforeDate: '2024-01-10',
+    resolution: 'Sentinel-3 Altimetry + SAR',
+    changePercentage: '+18.0%',
     keywords: ['bay of bengal', 'bengal', 'ocean', 'altimetry', 'cyclone', 'sea', 'current', 'marine', 'deepwater', 'station']
   },
   {
@@ -140,8 +196,16 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
     imageUrl: '/assets/card_1_construction.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/card_1_construction.jpg',
-    areaHa: '9.8 ha',
+    areaHa: '9.8 ha (98,000 m²)',
     timeGap: '20 months',
+    locationName: 'Mumbai Offshore Basin',
+    changeType: 'Offshore Energy Corridor',
+    observationPeriod: 'Aug 2023 → Apr 2025',
+    cloudCover: '1.0%',
+    beforeCloudCover: '0.0%',
+    beforeDate: '2023-08-20',
+    resolution: '10m C-Band SAR VV/VH',
+    changePercentage: '+26.3%',
     keywords: ['arabian sea', 'arabian', 'offshore', 'platform', 'energy', 'oil', 'gas', 'sea', 'marine', 'shipping', 'corridor']
   },
   {
@@ -155,8 +219,16 @@ const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
     imageUrl: '/assets/card_2_riverside.jpg',
     beforeImgUrl: '/assets/before_scene.jpg',
     afterImgUrl: '/assets/card_2_riverside.jpg',
-    areaHa: '15.2 ha',
+    areaHa: '15.2 ha (152,000 m²)',
     timeGap: '24 months',
+    locationName: 'Khambhat Tidal Delta',
+    changeType: 'Tidal Sediment & Coastal Shift',
+    observationPeriod: 'Mar 2023 → Mar 2025',
+    cloudCover: '0.4%',
+    beforeCloudCover: '0.7%',
+    beforeDate: '2023-03-05',
+    resolution: '10m True Color (B4,B3,B2)',
+    changePercentage: '+31.0%',
     keywords: ['khambhat', 'gulf', 'tidal', 'estuary', 'delta', 'marine', 'sediment', 'coast', 'water', 'gateway']
   }
 ];
@@ -480,7 +552,7 @@ const VigilPlatform: React.FC = () => {
             /* Main Signature Grid: Responsive with guaranteed visibility on all screen sizes */
             <div className="flex-1 p-2 sm:p-3 flex flex-col gap-3 overflow-y-auto min-h-0 pb-20 w-full max-w-full">
               {/* Top Row: Central Map (Left) + Change Analysis Panel (Right) */}
-              <div className="flex flex-col lg:grid lg:grid-cols-[1.65fr_1fr] gap-3 shrink-0 h-auto lg:h-[390px] xl:h-[430px]">
+              <div className="flex flex-col lg:grid lg:grid-cols-[1fr_1.25fr] gap-3 shrink-0 h-auto lg:h-[480px] xl:h-[520px]">
                 {/* Central Map with AOI, Controls & India Inset */}
                 <div className="h-[280px] sm:h-[340px] lg:h-full min-h-0 w-full">
                   <SatelliteMapCanvas
@@ -499,12 +571,23 @@ const VigilPlatform: React.FC = () => {
                 <div className="h-auto lg:h-full min-h-0 w-full">
                   <ChangeAnalysisCard
                     candidateTitle={selectedResult.title}
+                    changeType={selectedResult.changeType}
+                    locationName={selectedResult.locationName}
                     coordinates={selectedResult.coordinates}
                     confidence={selectedResult.confidencePct}
                     beforeImgUrl={selectedResult.beforeImgUrl}
                     afterImgUrl={selectedResult.afterImgUrl}
                     areaHa={selectedResult.areaHa}
                     timeGap={selectedResult.timeGap}
+                    candidateId={selectedResult.id}
+                    observationPeriod={selectedResult.observationPeriod}
+                    cloudCover={selectedResult.cloudCover}
+                    beforeCloudCover={selectedResult.beforeCloudCover}
+                    beforeDate={selectedResult.beforeDate}
+                    afterDate={selectedResult.date}
+                    resolution={selectedResult.resolution}
+                    changePercentage={selectedResult.changePercentage}
+                    sensor={selectedResult.sensor}
                     onViewFullReport={() => setShowDetailModal(true)}
                   />
                 </div>
