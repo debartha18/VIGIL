@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Home,
   Search,
+  Globe,
   Image as ImageIcon,
   GitCompare,
   Crosshair,
@@ -13,6 +14,7 @@ import {
 export type OrbitalTab =
   | 'overview'
   | 'semantic-search'
+  | 'satellite-map'
   | 'image-search'
   | 'change-analysis'
   | 'aoi-monitor'
@@ -35,6 +37,7 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
   const menuItems: { id: OrbitalTab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Mission Overview', icon: <Home className="w-4 h-4" /> },
     { id: 'semantic-search', label: 'Semantic Search', icon: <Search className="w-4 h-4" /> },
+    { id: 'satellite-map', label: 'Satellite Altimetry Map', icon: <Globe className="w-4 h-4" /> },
     { id: 'image-search', label: 'Image Search', icon: <ImageIcon className="w-4 h-4" /> },
     { id: 'change-analysis', label: 'Change Analysis', icon: <GitCompare className="w-4 h-4" /> },
     { id: 'aoi-monitor', label: 'AOI Monitor', icon: <Crosshair className="w-4 h-4" /> },

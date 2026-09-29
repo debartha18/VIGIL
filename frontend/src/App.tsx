@@ -17,6 +17,7 @@ import { EvaluationView } from './views/EvaluationView';
 import { ImageSearchView } from './views/ImageSearchView';
 import { AOIMonitorView } from './views/AOIMonitorView';
 import { ChangeAnalysisView } from './views/ChangeAnalysisView';
+import { SatelliteAltimetryMapView } from './views/SatelliteAltimetryMapView';
 import { api } from './services/api';
 import { Scene } from './types/kshitij';
 
@@ -165,6 +166,10 @@ const tabFromPath = (path: string): OrbitalTab => {
   switch (clean) {
     case '/overview':
       return 'overview';
+    case '/map':
+    case '/altimetry':
+    case '/satellite-map':
+      return 'satellite-map';
     case '/imagery':
     case '/image-search':
       return 'image-search';
@@ -191,6 +196,8 @@ const pathForTab = (tab: OrbitalTab): string => {
   switch (tab) {
     case 'overview':
       return '/overview';
+    case 'satellite-map':
+      return '/map';
     case 'image-search':
       return '/imagery';
     case 'change-analysis':
@@ -408,6 +415,17 @@ const VigilPlatform: React.FC = () => {
             <div className="flex-1 min-h-0 overflow-y-auto">
               <EvaluationView />
             </div>
+          ) : activeTab === 'satellite-map' ? (
+            <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+              <SatelliteAltimetryMapView
+                onBackToSemanticSearch={() => handleTabChange('semantic-search')}
+                onSelectStationForSearch={(item) => {
+                  handleSelectResult(item);
+                  handleTabChange('semantic-search');
+                }}
+                groundTruthTargets={GROUND_TRUTH_TARGETS}
+              />
+            </div>
           ) : activeTab === 'image-search' ? (
             <div className="flex-1 min-h-0 overflow-y-auto">
               <ImageSearchView
@@ -463,6 +481,8 @@ const VigilPlatform: React.FC = () => {
                     selectedTargetId={selectedResult.id}
                     onSelectTarget={(target) => handleSelectResult(target)}
                     targets={GROUND_TRUTH_TARGETS}
+                    mode="compact"
+                    onOpenFullMap={() => handleTabChange('satellite-map')}
                   />
                 </div>
 

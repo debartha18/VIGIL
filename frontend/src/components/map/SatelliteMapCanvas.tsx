@@ -10,7 +10,8 @@ import {
   Globe,
   Activity,
   RotateCcw,
-  ChevronRight
+  ChevronRight,
+  Maximize2
 } from 'lucide-react';
 import { SearchResultItem } from '../search/SemanticSearchResults';
 
@@ -248,6 +249,8 @@ interface SatelliteMapCanvasProps {
   selectedTargetId?: string;
   onSelectTarget?: (target: SearchResultItem) => void;
   targets?: SearchResultItem[];
+  mode?: 'compact' | 'full';
+  onOpenFullMap?: () => void;
 }
 
 export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
@@ -257,10 +260,12 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
   siteName = 'Hazira Deepwater Wharf & Piling Deck',
   selectedTargetId = 'res-1',
   onSelectTarget,
-  targets = []
+  targets = [],
+  mode = 'compact',
+  onOpenFullMap
 }) => {
   // Map View Mode: Regional Oceanographic vs Tactical 10m AOI Sector
-  const [viewMode, setViewMode] = useState<'regional' | 'tactical'>('regional');
+  const [viewMode, setViewMode] = useState<'regional' | 'tactical'>(() => mode === 'compact' ? 'tactical' : 'regional');
   const [zoom, setZoom] = useState<number>(1.0);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -427,11 +432,40 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
       className="relative w-full h-full bg-[#050C16] overflow-hidden rounded-xl border border-[#182A40] select-none cursor-crosshair group font-sans"
     >
       {/* 1. TOP HEADER & TELEMETRY TOOLBAR */}
-      <div
-        className="absolute top-2.5 left-2.5 right-2.5 z-30 flex items-center justify-between pointer-events-none"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      >
+      {mode === 'compact' ? (
+        <div
+          className="absolute top-2.5 left-2.5 right-2.5 z-30 flex items-center justify-between pointer-events-none"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Left: Tactical AOI Title Badge */}
+          <div className="flex items-center space-x-2 pointer-events-auto bg-[#070D16]/90 border border-[#182A40] px-2.5 py-1.5 rounded-lg shadow-xl backdrop-blur-md text-xs">
+            <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+            <span className="font-semibold text-white tracking-tight">Tactical AOI Monitor ({selectedAOI})</span>
+            <span className="text-[10px] text-[#38BDF8] font-mono border-l border-[#182A40] pl-2 hidden sm:inline">10m Sentinel-2</span>
+          </div>
+
+          {/* Right: Expand to Dedicated Satellite Altimetry Map button */}
+          <div className="flex items-center space-x-1.5 pointer-events-auto">
+            {onOpenFullMap && (
+              <button
+                onClick={onOpenFullMap}
+                className="h-7 px-2.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-medium flex items-center space-x-1.5 transition shadow-lg backdrop-blur-md cursor-pointer"
+                title="Open dedicated Satellite Altimetry Map section"
+              >
+                <span className="hidden sm:inline">Satellite Altimetry Map</span>
+                <span className="sm:hidden">Full Map</span>
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div
+          className="absolute top-2.5 left-2.5 right-2.5 z-30 flex items-center justify-between pointer-events-none"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Left: View Mode Toggle & Title */}
         <div className="flex items-center space-x-2 pointer-events-auto bg-[#070D16]/90 border border-[#182A40] px-2.5 py-1.5 rounded-lg shadow-xl backdrop-blur-md text-xs">
           <div className="flex items-center space-x-1.5">
@@ -552,6 +586,7 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
           </div>
         </div>
       </div>
+    )}
 
       {/* Alert Banner for AOI actions */}
       {aoiAlert && (
@@ -678,127 +713,142 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
         )}
       </div>
 
-      {/* 4. COORDINATE TELEMETRY INSPECTOR HUD (Bottom Left - styled like ocean-vision-3d) */}
-      <div
-        className="absolute bottom-3 left-3 z-30 pointer-events-auto max-w-sm"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="bg-[#070D16]/95 border border-[#182A40] rounded-xl p-3 shadow-2xl backdrop-blur-md text-xs font-sans space-y-2">
-          {/* Inspector Header */}
-          <div className="flex items-center justify-between border-b border-[#182A40]/80 pb-1.5">
-            <div className="flex items-center space-x-1.5 text-[#00E5FF] font-semibold text-[11px]">
-              <Activity className="w-3.5 h-3.5 animate-pulse" />
-              <span>Coordinate Telemetry Inspector</span>
-            </div>
-            <div className="flex items-center space-x-1.5">
-              <span className="font-mono text-[10px] text-white bg-[#0E2238] px-1.5 py-0.5 rounded border border-[#1E3A5F]">
-                {currentCoords.replace('Lat: ', '').replace('Lon: ', '')}
-              </span>
-              <button
-                onClick={() => setShowInspector(!showInspector)}
-                className="text-[#64748B] hover:text-white px-1 text-xs cursor-pointer"
-                title={showInspector ? 'Collapse' : 'Expand'}
-              >
-                {showInspector ? '−' : '+'}
-              </button>
-            </div>
+      {/* 4. COORDINATE TELEMETRY INSPECTOR HUD (Shown only in full mode) */}
+      {mode === 'compact' ? (
+        <div
+          className="absolute bottom-2.5 left-2.5 z-30 pointer-events-none"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-[#070D16]/90 border border-[#182A40] rounded-lg px-2.5 py-1 backdrop-blur-md text-[10px] font-mono text-[#94A3B8] flex items-center space-x-2 shadow-lg">
+            <span className="text-[#00E5FF] font-semibold">{currentCoords}</span>
+            <span className="border-l border-[#182A40] pl-2 text-white truncate max-w-[200px]">{siteName}</span>
           </div>
-
-          {showInspector && (
-            <>
-              {/* Telemetry Key-Value Matrix */}
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] font-mono">
-                <div>
-                  <span className="text-[#64748B]">Target Station:</span>
-                  <div className="text-white font-sans font-medium truncate" title={activeStation.title || siteName}>
-                    {activeStation.title || siteName}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-[#64748B]">Elevation / GSD:</span>
-                  <div className="text-[#38BDF8]">{activeStation.elevation}</div>
-                </div>
-                <div>
-                  <span className="text-[#64748B]">Surface Temp (SWIR):</span>
-                  <div className="text-[#F59E0B]">{activeStation.sst}</div>
-                </div>
-                <div>
-                  <span className="text-[#64748B]">Reflectance / Index:</span>
-                  <div className="text-[#10B981]">{activeStation.albedo}</div>
-                </div>
-                <div>
-                  <span className="text-[#64748B]">Atmospheric SCL:</span>
-                  <div className="text-white">{activeStation.cloudCover}</div>
-                </div>
-                <div>
-                  <span className="text-[#64748B]">Change Footprint:</span>
-                  <div className="text-[#00E5FF] font-bold">{activeStation.areaHa} (42k m²)</div>
-                </div>
+        </div>
+      ) : (
+        <div
+          className="absolute bottom-3 left-3 z-30 pointer-events-auto max-w-sm"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-[#070D16]/95 border border-[#182A40] rounded-xl p-3 shadow-2xl backdrop-blur-md text-xs font-sans space-y-2">
+            {/* Inspector Header */}
+            <div className="flex items-center justify-between border-b border-[#182A40]/80 pb-1.5">
+              <div className="flex items-center space-x-1.5 text-[#00E5FF] font-semibold text-[11px]">
+                <Activity className="w-3.5 h-3.5 animate-pulse" />
+                <span>Coordinate Telemetry Inspector</span>
               </div>
-
-              {/* Direct Synchronization Action Button */}
-              <div className="pt-1 border-t border-[#182A40]/60 flex items-center justify-between">
-                <span className="text-[9px] text-[#64748B]">
-                  Confidence: <strong className="text-[#10B981]">{activeStation.confidencePct}%</strong>
+              <div className="flex items-center space-x-1.5">
+                <span className="font-mono text-[10px] text-white bg-[#0E2238] px-1.5 py-0.5 rounded border border-[#1E3A5F]">
+                  {currentCoords.replace('Lat: ', '').replace('Lon: ', '')}
                 </span>
                 <button
-                  onClick={() => handleSelectStation(activeStation)}
-                  className="px-2.5 py-1 rounded bg-[#0284C7] hover:bg-[#0369A1] text-white font-medium text-[10px] flex items-center space-x-1 transition shadow cursor-pointer"
+                  onClick={() => setShowInspector(!showInspector)}
+                  className="text-[#64748B] hover:text-white px-1 text-xs cursor-pointer"
+                  title={showInspector ? 'Collapse' : 'Expand'}
                 >
-                  <span>Focus in Semantic Search</span>
-                  <ChevronRight className="w-3 h-3" />
+                  {showInspector ? '−' : '+'}
                 </button>
               </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* 5. STATION CATEGORY LEGEND (Right side - collapsible) */}
-      <div
-        className="hidden md:block absolute top-14 right-3 z-30 pointer-events-auto"
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="bg-[#070D16]/90 border border-[#182A40] rounded-xl p-2.5 shadow-2xl backdrop-blur-md text-[10px] font-sans space-y-1.5 w-44">
-          <div className="flex items-center justify-between border-b border-[#182A40] pb-1 text-[#64748B] font-bold tracking-wider uppercase text-[9px]">
-            <span>STATION LEGEND</span>
-            <button onClick={() => setShowLegend(!showLegend)} className="hover:text-white cursor-pointer">
-              {showLegend ? '−' : '+'}
-            </button>
-          </div>
-
-          {showLegend && (
-            <div className="space-y-1 text-[#94A3B8]">
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-[#00E5FF]" />
-                <span className="text-white">Wharf / Piling Construction</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-[#38BDF8]" />
-                <span>Sea Bund / Embankment</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-[#A855F7]" />
-                <span>Marine Logistics / Berth</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-                <span>Rivermouth Pier & Bridge</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
-                <span>Mudflat & Earthworks</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="w-2 h-2 rounded-full bg-[#14B8A6]" />
-                <span>Offshore Satellite Sector</span>
-              </div>
             </div>
-          )}
+
+            {showInspector && (
+              <>
+                {/* Telemetry Key-Value Matrix */}
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] font-mono">
+                  <div>
+                    <span className="text-[#64748B]">Target Station:</span>
+                    <div className="text-white font-sans font-medium truncate" title={activeStation.title || siteName}>
+                      {activeStation.title || siteName}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[#64748B]">Elevation / GSD:</span>
+                    <div className="text-[#38BDF8]">{activeStation.elevation}</div>
+                  </div>
+                  <div>
+                    <span className="text-[#64748B]">Surface Temp (SWIR):</span>
+                    <div className="text-[#F59E0B]">{activeStation.sst}</div>
+                  </div>
+                  <div>
+                    <span className="text-[#64748B]">Reflectance / Index:</span>
+                    <div className="text-[#10B981]">{activeStation.albedo}</div>
+                  </div>
+                  <div>
+                    <span className="text-[#64748B]">Atmospheric SCL:</span>
+                    <div className="text-white">{activeStation.cloudCover}</div>
+                  </div>
+                  <div>
+                    <span className="text-[#64748B]">Change Footprint:</span>
+                    <div className="text-[#00E5FF] font-bold">{activeStation.areaHa} (42k m²)</div>
+                  </div>
+                </div>
+
+                {/* Direct Synchronization Action Button */}
+                <div className="pt-1 border-t border-[#182A40]/60 flex items-center justify-between">
+                  <span className="text-[9px] text-[#64748B]">
+                    Confidence: <strong className="text-[#10B981]">{activeStation.confidencePct}%</strong>
+                  </span>
+                  <button
+                    onClick={() => handleSelectStation(activeStation)}
+                    className="px-2.5 py-1 rounded bg-[#0284C7] hover:bg-[#0369A1] text-white font-medium text-[10px] flex items-center space-x-1 transition shadow cursor-pointer"
+                  >
+                    <span>Focus in Semantic Search</span>
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* 5. STATION CATEGORY LEGEND (Shown only in full mode) */}
+      {mode !== 'compact' && (
+        <div
+          className="hidden md:block absolute top-14 right-3 z-30 pointer-events-auto"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-[#070D16]/90 border border-[#182A40] rounded-xl p-2.5 shadow-2xl backdrop-blur-md text-[10px] font-sans space-y-1.5 w-44">
+            <div className="flex items-center justify-between border-b border-[#182A40] pb-1 text-[#64748B] font-bold tracking-wider uppercase text-[9px]">
+              <span>STATION LEGEND</span>
+              <button onClick={() => setShowLegend(!showLegend)} className="hover:text-white cursor-pointer">
+                {showLegend ? '−' : '+'}
+              </button>
+            </div>
+
+            {showLegend && (
+              <div className="space-y-1 text-[#94A3B8]">
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-[#00E5FF]" />
+                  <span className="text-white">Wharf / Piling Construction</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-[#38BDF8]" />
+                  <span>Sea Bund / Embankment</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-[#A855F7]" />
+                  <span>Marine Logistics / Berth</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                  <span>Rivermouth Pier & Bridge</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+                  <span>Mudflat & Earthworks</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="w-2 h-2 rounded-full bg-[#14B8A6]" />
+                  <span>Offshore Satellite Sector</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 6. FLOATING ZOOM & VIEW CONTROLS (Top Left) */}
       <div
