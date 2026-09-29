@@ -22,6 +22,9 @@ export interface AltimetryStation {
   // Position percentages on global equirectangular map
   globalX: number;
   globalY: number;
+  // Position percentages on regional India satellite map
+  regionalX: number;
+  regionalY: number;
   // Telemetry metrics matching ocean-vision-3d
   depth: string;
   pressure: string;
@@ -45,66 +48,6 @@ export interface AltimetryStation {
 
 const GLOBAL_STATIONS: AltimetryStation[] = [
   {
-    id: 'st-bob',
-    title: 'Bay of Bengal Oceanic Station',
-    stationCode: 'Bay of Bengal',
-    type: 'in-situ',
-    typeLabel: 'In-situ Station',
-    color: '#EAB308',
-    coordinates: '15.2970° N, 87.8680° E',
-    lat: 15.297,
-    lon: 87.868,
-    globalX: 74.4,
-    globalY: 41.5,
-    depth: '3,840m',
-    pressure: '3,955.20 dbar (390.41 atm)',
-    sst: '28.9 °C',
-    sstVal: 28.9,
-    salinity: '32.8 PSU',
-    salinityVal: 32.8,
-    dissolvedOxygen: '4.6 mg/L',
-    dissolvedOxygenVal: 4.6,
-    chlorophyll: '0.52 mg/m³',
-    chlorophyllVal: 0.52,
-    waveHeight: '1.42m',
-    waveHeightVal: 1.42,
-    currentSpeed: '0.42 m/s',
-    currentSpeedVal: 0.42,
-    windSpeed: '7.4 m/s',
-    windDirection: '205° SW',
-    semanticId: 'res-7'
-  },
-  {
-    id: 'st-as',
-    title: 'Arabian Sea Offshore Energy Corridor',
-    stationCode: 'Arabian Sea',
-    type: 'in-situ',
-    typeLabel: 'In-situ Station',
-    color: '#EAB308',
-    coordinates: '18.9220° N, 71.4500° E',
-    lat: 18.922,
-    lon: 71.450,
-    globalX: 69.8,
-    globalY: 39.5,
-    depth: '1,280m',
-    pressure: '1,318.40 dbar (130.12 atm)',
-    sst: '28.1 °C',
-    sstVal: 28.1,
-    salinity: '36.5 PSU',
-    salinityVal: 36.5,
-    dissolvedOxygen: '4.2 mg/L',
-    dissolvedOxygenVal: 4.2,
-    chlorophyll: '0.38 mg/m³',
-    chlorophyllVal: 0.38,
-    waveHeight: '1.25m',
-    waveHeightVal: 1.25,
-    currentSpeed: '0.49 m/s',
-    currentSpeedVal: 0.49,
-    windSpeed: '8.2 m/s',
-    windDirection: '240° WSW',
-    semanticId: 'res-8'
-  },
-  {
     id: 'st-hazira',
     title: 'Hazira Deepwater Wharf & Piling Deck',
     stationCode: 'Hazira Wharf',
@@ -116,6 +59,8 @@ const GLOBAL_STATIONS: AltimetryStation[] = [
     lon: 72.7812,
     globalX: 70.2,
     globalY: 38.2,
+    regionalX: 37.0,
+    regionalY: 50.1,
     depth: '18m',
     pressure: '18.50 dbar (1.82 atm)',
     sst: '28.4 °C',
@@ -135,6 +80,198 @@ const GLOBAL_STATIONS: AltimetryStation[] = [
     semanticId: 'res-1'
   },
   {
+    id: 'st-dumas',
+    title: 'Dumas Coastal Bund & Sea Embankment',
+    stationCode: 'Dumas Bund',
+    type: 'tide-gauge',
+    typeLabel: 'Coastal Bund & Seawall',
+    color: '#38BDF8',
+    coordinates: '21.4632° N, 72.7845° E',
+    lat: 21.4632,
+    lon: 72.7845,
+    globalX: 70.2,
+    globalY: 38.1,
+    regionalX: 37.4,
+    regionalY: 50.0,
+    depth: '12m',
+    pressure: '12.40 dbar (1.22 atm)',
+    sst: '28.2 °C',
+    sstVal: 28.2,
+    salinity: '34.0 PSU',
+    salinityVal: 34.0,
+    dissolvedOxygen: '5.2 mg/L',
+    dissolvedOxygenVal: 5.2,
+    chlorophyll: '0.88 mg/m³',
+    chlorophyllVal: 0.88,
+    waveHeight: '0.90m',
+    waveHeightVal: 0.90,
+    currentSpeed: '0.58 m/s',
+    currentSpeedVal: 0.58,
+    windSpeed: '6.4 m/s',
+    windDirection: '195° S',
+    semanticId: 'res-2'
+  },
+  {
+    id: 'st-adani',
+    title: 'Adani Marine Logistics Berth Extension',
+    stationCode: 'Adani Logistics',
+    type: 'tide-gauge',
+    typeLabel: 'Marine Terminal & Berth',
+    color: '#00E5FF',
+    coordinates: '21.4521° N, 72.7763° E',
+    lat: 21.4521,
+    lon: 72.7763,
+    globalX: 70.1,
+    globalY: 38.3,
+    regionalX: 36.8,
+    regionalY: 50.4,
+    depth: '16m',
+    pressure: '16.20 dbar (1.60 atm)',
+    sst: '28.3 °C',
+    sstVal: 28.3,
+    salinity: '34.1 PSU',
+    salinityVal: 34.1,
+    dissolvedOxygen: '5.1 mg/L',
+    dissolvedOxygenVal: 5.1,
+    chlorophyll: '0.91 mg/m³',
+    chlorophyllVal: 0.91,
+    waveHeight: '0.88m',
+    waveHeightVal: 0.88,
+    currentSpeed: '0.60 m/s',
+    currentSpeedVal: 0.60,
+    windSpeed: '6.2 m/s',
+    windDirection: '192° S',
+    semanticId: 'res-3'
+  },
+  {
+    id: 'st-tapi',
+    title: 'Tapi Rivermouth Pier Piling & Riprap',
+    stationCode: 'Tapi Rivermouth',
+    type: 'tide-gauge',
+    typeLabel: 'Rivermouth & Riprap Bar',
+    color: '#38BDF8',
+    coordinates: '21.4550° N, 72.7801° E',
+    lat: 21.4550,
+    lon: 72.7801,
+    globalX: 70.2,
+    globalY: 38.2,
+    regionalX: 37.2,
+    regionalY: 50.2,
+    depth: '14m',
+    pressure: '14.10 dbar (1.39 atm)',
+    sst: '28.2 °C',
+    sstVal: 28.2,
+    salinity: '33.9 PSU',
+    salinityVal: 33.9,
+    dissolvedOxygen: '5.2 mg/L',
+    dissolvedOxygenVal: 5.2,
+    chlorophyll: '0.92 mg/m³',
+    chlorophyllVal: 0.92,
+    waveHeight: '0.86m',
+    waveHeightVal: 0.86,
+    currentSpeed: '0.65 m/s',
+    currentSpeedVal: 0.65,
+    windSpeed: '6.3 m/s',
+    windDirection: '194° S',
+    semanticId: 'res-4'
+  },
+  {
+    id: 'st-as',
+    title: 'Arabian Sea Offshore Energy Corridor',
+    stationCode: 'Arabian Sea',
+    type: 'in-situ',
+    typeLabel: 'In-situ Station',
+    color: '#EAB308',
+    coordinates: '18.9220° N, 71.4500° E',
+    lat: 18.922,
+    lon: 71.450,
+    globalX: 69.8,
+    globalY: 39.5,
+    regionalX: 33.6,
+    regionalY: 57.8,
+    depth: '1,280m',
+    pressure: '1,318.40 dbar (130.12 atm)',
+    sst: '28.1 °C',
+    sstVal: 28.1,
+    salinity: '36.5 PSU',
+    salinityVal: 36.5,
+    dissolvedOxygen: '4.2 mg/L',
+    dissolvedOxygenVal: 4.2,
+    chlorophyll: '0.38 mg/m³',
+    chlorophyllVal: 0.38,
+    waveHeight: '1.25m',
+    waveHeightVal: 1.25,
+    currentSpeed: '0.49 m/s',
+    currentSpeedVal: 0.49,
+    windSpeed: '8.2 m/s',
+    windDirection: '240° WSW',
+    semanticId: 'res-8'
+  },
+  {
+    id: 'st-bob',
+    title: 'Bay of Bengal Oceanic Station',
+    stationCode: 'Bay of Bengal',
+    type: 'in-situ',
+    typeLabel: 'In-situ Station',
+    color: '#EAB308',
+    coordinates: '15.2970° N, 87.8680° E',
+    lat: 15.297,
+    lon: 87.868,
+    globalX: 74.4,
+    globalY: 41.5,
+    regionalX: 74.7,
+    regionalY: 68.8,
+    depth: '3,840m',
+    pressure: '3,955.20 dbar (390.41 atm)',
+    sst: '28.9 °C',
+    sstVal: 28.9,
+    salinity: '32.8 PSU',
+    salinityVal: 32.8,
+    dissolvedOxygen: '4.6 mg/L',
+    dissolvedOxygenVal: 4.6,
+    chlorophyll: '0.52 mg/m³',
+    chlorophyllVal: 0.52,
+    waveHeight: '1.42m',
+    waveHeightVal: 1.42,
+    currentSpeed: '0.42 m/s',
+    currentSpeedVal: 0.42,
+    windSpeed: '7.4 m/s',
+    windDirection: '205° SW',
+    semanticId: 'res-7'
+  },
+  {
+    id: 'st-khambhat',
+    title: 'Gulf of Khambhat Marine Gateway & Tidal Basin',
+    stationCode: 'Gulf of Khambhat',
+    type: 'in-situ',
+    typeLabel: 'Tidal Sediment Gateway',
+    color: '#0284C7',
+    coordinates: '21.2000° N, 72.4000° E',
+    lat: 21.2000,
+    lon: 72.4000,
+    globalX: 70.1,
+    globalY: 38.4,
+    regionalX: 36.0,
+    regionalY: 50.9,
+    depth: '24m Bathymetry',
+    pressure: '24.80 dbar (2.44 atm)',
+    sst: '27.8 °C',
+    sstVal: 27.8,
+    salinity: '33.8 PSU',
+    salinityVal: 33.8,
+    dissolvedOxygen: '5.0 mg/L',
+    dissolvedOxygenVal: 5.0,
+    chlorophyll: '1.20 mg/m³',
+    chlorophyllVal: 1.20,
+    waveHeight: '1.10m',
+    waveHeightVal: 1.10,
+    currentSpeed: '0.74 m/s',
+    currentSpeedVal: 0.74,
+    windSpeed: '7.8 m/s',
+    windDirection: '210° SSW',
+    semanticId: 'res-9'
+  },
+  {
     id: 'st-natl',
     title: 'North Atlantic Ocean Mid-Basin',
     stationCode: 'Station 42012',
@@ -146,6 +283,8 @@ const GLOBAL_STATIONS: AltimetryStation[] = [
     lon: -42.1,
     globalX: 38.3,
     globalY: 32.0,
+    regionalX: -100,
+    regionalY: -100,
     depth: '4,520m',
     pressure: '4,655.60 dbar (459.45 atm)',
     sst: '22.4 °C',
@@ -175,6 +314,8 @@ const GLOBAL_STATIONS: AltimetryStation[] = [
     lon: -140.5,
     globalX: 11.0,
     globalY: 50.1,
+    regionalX: -100,
+    regionalY: -100,
     depth: '5,180m',
     pressure: '5,335.40 dbar (526.54 atm)',
     sst: '26.8 °C',
@@ -204,6 +345,8 @@ const GLOBAL_STATIONS: AltimetryStation[] = [
     lon: 85.4,
     globalX: 73.7,
     globalY: 73.4,
+    regionalX: -100,
+    regionalY: -100,
     depth: '4,100m',
     pressure: '4,223.00 dbar (416.78 atm)',
     sst: '12.4 °C',
@@ -233,6 +376,8 @@ const GLOBAL_STATIONS: AltimetryStation[] = [
     lon: 110.2,
     globalX: 80.6,
     globalY: 65.8,
+    regionalX: -100,
+    regionalY: -100,
     depth: '4,890m',
     pressure: '5,036.70 dbar (497.08 atm)',
     sst: '20.1 °C',
@@ -262,6 +407,8 @@ const GLOBAL_STATIONS: AltimetryStation[] = [
     lon: -148.2,
     globalX: 8.8,
     globalY: 18.7,
+    regionalX: -100,
+    regionalY: -100,
     depth: '3,820m',
     pressure: '3,934.60 dbar (388.31 atm)',
     sst: '10.1 °C',
@@ -294,8 +441,10 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
 }) => {
   // Navigation & Display state
   const [activeParam, setActiveParam] = useState<'currents' | 'sst' | 'wave' | 'salinity' | 'cyclones' | 'fleet'>('currents');
-  const [viewMode, setViewMode] = useState<'global' | 'regional' | 'tactical'>('global');
-  const [activeStation, setActiveStation] = useState<AltimetryStation>(GLOBAL_STATIONS[0]);
+  const [viewMode, setViewMode] = useState<'global' | 'regional' | 'tactical'>('regional');
+  const [activeStation, setActiveStation] = useState<AltimetryStation>(() => {
+    return GLOBAL_STATIONS.find(s => s.id === 'st-hazira') || GLOBAL_STATIONS[0];
+  });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [zoom, setZoom] = useState<number>(1.0);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -325,9 +474,20 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
     const normalizedX = (clickX - pan.x) / (rect.width * zoom);
     const normalizedY = (clickY - pan.y) / (rect.height * zoom);
 
-    // Equirectangular mapping: X: [-180, 180], Y: [90, -90]
-    const lon = (normalizedX * 360) - 180;
-    const lat = 90 - (normalizedY * 180);
+    let lon: number;
+    let lat: number;
+
+    if (viewMode === 'regional') {
+      // Calibrated to Indian Subcontinent (58°E - 98°E, 38°N - 5°N)
+      lon = 58 + (normalizedX * 40);
+      lat = 38 - (normalizedY * 33);
+    } else if (viewMode === 'tactical') {
+      lon = 72.76 + (normalizedX * 0.04);
+      lat = 21.48 - (normalizedY * 0.04);
+    } else {
+      lon = (normalizedX * 360) - 180;
+      lat = 90 - (normalizedY * 180);
+    }
 
     const clampedLat = Math.max(-85, Math.min(85, lat));
     const clampedLon = Math.max(-180, Math.min(180, lon));
@@ -354,6 +514,8 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
       lon: clampedLon,
       globalX: normalizedX * 100,
       globalY: normalizedY * 100,
+      regionalX: normalizedX * 100,
+      regionalY: normalizedY * 100,
       depth: `${depthEst}m Bathymetry`,
       pressure: `${pressEst} dbar (${(pressEst / 10.1325).toFixed(1)} atm)`,
       sst: `${sstEst} °C`,
@@ -551,29 +713,30 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
         <div className="flex items-center space-x-2 shrink-0">
           <div className="flex items-center space-x-1 bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
             <button
+              onClick={() => { setViewMode('regional'); setPan({ x: 0, y: 0 }); setZoom(1.0); }}
+              className={`h-7 px-3 rounded text-[11px] font-medium transition cursor-pointer flex items-center space-x-1.5 ${
+                viewMode === 'regional' ? 'bg-[#0284C7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
+              }`}
+              title="India Subcontinent & Ocean Basin (Primary Focus)"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+              <span>India (Main Focus)</span>
+            </button>
+            <button
               onClick={() => { setViewMode('global'); setPan({ x: 0, y: 0 }); setZoom(1.0); }}
               className={`h-7 px-2.5 rounded text-[11px] font-medium transition cursor-pointer ${
                 viewMode === 'global' ? 'bg-[#0284C7] text-white shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
               title="Global Ocean Bathymetry Map"
             >
-              Global
-            </button>
-            <button
-              onClick={() => { setViewMode('regional'); setPan({ x: 0, y: 0 }); setZoom(1.0); }}
-              className={`h-7 px-2.5 rounded text-[11px] font-medium transition cursor-pointer ${
-                viewMode === 'regional' ? 'bg-[#0284C7] text-white shadow' : 'text-[#94A3B8] hover:text-white'
-              }`}
-              title="Regional Ocean & Coast"
-            >
-              Regional
+              Global World
             </button>
             <button
               onClick={() => { setViewMode('tactical'); setPan({ x: 0, y: 0 }); setZoom(1.0); }}
               className={`h-7 px-2.5 rounded text-[11px] font-medium transition cursor-pointer ${
                 viewMode === 'tactical' ? 'bg-[#0284C7] text-white shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
-              title="Tactical Sentinel-2 (10m)"
+              title="Tactical Sentinel-2 (10m) AOI"
             >
               Tactical (10m)
             </button>
@@ -626,7 +789,9 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
         >
           {/* Authentic Satellite & Bathymetry Imagery */}
           <div
-            className="w-full h-full bg-contain md:bg-cover bg-center bg-no-repeat transition-all duration-300"
+            className={`w-full h-full bg-center bg-no-repeat transition-all duration-300 ${
+              viewMode === 'regional' ? 'bg-cover' : 'bg-contain md:bg-cover'
+            }`}
             style={{
               backgroundImage: `url(${
                 viewMode === 'global'
@@ -715,59 +880,103 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
             </svg>
           )}
 
+          {/* SVG Overlay: Regional India Subcontinent & Northern Indian Ocean Graticules/Currents */}
+          {viewMode === 'regional' && (
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1000 800" preserveAspectRatio="none">
+              {/* Latitude Graticule Lines for India */}
+              {/* Tropic of Cancer 23.5° N */}
+              <line x1="0" y1="352" x2="1000" y2="352" stroke="#F59E0B" strokeWidth="0.9" strokeDasharray="5 3" strokeOpacity="0.6" />
+              <text x="830" y="347" fill="#F59E0B" fontSize="10" fontFamily="monospace" opacity="0.85">Tropic of Cancer 23.5° N</text>
+
+              {/* 15° N Latitude */}
+              <line x1="0" y1="558" x2="1000" y2="558" stroke="#94A3B8" strokeWidth="0.8" strokeDasharray="4 4" strokeOpacity="0.4" />
+              <text x="880" y="553" fill="#94A3B8" fontSize="9" fontFamily="monospace" opacity="0.6">15.0° N</text>
+
+              {/* 10° N Latitude */}
+              <line x1="0" y1="679" x2="1000" y2="679" stroke="#94A3B8" strokeWidth="0.8" strokeDasharray="4 4" strokeOpacity="0.4" />
+              <text x="880" y="674" fill="#94A3B8" fontSize="9" fontFamily="monospace" opacity="0.6">10.0° N</text>
+
+              {/* Geographic Basin Labels */}
+              <text x="140" y="490" fill="#94A3B8" fontSize="13" fontFamily="sans-serif" letterSpacing="4" fontWeight="bold" opacity="0.6">ARABIAN SEA</text>
+              <text x="700" y="490" fill="#94A3B8" fontSize="13" fontFamily="sans-serif" letterSpacing="4" fontWeight="bold" opacity="0.6">BAY OF BENGAL</text>
+              <text x="400" y="770" fill="#00E5FF" fontSize="12" fontFamily="sans-serif" letterSpacing="4" fontWeight="bold" opacity="0.75">INDIAN OCEAN BASIN</text>
+
+              {/* Regional Ocean Currents Streamlines */}
+              {activeParam === 'currents' && (
+                <g className="animate-pulse">
+                  {/* West India Coastal Current (WICC) */}
+                  <path d="M 330 490 Q 345 570 355 650" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeDasharray="6 3" strokeOpacity="0.9" />
+                  <text x="210" y="580" fill="#F87171" fontSize="9" fontFamily="sans-serif" fontWeight="bold">West India Coastal Current (WICC)</text>
+
+                  {/* East India Coastal Current (EICC) */}
+                  <path d="M 680 640 Q 710 560 760 480" fill="none" stroke="#EF4444" strokeWidth="2.2" strokeDasharray="6 3" strokeOpacity="0.9" />
+                  <text x="730" y="560" fill="#F87171" fontSize="9" fontFamily="sans-serif" fontWeight="bold">East India Coastal Current (EICC)</text>
+
+                  {/* South-West Monsoon Current (SWMC) */}
+                  <path d="M 230 710 Q 480 720 740 680" fill="none" stroke="#38BDF8" strokeWidth="2.5" strokeDasharray="8 4" strokeOpacity="0.9" />
+                  <text x="390" y="730" fill="#38BDF8" fontSize="10" fontFamily="sans-serif" fontWeight="bold">South-West Monsoon Current (SWMC)</text>
+                </g>
+              )}
+            </svg>
+          )}
+
           {/* Station Beacon Pins (Global & Regional) */}
-          {filteredStations.map((st) => {
-            const isSelected = activeStation.id === st.id;
-            return (
-              <div
-                key={st.id}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveStation(st);
-                }}
-                className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-                style={{
-                  left: `${st.globalX}%`,
-                  top: `${st.globalY}%`,
-                }}
-                title={`${st.title} (${st.coordinates})`}
-              >
-                {/* Pulsing Beacon Waves */}
+          {filteredStations
+            .filter((st) => (viewMode === 'regional' ? st.regionalX > 0 : true))
+            .map((st) => {
+              const isSelected = activeStation.id === st.id;
+              const posX = viewMode === 'regional' ? st.regionalX : st.globalX;
+              const posY = viewMode === 'regional' ? st.regionalY : st.globalY;
+              return (
                 <div
-                  className="absolute inset-0 -m-3 rounded-full opacity-75 animate-ping"
-                  style={{ backgroundColor: st.color, animationDuration: isSelected ? '1.5s' : '3s' }}
-                />
-
-                {/* Center Target Dot */}
-                <div
-                  className={`relative w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center shadow-lg ${
-                    isSelected ? 'scale-125 border-white shadow-[0_0_15px_#00E5FF]' : 'border-[#070D16] group-hover:scale-110'
-                  }`}
-                  style={{ backgroundColor: isSelected ? '#00E5FF' : st.color }}
+                  key={st.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveStation(st);
+                  }}
+                  className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
+                  style={{
+                    left: `${posX}%`,
+                    top: `${posY}%`,
+                  }}
+                  title={`${st.title} (${st.coordinates})`}
                 >
-                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                </div>
+                  {/* Pulsing Beacon Waves */}
+                  <div
+                    className="absolute inset-0 -m-3 rounded-full opacity-75 animate-ping"
+                    style={{ backgroundColor: st.color, animationDuration: isSelected ? '1.5s' : '3s' }}
+                  />
 
-                {/* Station Tag Card (matching ocean-vision-3d) */}
-                <div
-                  className={`absolute left-5 top-1/2 -translate-y-1/2 whitespace-nowrap px-2.5 py-1.5 rounded-md border text-[10px] font-sans transition-all shadow-2xl backdrop-blur-md ${
-                    isSelected
-                      ? 'bg-[#070D16]/95 border-[#00E5FF] text-white shadow-[0_0_15px_rgba(0,229,255,0.4)] z-30 scale-105'
-                      : 'bg-[#0B1523]/90 border-[#182A40] text-[#94A3B8] group-hover:text-white group-hover:border-[#0284C7]'
-                  }`}
-                >
-                  <div className="flex items-center space-x-1.5 font-bold">
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: st.color }} />
-                    <span>{st.stationCode}</span>
+                  {/* Center Target Dot */}
+                  <div
+                    className={`relative w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center shadow-lg ${
+                      isSelected ? 'scale-125 border-white shadow-[0_0_15px_#00E5FF]' : 'border-[#070D16] group-hover:scale-110'
+                    }`}
+                    style={{ backgroundColor: isSelected ? '#00E5FF' : st.color }}
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
                   </div>
-                  <div className="text-[9px] font-mono text-[#38BDF8] flex items-center space-x-2">
-                    <span>SST: {st.sst}</span>
-                    <span>Cur: {st.currentSpeed}</span>
+
+                  {/* Station Tag Card (matching ocean-vision-3d) */}
+                  <div
+                    className={`absolute left-5 top-1/2 -translate-y-1/2 whitespace-nowrap px-2.5 py-1.5 rounded-md border text-[10px] font-sans transition-all shadow-2xl backdrop-blur-md ${
+                      isSelected
+                        ? 'bg-[#070D16]/95 border-[#00E5FF] text-white shadow-[0_0_15px_rgba(0,229,255,0.4)] z-30 scale-105'
+                        : 'bg-[#0B1523]/90 border-[#182A40] text-[#94A3B8] group-hover:text-white group-hover:border-[#0284C7]'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-1.5 font-bold">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: st.color }} />
+                      <span>{st.stationCode}</span>
+                    </div>
+                    <div className="text-[9px] font-mono text-[#38BDF8] flex items-center space-x-2">
+                      <span>SST: {st.sst}</span>
+                      <span>Cur: {st.currentSpeed}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
           {/* User Click Indicator Beacon (if clicked arbitrary spot) */}
           {clickedCoord && (
@@ -919,9 +1128,21 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
 
         {/* Right Corner: Mini Map Preview Thumbnail */}
         <div className="shrink-0 flex items-center space-x-2 pl-2 border-l border-[#182A40]/80">
-          <div className="w-20 h-9 rounded border border-[#182A40] overflow-hidden relative shadow bg-cover bg-center" style={{ backgroundImage: "url('/assets/global_altimetry_map.jpg')" }}>
+          <div
+            className="w-20 h-9 rounded border border-[#182A40] overflow-hidden relative shadow bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${viewMode === 'regional' ? '/assets/regional_satellite_map.jpg' : '/assets/global_altimetry_map.jpg'})`
+            }}
+          >
             <div className="absolute inset-0 bg-[#00E5FF]/10" />
-            <div className="absolute w-2 h-2 rounded-full bg-[#00E5FF] animate-ping" style={{ left: `${activeStation.globalX}%`, top: `${activeStation.globalY}%`, transform: 'translate(-50%, -50%)' }} />
+            <div
+              className="absolute w-2 h-2 rounded-full bg-[#00E5FF] animate-ping"
+              style={{
+                left: `${viewMode === 'regional' && activeStation.regionalX > 0 ? activeStation.regionalX : activeStation.globalX}%`,
+                top: `${viewMode === 'regional' && activeStation.regionalY > 0 ? activeStation.regionalY : activeStation.globalY}%`,
+                transform: 'translate(-50%, -50%)'
+              }}
+            />
           </div>
         </div>
       </footer>
