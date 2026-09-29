@@ -12,6 +12,12 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { api } from '../../services/api';
+import {
+  TimelinePass,
+  computeMonthsBetween,
+  computeObservationPeriod,
+  formatImageOverlayLabel
+} from '../../data/groundTruthTargets';
 
 export type ChangeViewMode = 'visual' | 'comparison' | 'change-map';
 
@@ -37,6 +43,7 @@ interface ChangeAnalysisCardProps {
   resolution?: string;
   changePercentage?: string;
   sensor?: string;
+  passes?: TimelinePass[];
   externalViewMode?: ChangeViewMode;
   onViewModeChange?: (mode: ChangeViewMode) => void;
   externalShowChangeMask?: boolean;
@@ -65,6 +72,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
   resolution = '10 m',
   changePercentage = '+34.8%',
   sensor = 'Sentinel-2 Optical (10m)',
+  passes,
   externalViewMode,
   onViewModeChange,
   externalShowChangeMask,
@@ -121,13 +129,23 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Multi-temporal milestones along continuous timeline
-  const timelineMilestones = [
-    { date: beforeDate, label: 'Baseline', month: 'Aug 2023', img: beforeImgUrl, hasChange: false },
+  // Derive dynamically computed months and period strictly from baseline and current dates
+  const computedMonths = beforeDate && afterDate ? computeMonthsBetween(beforeDate, afterDate) : (timeGap ? parseInt(timeGap, 10) || 24 : 24);
+  const computedPeriod = beforeDate && afterDate ? computeObservationPeriod(beforeDate, afterDate) : (observationPeriod || 'Apr 2023 → Apr 2025');
+  const computedTimeGap = beforeDate && afterDate ? `${computedMonths} months` : (timeGap || `${computedMonths} months`);
+
+  // Multi-temporal milestones along continuous timeline - strictly chronological with baseline as first and afterDate as last
+  const timelineMilestones: TimelinePass[] = passes && passes.length > 0 ? passes : [
+    { date: beforeDate, label: 'Baseline', month: 'Apr 2023', img: beforeImgUrl, hasChange: false },
     { date: '2024-02-18', label: 'Excavation', month: 'Feb 2024', img: '/assets/card_5_land.jpg', hasChange: false },
     { date: '2024-08-19', label: 'Piling Works', month: 'Aug 2024', img: '/assets/card_4_bridge.jpg', hasChange: true },
     { date: afterDate, label: 'Superstructure', month: 'Apr 2025', img: afterImgUrl, hasChange: true },
   ];
+
+  // Derived clean single-line overlay labels adhering to:
+  // "BEFORE · 12 Apr 2023 · 10 m · Cloud 0.8%" / "AFTER · 28 Apr 2025 · 10 m · Cloud 1.2%"
+  const beforeOverlayLabel = formatImageOverlayLabel('BEFORE', beforeDate, resolution, beforeCloudCover);
+  const afterOverlayLabel = formatImageOverlayLabel('AFTER', selectedTimelineDate, resolution, cloudCover);
 
   const activePhase = timelineMilestones.find((p) => p.date === selectedTimelineDate) || timelineMilestones[3];
 
@@ -187,13 +205,13 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         {/* Left: Mode Title + Target Name */}
         <div className="flex items-center space-x-2 min-w-0">
           <TrendingUp className="w-4 h-4 text-[#00E5FF] shrink-0" />
-          <h2 className="text-xs font-semibold text-white tracking-normal font-sans truncate">
+          <h2 className="text-xs sm:text-sm font-semibold text-white tracking-normal font-sans truncate max-w-[190px] sm:max-w-xs" title={candidateTitle}>
             {candidateTitle}
           </h2>
-          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-[#070D16] border border-[#182A40] text-[10px] font-mono text-[#38BDF8] shrink-0">
+          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-[#070D16] border border-[#182A40] text-[11px] font-mono text-[#38BDF8] shrink-0" title={coordinates}>
             {coordinates.split(',')[0]}
           </span>
-          <span className="hidden md:inline-block px-1.5 py-0.5 rounded bg-[#070D16] border border-[#182A40] text-[10px] font-sans text-[#94A3B8] shrink-0">
+          <span className="hidden md:inline-block px-1.5 py-0.5 rounded bg-[#070D16] border border-[#182A40] text-[11px] font-sans text-[#94A3B8] shrink-0" title={locationName}>
             {locationName}
           </span>
         </div>
@@ -203,7 +221,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
             <button
               onClick={() => { setViewMode('visual'); onViewModeChange?.('visual'); }}
-              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
+              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
                 viewMode === 'visual'
                   ? 'bg-[#0284C7] text-white shadow font-semibold'
                   : 'text-[#94A3B8] hover:text-white'
@@ -215,7 +233,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
             <button
               onClick={() => { setViewMode('comparison'); onViewModeChange?.('comparison'); }}
-              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
+              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
                 viewMode === 'comparison'
                   ? 'bg-[#0284C7] text-white shadow font-semibold'
                   : 'text-[#94A3B8] hover:text-white'
@@ -227,7 +245,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
             <button
               onClick={() => { setViewMode('change-map'); onViewModeChange?.('change-map'); }}
-              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer flex items-center space-x-1 ${
+              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
                 viewMode === 'change-map'
                   ? 'bg-[#0284C7] text-white shadow font-semibold'
                   : 'text-[#94A3B8] hover:text-white'
@@ -241,7 +259,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           {/* Full Report Dossier Button */}
           <button
             onClick={onViewFullReport}
-            className="h-6 hidden md:flex items-center space-x-1 px-2 rounded-lg border border-[#0284C7]/50 text-[11px] text-[#38BDF8] hover:bg-[#0E2D4A] hover:border-[#38BDF8] transition cursor-pointer font-sans"
+            className="h-6 hidden md:flex items-center space-x-1 px-2 rounded-lg border border-[#0284C7]/50 text-[11px] text-[#38BDF8] hover:bg-[#0E2D4A] hover:border-[#38BDF8] transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none font-sans"
             title="Open comprehensive intelligence dossier"
           >
             <span>Dossier</span>
@@ -258,7 +276,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
             <button
               onClick={() => { setSpectralMode('RGB'); onSpectralModeChange?.('RGB'); }}
-              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
+              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
                 spectralMode === 'RGB' ? 'bg-[#00E5FF] text-[#070D16] font-bold shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
               title="True Color RGB (B04, B03, B02)"
@@ -267,7 +285,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             </button>
             <button
               onClick={() => { setSpectralMode('FALSE_COLOR'); onSpectralModeChange?.('FALSE_COLOR'); }}
-              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
+              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
                 spectralMode === 'FALSE_COLOR' ? 'bg-[#A855F7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
               title="Color Infrared (NIR/Red/Green) - Vegetation & boundary contrast [DEMO simulation]"
@@ -276,7 +294,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             </button>
             <button
               onClick={() => { setSpectralMode('NDVI'); onSpectralModeChange?.('NDVI'); }}
-              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
+              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
                 spectralMode === 'NDVI' ? 'bg-[#10B981] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
               title="Normalized Difference Vegetation Index [DEMO radiometric simulation]"
@@ -285,7 +303,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             </button>
             <button
               onClick={() => { setSpectralMode('NDWI'); onSpectralModeChange?.('NDWI'); }}
-              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer ${
+              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
                 spectralMode === 'NDWI' ? 'bg-[#0284C7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
               }`}
               title="Normalized Difference Water Index [DEMO water delineation]"
@@ -300,21 +318,21 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           {/* Change Mask Toggle */}
           <button
             onClick={() => { const next = !showChangeMask; setShowChangeMask(next); onToggleChangeMask?.(next); }}
-            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer ${
+            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
               showChangeMask
                 ? 'bg-[#EF4444]/20 border-[#EF4444] text-[#EF4444] font-semibold shadow'
                 : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
             }`}
             title="Toggle semi-transparent change mask overlay"
           >
-            {showChangeMask ? <Eye className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
-            <span>Change Mask</span>
+            {showChangeMask ? <Eye className="w-3 h-3 text-[#EF4444]" /> : <EyeOff className="w-3 h-3 text-[#94A3B8]" />}
+            <span>Mask Overlay</span>
           </button>
 
           {/* Bounding Box Secondary Toggle */}
           <button
             onClick={() => setShowBoundingBox(!showBoundingBox)}
-            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer ${
+            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
               showBoundingBox
                 ? 'bg-[#00E5FF]/20 border-[#00E5FF] text-[#00E5FF] font-semibold'
                 : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
@@ -329,7 +347,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
               <button
                 onClick={() => setComparisonType('swipe')}
-                className={`h-5 px-1.5 rounded text-[10px] transition cursor-pointer flex items-center space-x-1 ${
+                className={`h-5 px-1.5 rounded text-[10px] transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
                   comparisonType === 'swipe' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
                 }`}
                 title="Draggable comparison slider"
@@ -339,7 +357,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               </button>
               <button
                 onClick={() => setComparisonType('side-by-side')}
-                className={`h-5 px-1.5 rounded text-[10px] transition cursor-pointer flex items-center space-x-1 ${
+                className={`h-5 px-1.5 rounded text-[10px] transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
                   comparisonType === 'side-by-side' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
                 }`}
                 title="Side-by-side dual tile comparison"
@@ -353,7 +371,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           {/* Adjustments Tray Toggle */}
           <button
             onClick={() => setShowAdjustments(!showAdjustments)}
-            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer ${
+            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
               showAdjustments || brightness !== 0 || contrast !== 0 || sharpness !== 'normal'
                 ? 'bg-[#F59E0B]/20 border-[#F59E0B] text-[#F59E0B] font-semibold'
                 : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
@@ -367,7 +385,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           {/* Reset View Button */}
           <button
             onClick={resetEnhancements}
-            className="w-5 h-5 rounded bg-[#070D16] hover:bg-[#15273F] border border-[#182A40] text-[#94A3B8] hover:text-white flex items-center justify-center transition cursor-pointer"
+            className="w-5 h-5 rounded bg-[#070D16] hover:bg-[#15273F] border border-[#182A40] text-[#94A3B8] hover:text-white flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none"
             title="Reset enhancements and views"
           >
             <RotateCcw className="w-2.5 h-2.5" />
@@ -389,7 +407,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               max="50"
               value={brightness}
               onChange={(e) => setBrightness(Number(e.target.value))}
-              className="w-full accent-[#00E5FF] h-1.5 bg-[#182A40] rounded-lg cursor-pointer"
+              className="w-full accent-[#00E5FF] h-1.5 bg-[#182A40] rounded-lg cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none"
             />
           </div>
 
@@ -404,7 +422,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               max="50"
               value={contrast}
               onChange={(e) => setContrast(Number(e.target.value))}
-              className="w-full accent-[#00E5FF] h-1.5 bg-[#182A40] rounded-lg cursor-pointer"
+              className="w-full accent-[#00E5FF] h-1.5 bg-[#182A40] rounded-lg cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none"
             />
           </div>
 
@@ -419,7 +437,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               max="100"
               value={maskOpacity}
               onChange={(e) => setMaskOpacity(Number(e.target.value))}
-              className="w-full accent-[#EF4444] h-1.5 bg-[#182A40] rounded-lg cursor-pointer"
+              className="w-full accent-[#EF4444] h-1.5 bg-[#182A40] rounded-lg cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none"
             />
           </div>
 
@@ -568,15 +586,15 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                       filter: getFilterStyle(false)
                     }}
                   />
-                  {/* BEFORE Metadata Tag on Left */}
-                  <div className="absolute top-2 left-2 z-20 bg-[#070D16]/95 border border-[#182A40] rounded px-2 py-0.5 text-[9px] font-mono text-white backdrop-blur">
-                    <span className="font-bold text-[#94A3B8]">BEFORE:</span> {beforeDate} • {resolution} • Cloud: {beforeCloudCover}
+                  {/* BEFORE Single-line Metadata Tag on Left (Truncated, no wrap) */}
+                  <div className="absolute top-2 left-2 z-20 max-w-[48%] bg-[#070D16]/95 border border-[#182A40] rounded-md px-2.5 py-1 text-[10px] sm:text-[11px] font-mono text-white backdrop-blur truncate shadow" title={beforeOverlayLabel}>
+                    {beforeOverlayLabel}
                   </div>
                 </div>
 
-                {/* AFTER Metadata Tag on Right */}
-                <div className="absolute top-2 right-2 z-20 bg-[#070D16]/95 border border-[#182A40] rounded px-2 py-0.5 text-[9px] font-mono text-white backdrop-blur">
-                  <span className="font-bold text-[#00E5FF]">AFTER:</span> {selectedTimelineDate} • {resolution} • Cloud: {cloudCover}
+                {/* AFTER Single-line Metadata Tag on Right (Truncated, no wrap) */}
+                <div className="absolute top-2 right-2 z-20 max-w-[48%] bg-[#070D16]/95 border border-[#182A40] rounded-md px-2.5 py-1 text-[10px] sm:text-[11px] font-mono text-white backdrop-blur truncate shadow" title={afterOverlayLabel}>
+                  {afterOverlayLabel}
                 </div>
 
                 {/* Draggable Divider Handle with Glow & Grip */}
@@ -754,8 +772,8 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
       </div>
 
       {/* 5. MULTI-TEMPORAL CONTINUOUS MILESTONES SCRUBBER */}
-      <div className="bg-[#070D16] px-3 py-1.5 rounded-lg border border-[#182A40] flex items-center justify-between gap-2 shrink-0 text-[10px] font-mono">
-        <span className="text-[#64748B] uppercase font-bold shrink-0">Passes:</span>
+      <div className="bg-[#070D16] px-3 py-2 rounded-lg border border-[#182A40] flex items-center justify-between gap-2 shrink-0 text-xs font-mono">
+        <span className="text-[#94A3B8] uppercase font-bold shrink-0 text-xs">Passes:</span>
         <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-0.5">
           {timelineMilestones.map((m) => {
             const isSel = selectedTimelineDate === m.date;
@@ -763,45 +781,46 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               <button
                 key={m.date}
                 onClick={() => setSelectedTimelineDate(m.date)}
-                className={`px-2 py-0.5 rounded transition cursor-pointer flex items-center space-x-1 shrink-0 ${
+                className={`px-2.5 py-1 rounded-md text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 shrink-0 focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
                   isSel
                     ? 'bg-[#00E5FF] text-[#070D16] font-bold shadow'
                     : 'bg-[#0B1523] text-[#94A3B8] hover:text-white border border-[#182A40]'
                 }`}
+                title={`Pass ${m.month}: ${m.label} (${m.date})`}
               >
                 <span>{m.month}</span>
-                <span className="text-[8px] opacity-80">({m.label})</span>
+                <span className="text-[10px] opacity-80">({m.label})</span>
               </button>
             );
           })}
         </div>
-        <span className="text-[#38BDF8] shrink-0 font-medium hidden sm:inline">
-          Period: {observationPeriod} ({timeGap})
+        <span className="text-[#38BDF8] shrink-0 font-semibold text-xs hidden sm:inline">
+          Period: {computedPeriod} ({computedTimeGap})
         </span>
       </div>
 
       {/* 6. QUANTIFIED CHANGE METRICS & MANDATORY ANALYST BANNER */}
       <div className="pt-2 border-t border-[#182A40]/80 space-y-1.5 shrink-0 font-sans">
-        {/* Change Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
-          <div className="p-1.5 rounded bg-[#070D16] border border-[#182A40]">
-            <span className="text-[#64748B] block uppercase text-[8px]">Changed Area</span>
-            <span className="text-[#38BDF8] font-bold">{areaHa}</span>
+        {/* Change Metrics Grid - High-Contrast 12-13px labels for Projector Display */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono">
+          <div className="p-2 rounded-lg bg-[#070D16] border border-[#182A40]">
+            <span className="text-[#94A3B8] block uppercase text-xs font-semibold tracking-wider">Changed Area</span>
+            <span className="text-[#38BDF8] text-sm sm:text-base font-bold block mt-0.5">{areaHa}</span>
           </div>
 
-          <div className="p-1.5 rounded bg-[#070D16] border border-[#182A40]">
-            <span className="text-[#64748B] block uppercase text-[8px]">Change Delta</span>
-            <span className="text-[#10B981] font-bold">{changePercentage}</span>
+          <div className="p-2 rounded-lg bg-[#070D16] border border-[#182A40]">
+            <span className="text-[#94A3B8] block uppercase text-xs font-semibold tracking-wider">Change Delta</span>
+            <span className="text-[#10B981] text-sm sm:text-base font-bold block mt-0.5">{changePercentage}</span>
           </div>
 
-          <div className="p-1.5 rounded bg-[#070D16] border border-[#182A40]">
-            <span className="text-[#64748B] block uppercase text-[8px]">Confidence Score</span>
-            <span className="text-[#F59E0B] font-bold">{confidence}% Match</span>
+          <div className="p-2 rounded-lg bg-[#070D16] border border-[#182A40]">
+            <span className="text-[#94A3B8] block uppercase text-xs font-semibold tracking-wider">Detection Confidence</span>
+            <span className="text-[#F59E0B] text-sm sm:text-base font-bold block mt-0.5">{confidence}%</span>
           </div>
 
-          <div className="p-1.5 rounded bg-[#070D16] border border-[#182A40]">
-            <span className="text-[#64748B] block uppercase text-[8px]">Coordinates</span>
-            <span className="text-white truncate block">{coordinates}</span>
+          <div className="p-2 rounded-lg bg-[#070D16] border border-[#182A40]">
+            <span className="text-[#94A3B8] block uppercase text-xs font-semibold tracking-wider">Coordinates</span>
+            <span className="text-white text-xs sm:text-sm font-bold truncate block mt-0.5" title={coordinates}>{coordinates}</span>
           </div>
         </div>
 
@@ -817,7 +836,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             <button
               onClick={() => handleQuickReview('CONFIRMED')}
               disabled={isSubmitting || analystVerdict === 'CONFIRMED'}
-              className={`h-6 px-2.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition cursor-pointer ${
+              className={`h-6 px-2.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
                 analystVerdict === 'CONFIRMED'
                   ? 'bg-[#10B981] text-white shadow'
                   : 'bg-[#0E355A] hover:bg-[#10B981]/80 text-[#38BDF8] hover:text-white border border-[#0284C7]'
@@ -830,7 +849,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             <button
               onClick={() => handleQuickReview('REJECTED')}
               disabled={isSubmitting || analystVerdict === 'REJECTED'}
-              className={`h-6 px-2 rounded-lg text-xs font-medium flex items-center space-x-1 transition cursor-pointer ${
+              className={`h-6 px-2 rounded-lg text-xs font-medium flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
                 analystVerdict === 'REJECTED'
                   ? 'bg-[#EF4444] text-white'
                   : 'bg-[#070D16] hover:bg-[#EF4444]/20 text-[#94A3B8] hover:text-[#EF4444] border border-[#182A40]'

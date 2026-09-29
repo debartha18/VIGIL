@@ -383,55 +383,62 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
               }`}
             >
               <Crosshair className="w-2.5 h-2.5 text-[#10B981]" />
-              <span>Tactical {selectedAOI}</span>
+              <span>Local {selectedAOI}</span>
             </button>
           </div>
         </div>
 
-        {/* Right: Spectral Band Layer Menu & Heatmap */}
-        <div className="flex items-center space-x-1.5 pointer-events-auto">
-          {/* Heatmap Toggle */}
+        {/* Right: Consolidated "Layers & More" Dropdown (Uncluttered Map Header) */}
+        <div className="relative pointer-events-auto">
           <button
-            onClick={() => setShowHeatmap(!showHeatmap)}
-            className={`h-6 px-2 rounded-lg border text-[11px] font-medium flex items-center space-x-1 transition shadow backdrop-blur-md cursor-pointer ${
-              showHeatmap
-                ? 'bg-[#EF4444]/20 border-[#EF4444] text-[#EF4444]'
-                : 'bg-[#070D16]/90 border-[#182A40] text-[#94A3B8] hover:text-white'
-            }`}
-            title="Toggle multi-temporal change heatmap"
+            onClick={() => setShowLayerMenu(!showLayerMenu)}
+            className="h-6 px-2.5 rounded-lg bg-[#070D16]/95 border border-[#182A40] hover:border-[#00E5FF]/60 text-white text-[11px] font-medium flex items-center space-x-1.5 transition shadow backdrop-blur-md cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none"
+            title="Spectral Layers, Heatmap and Display Controls"
           >
-            <Flame className="w-3 h-3 text-[#EF4444]" />
-            <span className="hidden md:inline">Heatmap</span>
+            <Layers className="w-3.5 h-3.5 text-[#00E5FF]" />
+            <span className="hidden sm:inline">Layers & More</span>
+            <ChevronDown className="w-3 h-3 text-[#64748B]" />
           </button>
 
-          {/* Full Map Expander (if prop passed) */}
-          {onOpenFullMap && (
-            <button
-              onClick={onOpenFullMap}
-              className="h-6 px-2 rounded-lg bg-[#070D16]/90 border border-[#182A40] text-[#94A3B8] hover:text-white hover:border-[#00E5FF] flex items-center space-x-1 transition shadow backdrop-blur-md cursor-pointer"
-              title="Open full interactive geospatial map"
-            >
-              <Maximize2 className="w-3 h-3 text-[#00E5FF]" />
-              <span className="hidden md:inline text-[10px]">Expand</span>
-            </button>
-          )}
+          {showLayerMenu && (
+            <div className="absolute top-7 right-0 w-64 bg-[#0B1523] border border-[#182A40] rounded-xl shadow-2xl p-2.5 z-50 text-xs space-y-2 font-sans animate-in fade-in">
+              <div className="px-2 py-1 text-[10px] text-[#94A3B8] uppercase font-bold tracking-wider border-b border-[#182A40]/70">
+                Display & Analysis Overlays
+              </div>
 
-          {/* Layer Selector */}
-          <div className="relative">
-            <button
-              onClick={() => setShowLayerMenu(!showLayerMenu)}
-              className="h-6 px-2 rounded-lg bg-[#070D16]/90 border border-[#182A40] hover:border-[#00E5FF]/50 text-white text-[10px] font-medium flex items-center space-x-1 transition shadow backdrop-blur-md cursor-pointer"
-            >
-              <Layers className="w-3 h-3 text-[#00E5FF]" />
-              <span className="hidden sm:inline truncate max-w-[90px]">{activeLayer.split(' ')[0]}</span>
-              <ChevronDown className="w-2.5 h-2.5 text-[#64748B]" />
-            </button>
+              {/* Quick Actions in Menu: Heatmap & Fullscreen Expand */}
+              <div className="grid grid-cols-2 gap-1.5 px-1">
+                <button
+                  onClick={() => setShowHeatmap(!showHeatmap)}
+                  className={`flex items-center justify-center space-x-1 py-1.5 px-2 rounded-lg border text-[11px] font-medium transition cursor-pointer ${
+                    showHeatmap
+                      ? 'bg-[#EF4444]/20 border-[#EF4444] text-[#EF4444]'
+                      : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
+                  }`}
+                >
+                  <Flame className="w-3 h-3 text-[#EF4444]" />
+                  <span>Heatmap</span>
+                </button>
 
-            {showLayerMenu && (
-              <div className="absolute top-7 right-0 w-60 bg-[#0B1523] border border-[#182A40] rounded-xl shadow-2xl p-2 z-50 text-xs space-y-1 font-sans animate-in fade-in">
-                <div className="px-2 py-1 text-[9px] text-[#64748B] uppercase font-bold tracking-wider">
-                  Select Spectral Band Layer
-                </div>
+                {onOpenFullMap && (
+                  <button
+                    onClick={() => {
+                      setShowLayerMenu(false);
+                      onOpenFullMap();
+                    }}
+                    className="flex items-center justify-center space-x-1 py-1.5 px-2 rounded-lg bg-[#070D16] border border-[#182A40] text-[#94A3B8] hover:text-white hover:border-[#00E5FF] transition cursor-pointer text-[11px]"
+                  >
+                    <Maximize2 className="w-3 h-3 text-[#00E5FF]" />
+                    <span>Full Map</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="px-2 pt-1 text-[10px] text-[#94A3B8] uppercase font-bold tracking-wider">
+                Spectral Band Layers
+              </div>
+
+              <div className="space-y-1">
                 {layers.map((l) => (
                   <div
                     key={l.name}
@@ -453,8 +460,8 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -506,14 +513,14 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
           <div
             onClick={handleClusterClick}
             className="absolute z-25 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-            style={{ left: '46%', top: '44%' }}
-            title="Click to zoom into Hazira Coastal Cluster (5 Targets)"
+            style={{ left: '38%', top: '34%' }}
+            title="Click to zoom into Hazira Coastal Cluster (5 Locations)"
           >
             <div className="w-12 h-12 rounded-full bg-[#00E5FF]/20 border border-[#00E5FF] animate-ping" />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="px-2.5 py-1 rounded-full bg-[#070D16]/95 border-2 border-[#00E5FF] text-[#00E5FF] font-mono font-bold text-xs shadow-[0_0_15px_#00E5FF] group-hover:scale-110 transition flex items-center space-x-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                <span>5 Targets</span>
+                <span>5 Locations</span>
               </div>
             </div>
             <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#0B1523]/90 border border-[#182A40] text-[9px] font-mono px-2 py-0.5 rounded text-[#94A3B8]">
@@ -567,7 +574,7 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
                     <div className="flex items-center space-x-1.5 font-bold">
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: station.color }} />
                       <span className="text-white text-xs">{station.title.split(' ')[0]}</span>
-                      <span className="text-[#00E5FF] text-[10px] font-mono">• {station.confidencePct}% match</span>
+                      <span className="text-[#00E5FF] text-[10px] font-mono">• {station.confidencePct}% Detection Confidence</span>
                     </div>
                     <div className="text-[9px] font-mono text-[#F59E0B] mt-0.5">
                       {station.lat.toFixed(4)}°N, {station.lon.toFixed(4)}°E
@@ -579,18 +586,21 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
           })
         )}
 
-        {/* Tactical AOI Bounding Box (In Tactical Mode) */}
+        {/* Local AOI Bounding Box (In Local Mode) */}
         {viewMode === 'tactical' && (
           <div
             className="absolute transition-all rounded-xl border-2 border-[#00E5FF] bg-[#00E5FF]/10 shadow-[0_0_20px_rgba(0,229,255,0.25)] pointer-events-none"
             style={{
-              top: '44%',
-              left: '46%',
-              width: '260px',
-              height: '190px',
+              top: '48%',
+              left: '52%',
+              width: '250px',
+              height: '180px',
               transform: 'translate(-50%, -50%) rotate(-14deg)',
             }}
           >
+            <span className="absolute -top-3 right-2 bg-[#00E5FF] text-[#070D16] text-[9px] font-mono font-bold px-1.5 py-0.2 rounded shadow">
+              AOI-1 CORRIDOR
+            </span>
             <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-[#0B1523] rounded-full border-2 border-[#00E5FF]" />
             <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-[#0B1523] rounded-full border-2 border-[#00E5FF]" />
             <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-[#0B1523] rounded-full border-2 border-[#00E5FF]" />
@@ -601,9 +611,9 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
 
       {/* 4. SLEEK COORDINATE & TARGET BADGE (Bottom Left) */}
       <div className="absolute bottom-2.5 left-2.5 z-30 pointer-events-none">
-        <div className="bg-[#070D16]/95 border border-[#182A40] rounded-lg px-2.5 py-1 backdrop-blur-md text-[10px] font-mono text-[#94A3B8] flex items-center space-x-2 shadow-lg">
+        <div className="bg-[#070D16]/95 border border-[#182A40] rounded-lg px-2.5 py-1 backdrop-blur-md text-[11px] font-mono text-[#94A3B8] flex items-center space-x-2 shadow-lg" title={`${siteName} (${currentCoords})`}>
           <span className="text-[#00E5FF] font-semibold">{currentCoords}</span>
-          <span className="border-l border-[#182A40] pl-2 text-white truncate max-w-[180px]">{siteName}</span>
+          <span className="border-l border-[#182A40] pl-2 text-white truncate max-w-[140px] sm:max-w-[220px]" title={siteName}>{siteName}</span>
         </div>
       </div>
 

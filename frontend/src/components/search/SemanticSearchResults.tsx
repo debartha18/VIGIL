@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { Search, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import {
+  CANONICAL_LOCATIONS,
+  locationToSearchResultItem,
+  TimelinePass
+} from '../../data/groundTruthTargets';
 
 export interface SearchResultItem {
   id: string;
@@ -23,6 +28,10 @@ export interface SearchResultItem {
   resolution?: string;
   changePercentage?: string;
   changeMaskUrl?: string;
+  passes?: TimelinePass[];
+  relevanceScore?: number;
+  areaHaValue?: number;
+  areaM2Value?: number;
 }
 
 interface SemanticSearchResultsProps {
@@ -41,118 +50,7 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
   const [sortMethod, setSortMethod] = useState<'Relevance' | 'Confidence' | 'Date'>('Relevance');
   const [showSortMenu, setShowSortMenu] = useState<boolean>(false);
 
-  const fallbackResults: SearchResultItem[] = [
-    {
-      id: 'res-1',
-      title: 'Hazira Deepwater Wharf & Piling Deck',
-      locationName: 'Hazira',
-      changeType: 'New Construction',
-      date: '2025-04-28',
-      observationPeriod: '2023 → 2025',
-      sensor: 'Sentinel-2 (10m)',
-      resolution: '10 m',
-      cloudCover: '1.8%',
-      beforeCloudCover: '2.1%',
-      beforeDate: '2023-08-12',
-      coordinates: '21.4587° N, 72.7812° E',
-      matchType: 'High Match',
-      confidencePct: 96,
-      changePercentage: '+34.8%',
-      imageUrl: '/assets/card_1_construction.jpg',
-      beforeImgUrl: '/assets/before_scene.jpg',
-      afterImgUrl: '/assets/card_1_construction.jpg',
-      areaHa: '4.2 ha (42,000 m²)',
-      timeGap: '20 months',
-    },
-    {
-      id: 'res-2',
-      title: 'Dumas Coastal Bund & Sea Embankment',
-      locationName: 'Dumas Shoreline',
-      changeType: 'Coastal Bund Extension',
-      date: '2024-11-18',
-      observationPeriod: '2023 → 2024',
-      sensor: 'Sentinel-2 (10m)',
-      resolution: '10 m',
-      cloudCover: '1.4%',
-      beforeCloudCover: '2.1%',
-      beforeDate: '2023-08-12',
-      coordinates: '21.4632° N, 72.7845° E',
-      matchType: 'High Match',
-      confidencePct: 93,
-      changePercentage: '+28.4%',
-      imageUrl: '/assets/card_2_riverside.jpg',
-      beforeImgUrl: '/assets/before_scene.jpg',
-      afterImgUrl: '/assets/card_2_riverside.jpg',
-      areaHa: '3.1 ha (31,000 m²)',
-      timeGap: '15 months',
-    },
-    {
-      id: 'res-3',
-      title: 'Adani Marine Logistics Berth Extension',
-      locationName: 'Adani Port',
-      changeType: 'Structural Berth Expansion',
-      date: '2024-06-15',
-      observationPeriod: '2023 → 2024',
-      sensor: 'Sentinel-1 SAR (10m)',
-      resolution: '10 m',
-      cloudCover: '0.0% (SAR Radar)',
-      beforeCloudCover: '2.1%',
-      beforeDate: '2023-08-12',
-      coordinates: '21.4521° N, 72.7763° E',
-      matchType: 'Medium Match',
-      confidencePct: 89,
-      changePercentage: '+41.2%',
-      imageUrl: '/assets/card_3_port.jpg',
-      beforeImgUrl: '/assets/before_scene.jpg',
-      afterImgUrl: '/assets/card_3_port.jpg',
-      areaHa: '4.8 ha (48,000 m²)',
-      timeGap: '10 months',
-    },
-    {
-      id: 'res-4',
-      title: 'Tapi Rivermouth Pier Piling & Riprap',
-      locationName: 'Tapi Rivermouth',
-      changeType: 'Pier & Bridge Works',
-      date: '2023-12-03',
-      observationPeriod: '2023 → 2024',
-      sensor: 'Sentinel-2 (10m)',
-      resolution: '10 m',
-      cloudCover: '2.4%',
-      beforeCloudCover: '2.1%',
-      beforeDate: '2023-08-12',
-      coordinates: '21.4550° N, 72.7801° E',
-      matchType: 'Medium Match',
-      confidencePct: 85,
-      changePercentage: '+18.5%',
-      imageUrl: '/assets/card_4_bridge.jpg',
-      beforeImgUrl: '/assets/before_scene.jpg',
-      afterImgUrl: '/assets/card_4_bridge.jpg',
-      areaHa: '1.8 ha (18,000 m²)',
-      timeGap: '4 months',
-    },
-    {
-      id: 'res-5',
-      title: 'Coastal Mudflat Landfill & Earthworks',
-      locationName: 'Dumas Mudflats',
-      changeType: 'Land Clearance & Leveling',
-      date: '2024-03-22',
-      observationPeriod: '2023 → 2024',
-      sensor: 'Landsat-8/9 (15m)',
-      resolution: '15 m',
-      cloudCover: '1.1%',
-      beforeCloudCover: '2.1%',
-      beforeDate: '2023-08-12',
-      coordinates: '21.4617° N, 72.7890° E',
-      matchType: 'Medium Match',
-      confidencePct: 81,
-      changePercentage: '+52.0%',
-      imageUrl: '/assets/card_5_land.jpg',
-      beforeImgUrl: '/assets/before_scene.jpg',
-      afterImgUrl: '/assets/card_5_land.jpg',
-      areaHa: '5.6 ha (56,000 m²)',
-      timeGap: '7 months',
-    },
-  ];
+  const fallbackResults: SearchResultItem[] = CANONICAL_LOCATIONS.map(locationToSearchResultItem);
 
   const sourceData = items && items.length > 0 ? items : fallbackResults;
 
@@ -175,7 +73,7 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
             Semantic search results
           </h3>
           <span className="px-2 py-0.5 rounded-full bg-[#0369A1]/20 border border-[#0284C7]/40 text-[11px] text-[#38BDF8] font-sans">
-            <span className="font-mono font-medium">{searchResults.length}</span> targets retrieved
+            <span className="font-mono font-medium">{searchResults.length}</span> locations retrieved
           </span>
         </div>
 
@@ -263,10 +161,10 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
 
                       {/* Top Overlay: Match Score & Location Badge */}
                       <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between pointer-events-none">
-                        {/* Primary Match Score */}
-                        <span className="font-mono text-white text-[11px] font-bold px-1.5 py-0.5 bg-[#070D16]/95 border border-[#182A40] rounded shadow-md backdrop-blur flex items-center space-x-1">
+                        {/* Retrieval Relevance Score */}
+                        <span className="font-mono text-white text-[11px] font-bold px-1.5 py-0.5 bg-[#070D16]/95 border border-[#182A40] rounded shadow-md backdrop-blur flex items-center space-x-1" title="Retrieval Relevance">
                           <span className="text-[#00E5FF]">{card.confidencePct}%</span>
-                          <span className="text-[9px] text-[#94A3B8] font-normal border-l border-[#182A40] pl-1">match</span>
+                          <span className="text-[9px] text-[#94A3B8] font-normal border-l border-[#182A40] pl-1">Relevance</span>
                         </span>
 
                         {/* Location Tag */}

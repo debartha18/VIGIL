@@ -60,16 +60,16 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
               <button
                 key={item.id}
                 onClick={() => onSelectTab(item.id)}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-xs font-medium text-left transition-all ${
                   isActive
                     ? 'bg-[#0E355A] text-[#38BDF8] border border-[#0284C7]/60 shadow-[0_0_12px_rgba(2,132,199,0.25)]'
                     : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1A2B]/60'
                 }`}
               >
-                <span className={isActive ? 'text-[#38BDF8]' : 'text-[#64748B]'}>
+                <span className={`shrink-0 ${isActive ? 'text-[#38BDF8]' : 'text-[#64748B]'}`}>
                   {item.icon}
                 </span>
-                <span className="tracking-normal">{item.label}</span>
+                <span className="tracking-normal text-left leading-snug">{item.label}</span>
               </button>
             );
           })}

@@ -24,216 +24,15 @@ import { BorderStrategicAnalysisView } from './views/BorderStrategicAnalysisView
 import { api } from './services/api';
 import { Scene } from './types/kshitij';
 
-// Authentic, verified ground-truth targets across Tapi/Hazira/Dumas coastal AOI (DGIS Ground Station)
-const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] = [
-  {
-    id: 'res-1',
-    title: 'Hazira Deepwater Wharf & Piling Deck',
-    date: '2025-04-28',
-    sensor: 'Sentinel-2 (10m)',
-    coordinates: '21.4587° N, 72.7812° E',
-    matchType: 'High Match',
-    confidencePct: 96,
-    imageUrl: '/assets/card_1_construction.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/after_scene.jpg',
-    areaHa: '4.2 ha (42,000 m²)',
-    timeGap: '32 months',
-    locationName: 'Hazira Industrial Port Sector',
-    changeType: 'New Construction',
-    observationPeriod: 'Apr 2023 → Apr 2025',
-    cloudCover: '1.2%',
-    beforeCloudCover: '0.8%',
-    beforeDate: '2023-04-12',
-    resolution: '10m True Color (B4,B3,B2)',
-    changePercentage: '+34.8%',
-    keywords: ['construction', 'wharf', 'port', 'jetty', 'marine', 'deck', 'structure', 'building', 'sea', 'coastal', 'concrete', 'pier']
-  },
-  {
-    id: 'res-2',
-    title: 'Dumas Coastal Bund & Sea Embankment',
-    date: '2024-11-18',
-    sensor: 'Sentinel-2 (10m)',
-    coordinates: '21.4632° N, 72.7845° E',
-    matchType: 'High Match',
-    confidencePct: 93,
-    imageUrl: '/assets/card_2_riverside.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/card_2_riverside.jpg',
-    areaHa: '3.1 ha (31,000 m²)',
-    timeGap: '24 months',
-    locationName: 'Dumas Shoreline Sector',
-    changeType: 'River / Embankment Work',
-    observationPeriod: 'Nov 2022 → Nov 2024',
-    cloudCover: '0.5%',
-    beforeCloudCover: '1.1%',
-    beforeDate: '2022-11-04',
-    resolution: '10m True Color (B4,B3,B2)',
-    changePercentage: '+21.5%',
-    keywords: ['sea', 'coast', 'coastal', 'river', 'riverside', 'bund', 'embankment', 'seawall', 'water', 'boundary', 'shoreline', 'riprap']
-  },
-  {
-    id: 'res-3',
-    title: 'Adani Marine Logistics Berth Extension',
-    date: '2024-06-15',
-    sensor: 'Sentinel-1 SAR / Sentinel-2 (10m)',
-    coordinates: '21.4521° N, 72.7763° E',
-    matchType: 'Medium Match',
-    confidencePct: 89,
-    imageUrl: '/assets/card_3_port.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/card_3_port.jpg',
-    areaHa: '4.8 ha (48,000 m²)',
-    timeGap: '18 months',
-    locationName: 'Marine Logistics South Wharf',
-    changeType: 'Structural Expansion',
-    observationPeriod: 'Dec 2022 → Jun 2024',
-    cloudCover: '2.1%',
-    beforeCloudCover: '0.4%',
-    beforeDate: '2022-12-10',
-    resolution: '10m Optical / SAR fused',
-    changePercentage: '+28.4%',
-    keywords: ['port', 'berth', 'marine', 'dock', 'ships', 'logistics', 'container', 'sar', 'radar', 'sea', 'water']
-  },
-  {
-    id: 'res-4',
-    title: 'Tapi Rivermouth Pier Piling & Riprap',
-    date: '2023-12-03',
-    sensor: 'Sentinel-2 (10m)',
-    coordinates: '21.4550° N, 72.7801° E',
-    matchType: 'Medium Match',
-    confidencePct: 85,
-    imageUrl: '/assets/card_4_bridge.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/card_4_bridge.jpg',
-    areaHa: '1.8 ha (18,000 m²)',
-    timeGap: '12 months',
-    locationName: 'Tapi River Channel Estuary',
-    changeType: 'Road & Pier Development',
-    observationPeriod: 'Dec 2022 → Dec 2023',
-    cloudCover: '0.0%',
-    beforeCloudCover: '0.9%',
-    beforeDate: '2022-12-01',
-    resolution: '10m True Color (B4,B3,B2)',
-    changePercentage: '+14.2%',
-    keywords: ['bridge', 'road', 'pier', 'piling', 'highway', 'corridor', 'transport', 'river', 'rivermouth', 'channel']
-  },
-  {
-    id: 'res-5',
-    title: 'Coastal Mudflat Landfill & Earthworks',
-    date: '2023-05-17',
-    sensor: 'Sentinel-2 / Landsat-8 (15m)',
-    coordinates: '21.4617° N, 72.7890° E',
-    matchType: 'Medium Match',
-    confidencePct: 81,
-    imageUrl: '/assets/card_5_land.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/card_5_land.jpg',
-    areaHa: '5.6 ha (56,000 m²)',
-    timeGap: '8 months',
-    locationName: 'East Hazira Tidal Mudflat',
-    changeType: 'Vegetation / Cleared Land',
-    observationPeriod: 'Sep 2022 → May 2023',
-    cloudCover: '1.6%',
-    beforeCloudCover: '0.2%',
-    beforeDate: '2022-09-14',
-    resolution: '10m High-Res Optical',
-    changePercentage: '+39.1%',
-    keywords: ['land', 'clearance', 'earthworks', 'soil', 'landfill', 'reclamation', 'vegetation', 'mangrove', 'deforestation', 'sea']
-  },
-  {
-    id: 'res-6',
-    title: 'Hazira Port North Container Staging Yard',
-    date: '2025-04-10',
-    sensor: 'Sentinel-2 (10m)',
-    coordinates: '21.4820° N, 72.7740° E',
-    matchType: 'High Match',
-    confidencePct: 94,
-    imageUrl: '/assets/card_1_construction.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/card_3_port.jpg',
-    areaHa: '8.4 ha (84,000 m²)',
-    timeGap: '28 months',
-    locationName: 'North Terminal Staging Zone',
-    changeType: 'Industrial Staging Area',
-    observationPeriod: 'Dec 2022 → Apr 2025',
-    cloudCover: '0.8%',
-    beforeCloudCover: '0.5%',
-    beforeDate: '2022-12-18',
-    resolution: '10m True Color (B4,B3,B2)',
-    changePercentage: '+45.0%',
-    keywords: ['port', 'container', 'storage', 'yard', 'asphalt', 'paving', 'terminal', 'hazira', 'industrial', 'construction']
-  },
-  {
-    id: 'res-7',
-    title: 'Bay of Bengal Deepwater Oceanographic Station',
-    date: '2025-05-12',
-    sensor: 'Sentinel-3 & Sentinel-1 SAR',
-    coordinates: '15.2970° N, 87.8680° E',
-    matchType: 'High Match',
-    confidencePct: 95,
-    imageUrl: '/assets/card_3_port.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/card_3_port.jpg',
-    areaHa: '12.4 ha (124,000 m²)',
-    timeGap: '16 months',
-    locationName: 'Central Bay of Bengal',
-    changeType: 'Oceanographic Station',
-    observationPeriod: 'Jan 2024 → May 2025',
-    cloudCover: '4.2%',
-    beforeCloudCover: '2.8%',
-    beforeDate: '2024-01-10',
-    resolution: 'Sentinel-3 Altimetry + SAR',
-    changePercentage: '+18.0%',
-    keywords: ['bay of bengal', 'bengal', 'ocean', 'altimetry', 'cyclone', 'sea', 'current', 'marine', 'deepwater', 'station']
-  },
-  {
-    id: 'res-8',
-    title: 'Arabian Sea Offshore Energy Corridor',
-    date: '2025-04-18',
-    sensor: 'Sentinel-1 SAR (10m)',
-    coordinates: '18.9220° N, 71.4500° E',
-    matchType: 'High Match',
-    confidencePct: 92,
-    imageUrl: '/assets/card_1_construction.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/card_1_construction.jpg',
-    areaHa: '9.8 ha (98,000 m²)',
-    timeGap: '20 months',
-    locationName: 'Mumbai Offshore Basin',
-    changeType: 'Offshore Energy Corridor',
-    observationPeriod: 'Aug 2023 → Apr 2025',
-    cloudCover: '1.0%',
-    beforeCloudCover: '0.0%',
-    beforeDate: '2023-08-20',
-    resolution: '10m C-Band SAR VV/VH',
-    changePercentage: '+26.3%',
-    keywords: ['arabian sea', 'arabian', 'offshore', 'platform', 'energy', 'oil', 'gas', 'sea', 'marine', 'shipping', 'corridor']
-  },
-  {
-    id: 'res-9',
-    title: 'Gulf of Khambhat Marine Gateway & Tidal Flat',
-    date: '2025-03-22',
-    sensor: 'Sentinel-2 (10m)',
-    coordinates: '21.2000° N, 72.4000° E',
-    matchType: 'High Match',
-    confidencePct: 91,
-    imageUrl: '/assets/card_2_riverside.jpg',
-    beforeImgUrl: '/assets/before_scene.jpg',
-    afterImgUrl: '/assets/card_2_riverside.jpg',
-    areaHa: '15.2 ha (152,000 m²)',
-    timeGap: '24 months',
-    locationName: 'Khambhat Tidal Delta',
-    changeType: 'Tidal Sediment & Coastal Shift',
-    observationPeriod: 'Mar 2023 → Mar 2025',
-    cloudCover: '0.4%',
-    beforeCloudCover: '0.7%',
-    beforeDate: '2023-03-05',
-    resolution: '10m True Color (B4,B3,B2)',
-    changePercentage: '+31.0%',
-    keywords: ['khambhat', 'gulf', 'tidal', 'estuary', 'delta', 'marine', 'sediment', 'coast', 'water', 'gateway']
-  }
-];
+import {
+  CANONICAL_LOCATIONS,
+  locationToSearchResultItem,
+  validateLocationData
+} from './data/groundTruthTargets';
+
+// Master canonical locations mapped to rich SearchResultItem objects
+const GROUND_TRUTH_TARGETS: (SearchResultItem & { keywords: string[] })[] =
+  CANONICAL_LOCATIONS.map(locationToSearchResultItem) as unknown as (SearchResultItem & { keywords: string[] })[];
 
 // Helper to map browser pathname to OrbitalTab
 const tabFromPath = (path: string): OrbitalTab => {
@@ -376,6 +175,13 @@ const VigilPlatform: React.FC = () => {
     api.getScenes().then(setScenes).catch(() => {});
   }, []);
 
+  // Priority 1: Dev-time data consistency validation for active AOI
+  useEffect(() => {
+    if (selectedResult) {
+      validateLocationData(selectedResult as any);
+    }
+  }, [selectedResult]);
+
   // Construct real-time, zero-hallucination analysis context for VIGIL Assistant
   const currentAnalysisContext: AnalysisContext = useMemo(() => {
     const latLonParts = selectedResult.coordinates.split(',').map(s => parseFloat(s.replace(/[^0-9.-]/g, '')) || 0);
@@ -405,10 +211,10 @@ const VigilPlatform: React.FC = () => {
         beforeImageUrl: selectedResult.beforeImgUrl
       },
       temporalComparison: {
-        baselineDate: selectedResult.beforeDate || '2023-08-12',
+        baselineDate: selectedResult.beforeDate || '2023-04-12',
         currentDate: selectedResult.date,
-        observationPeriod: selectedResult.observationPeriod || '2023 → 2025',
-        timeGap: selectedResult.timeGap || '20 months'
+        observationPeriod: selectedResult.observationPeriod || 'Apr 2023 → Apr 2025',
+        timeGap: selectedResult.timeGap || '24 months'
       },
       changeAnalysis: {
         changeType: selectedResult.changeType || 'New Construction',
@@ -426,7 +232,7 @@ const VigilPlatform: React.FC = () => {
         }
       },
       searchContext: {
-        originalQuery: currentQuery || 'All Coastal Targets',
+        originalQuery: currentQuery || 'All Coastal Locations',
         retrievedLocationsCount: searchResults.length,
         topMatchTitle: searchResults[0]?.title,
         allResultsSummary: searchResults.map(r => ({
@@ -641,7 +447,49 @@ const VigilPlatform: React.FC = () => {
             </div>
           ) : (
             /* Main Signature Grid: Responsive with guaranteed visibility on all screen sizes */
-            <div className="flex-1 p-2 sm:p-3 flex flex-col gap-3 overflow-y-auto min-h-0 pb-20 w-full max-w-full">
+            <div className="flex-1 p-2 sm:p-3 flex flex-col gap-3 overflow-y-auto min-h-0 pb-28 w-full max-w-full">
+              {/* Priority 5: Compact Horizontal Results Strip directly under search bar / above map for instant visibility on 1080p laptops */}
+              <div className="bg-[#0B1523] border border-[#182A40] rounded-xl px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center space-x-2 shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-[#00E5FF] animate-pulse" />
+                  <span className="text-xs font-mono font-semibold text-white tracking-wide">
+                    {searchResults.length} {searchResults.length === 1 ? 'Location' : 'Locations'} Retrieved
+                  </span>
+                  {currentQuery && (
+                    <span className="text-[11px] text-[#94A3B8] font-mono hidden md:inline truncate max-w-[220px]" title={currentQuery}>
+                      for <span className="text-[#00E5FF] font-sans italic">{currentQuery}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Quick selection pills for instant switching */}
+                <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full">
+                  {searchResults.map((item, idx) => {
+                    const isSelected = item.id === selectedResultId;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSelectResult(item)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00E5FF] ${
+                          isSelected
+                            ? 'bg-[#00E5FF]/15 border-[#00E5FF] text-white shadow-[0_0_12px_rgba(0,229,255,0.25)] font-semibold'
+                            : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white hover:border-[#38BDF8]/60'
+                        }`}
+                        title={`${item.title} (${item.confidencePct}% Detection Confidence)`}
+                      >
+                        <span className={`text-[10px] font-mono px-1 py-0.2 rounded ${isSelected ? 'bg-[#00E5FF] text-black font-bold' : 'bg-[#182A40] text-[#94A3B8]'}`}>
+                          #{idx + 1}
+                        </span>
+                        <span className="truncate max-w-[120px] sm:max-w-[150px]">{item.title}</span>
+                        <span className={`text-[10px] font-mono ${isSelected ? 'text-[#00E5FF]' : 'text-[#64748B]'}`}>
+                          {item.confidencePct}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Top Row: Central Map (Left) + Change Analysis Panel (Right) */}
               <div className="flex flex-col lg:grid lg:grid-cols-[1fr_1.25fr] gap-3 shrink-0 h-auto lg:h-[480px] xl:h-[520px]">
                 {/* Central Map with AOI, Controls & India Inset */}

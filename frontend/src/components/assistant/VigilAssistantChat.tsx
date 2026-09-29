@@ -206,29 +206,25 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
 
   return (
     <>
-      {/* 1. FLOATING LAUNCHER BUTTON (Bottom-Right) */}
+      {/* 1. COMPACT CIRCULAR LAUNCHER BUTTON (Bottom-Right, safe offset z-40) */}
       {!isOpen && (
         <button
           onClick={() => {
             setIsOpen(true);
             setIsMinimized(false);
           }}
-          className="fixed bottom-4 right-4 z-50 flex items-center space-x-2.5 px-3.5 py-2.5 rounded-full bg-[#070D16] border-2 border-[#00E5FF] text-white shadow-[0_0_25px_rgba(0,229,255,0.4)] hover:shadow-[0_0_35px_rgba(0,229,255,0.7)] hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer font-sans group"
+          className="fixed bottom-5 right-5 z-40 flex items-center justify-center p-3 rounded-full bg-[#070D16] border-2 border-[#00E5FF] text-white shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.75)] hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer font-sans group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00E5FF]"
           title="Open VIGIL Assistant - AI satellite imagery copilot"
+          aria-label="Open VIGIL Assistant"
         >
-          <div className="relative">
-            <Bot className="w-5 h-5 text-[#00E5FF] group-hover:rotate-12 transition-transform duration-200" />
+          <div className="relative flex items-center justify-center">
+            <Bot className="w-6 h-6 text-[#00E5FF] group-hover:rotate-12 transition-transform duration-200" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#10B981]" />
           </div>
-          <div className="flex flex-col text-left">
-            <span className="text-xs font-bold tracking-wider text-white uppercase font-mono">
-              VIGIL AI
-            </span>
-            <span className="text-[9px] text-[#00E5FF] font-medium leading-none">
-              Copilot Active
-            </span>
-          </div>
+          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs group-hover:ml-2 text-xs font-bold font-mono text-[#00E5FF] transition-all duration-300">
+            VIGIL AI
+          </span>
         </button>
       )}
 
