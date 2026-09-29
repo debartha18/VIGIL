@@ -82,7 +82,7 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     mapY: 22,
     borderDistanceKm: 4.2,
     borderDistanceStr: '4.2 km from International Boundary',
-    observationPeriod: '2022 → 2026',
+    observationPeriod: '2023 → 2026',
     changedArea: '32,500 m² (3.2 ha)',
     changedAreaM2: 32500,
     source: 'Sentinel-2 (10m Optical)',
@@ -165,7 +165,7 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     mapY: 26,
     borderDistanceKm: 2.8,
     borderDistanceStr: '2.8 km from International Boundary',
-    observationPeriod: '2022 → 2026',
+    observationPeriod: '2023 → 2026',
     changedArea: '78,000 m² (12.4 km corridor)',
     changedAreaM2: 78000,
     source: 'Sentinel-1 (SAR C-Band)',
@@ -331,7 +331,7 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     mapY: 42,
     borderDistanceKm: 1.6,
     borderDistanceStr: '1.6 km from International Boundary',
-    observationPeriod: '2022 → 2026',
+    observationPeriod: '2023 → 2026',
     changedArea: '46,000 m² (4.6 ha)',
     changedAreaM2: 46000,
     source: 'Sentinel-2 (10m Optical)',
@@ -497,7 +497,7 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     mapY: 34,
     borderDistanceKm: 8.2,
     borderDistanceStr: '8.2 km from International Boundary',
-    observationPeriod: '2022 → 2026',
+    observationPeriod: '2023 → 2026',
     changedArea: '38,000 m² (3.8 ha)',
     changedAreaM2: 38000,
     source: 'Landsat-8/9 (15m)',
@@ -735,6 +735,146 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
   }
 ];
 
+
+export const SEARCH_STOP_WORDS = new Set([
+  'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are',
+  'as', 'at', 'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by',
+  'can', 'could', 'did', 'do', 'does', 'doing', 'don', 'down', 'during', 'each', 'few', 'for', 'from',
+  'further', 'had', 'has', 'have', 'having', 'he', 'her', 'here', 'how', 'i', 'if', 'in', 'into', 'is',
+  'it', 'its', 'itself', 'just', 'me', 'more', 'most', 'my', 'no', 'nor', 'not', 'now', 'of', 'off',
+  'on', 'once', 'only', 'or', 'other', 'our', 'out', 'over', 'own', 'same', 'she', 'should', 'so',
+  'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them', 'then', 'there', 'these', 'they',
+  'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', 'we', 'were', 'what',
+  'when', 'where', 'which', 'while', 'who', 'whom', 'why', 'with', 'you', 'your',
+  // Geospatial generic search fillers:
+  'show', 'find', 'areas', 'area', 'region', 'regions', 'place', 'places', 'spot', 'spots', 'look',
+  'locate', 'display', 'search', 'get', 'give', 'list', 'boundary', 'international', 'border', 'increased',
+  'changes', 'change'
+]);
+
+interface CategoryIntent {
+  changeTypes?: BorderChangeType[];
+  keywords: string[];
+  locationIds?: string[];
+  weight: number;
+}
+
+const CATEGORY_INTENTS: CategoryIntent[] = [
+  {
+    changeTypes: ['Road Development'],
+    keywords: [
+      'road', 'roads', 'highway', 'highways', 'paving', 'paved', 'asphalt', 'pass', 'corridor',
+      'culvert', 'bridge', 'transit', 'route', 'traffic', 'widening', 'lateral'
+    ],
+    locationIds: ['LOC-STRAT-02'],
+    weight: 70
+  },
+  {
+    changeTypes: ['New Construction'],
+    keywords: [
+      'construction', 'constructed', 'construct', 'deck', 'modular', 'pylons', 'erected', 'erection',
+      'shelter', 'shelters', 'foundation', 'pads', 'building', 'buildings', 'structure', 'structures'
+    ],
+    locationIds: ['LOC-STRAT-01'],
+    weight: 60
+  },
+  {
+    changeTypes: ['Structural Expansion'],
+    keywords: [
+      'expansion', 'expanded', 'logistics', 'terminal', 'warehouse', 'warehouses', 'depot', 'apron',
+      'stacking', 'storage', 'commercial', 'urban', 'town', 'township', 'grid', 'subdivision'
+    ],
+    locationIds: ['LOC-STRAT-03', 'LOC-STRAT-07'],
+    weight: 60
+  },
+  {
+    changeTypes: ['Land Clearance'],
+    keywords: [
+      'clearance', 'cleared', 'clearing', 'island', 'silt', 'bund', 'earthworks', 'leveling', 'leveled',
+      'bulldozed', 'agrarian', 'agricultural', 'farming', 'terrace', 'terraced', 'topsoil'
+    ],
+    locationIds: ['LOC-STRAT-04', 'LOC-STRAT-08'],
+    weight: 60
+  },
+  {
+    changeTypes: ['Water-Extent Change'],
+    keywords: [
+      'water', 'stream', 'river', 'riverine', 'riverbank', 'channel', 'culvert', 'embankment', 'gabion',
+      'riparian', 'hydrography', 'flood', 'coffer'
+    ],
+    locationIds: ['LOC-STRAT-05'],
+    weight: 70
+  },
+  {
+    changeTypes: ['Vegetation Change'],
+    keywords: [
+      'vegetation', 'forest', 'canopy', 'tree', 'trees', 'pine', 'logging', 'logged', 'conifer',
+      'mast', 'relay', 'telemetry', 'ridge'
+    ],
+    locationIds: ['LOC-STRAT-06'],
+    weight: 70
+  }
+];
+
+export const computeRelevance = (loc: BorderLocationItem, query: string): number => {
+  const qClean = query.toLowerCase().trim();
+  if (!qClean) return 1;
+
+  // Extract meaningful tokens
+  const words = qClean.replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(Boolean);
+  const meaningfulTokens = words.filter(w => !SEARCH_STOP_WORDS.has(w) && w.length > 2);
+  const tokens = meaningfulTokens.length > 0 ? meaningfulTokens : words.filter(w => w.length > 1);
+
+  if (tokens.length === 0) return 1;
+
+  let score = 0;
+
+  // 1. Exact phrase matches in name, description, or changeType
+  if (loc.name.toLowerCase().includes(qClean)) score += 100;
+  if (loc.description.toLowerCase().includes(qClean)) score += 60;
+  if (loc.changeType.toLowerCase() === qClean) score += 90;
+
+  // 2. Category intent matches
+  for (const intent of CATEGORY_INTENTS) {
+    const hasIntentKeyword = intent.keywords.some(k => qClean.includes(k) || words.includes(k));
+    if (hasIntentKeyword) {
+      if (intent.changeTypes && intent.changeTypes.includes(loc.changeType)) {
+        score += intent.weight;
+      }
+      if (intent.locationIds && intent.locationIds.includes(loc.id)) {
+        score += intent.weight * 1.5;
+      }
+    }
+  }
+
+  // 3. Token-level matches
+  for (const token of tokens) {
+    if (loc.id.toLowerCase() === token) score += 90;
+    if (loc.changeType.toLowerCase().includes(token)) score += 40;
+    if (loc.keywords.some(k => k.includes(token) || token.includes(k))) score += 30;
+    if (loc.name.toLowerCase().includes(token)) score += 25;
+    if (loc.region.toLowerCase().includes(token)) score += 20;
+    if (loc.description.toLowerCase().includes(token)) score += 15;
+    if (loc.source.toLowerCase().includes(token)) score += 10;
+  }
+
+  // 4. Sector keywords
+  if (qClean.includes('north') && loc.region.includes('Northern')) score += 25;
+  if (qClean.includes('west') && loc.region.includes('Western')) score += 25;
+  if (qClean.includes('east') && loc.region.includes('Eastern')) score += 25;
+  if ((qClean.includes('himalaya') || qClean.includes('central')) && loc.region.includes('Central Himalayan')) score += 25;
+
+  // 5. Year matching (e.g. 2023, 2026)
+  for (const y of ['2022', '2023', '2024', '2025', '2026']) {
+    if (qClean.includes(y)) {
+      if (loc.observationPeriod.includes(y)) score += 15;
+      if (loc.timelineProgression.some(t => t.year.toString() === y)) score += 10;
+    }
+  }
+
+  return score;
+};
+
 interface BorderStrategicAnalysisViewProps {
   onNavigateToSemanticSearch?: () => void;
 }
@@ -774,9 +914,103 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
 
   const sliderContainerRef = useRef<HTMLDivElement>(null);
 
+  // Natural-Language Semantic Search & Filtering Engine
+  const filteredLocations = useMemo(() => {
+    // 1. Base Dropdown Filtering
+    const baseList = DEMO_BORDER_LOCATIONS.filter((loc) => {
+      // Change Type Filter
+      if (selectedType !== 'All' && loc.changeType !== selectedType) {
+        return false;
+      }
+
+      // Sector Filter
+      if (selectedRegion !== 'All' && loc.region !== selectedRegion) {
+        return false;
+      }
+
+      // Distance Filter
+      if (selectedDistance === '< 3 km' && loc.borderDistanceKm >= 3) return false;
+      if (selectedDistance === '< 5 km' && loc.borderDistanceKm >= 5) return false;
+      if (selectedDistance === '< 10 km' && loc.borderDistanceKm >= 10) return false;
+
+      // Confidence Filter
+      if (selectedConfidence === '90%+' && loc.confidence < 90) return false;
+      if (selectedConfidence === '95%+' && loc.confidence < 95) return false;
+
+      // Source Filter
+      if (selectedSource !== 'All' && !loc.source.toLowerCase().includes(selectedSource.toLowerCase())) {
+        return false;
+      }
+
+      // Date Range Filter
+      if (selectedDateRange !== 'All' && !loc.observationPeriod.includes(selectedDateRange)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    const qClean = searchQuery.toLowerCase().trim();
+    if (!qClean) {
+      return baseList;
+    }
+
+    // 2. Score and rank by semantic relevance
+    const scored = baseList
+      .map((loc) => ({
+        loc,
+        score: computeRelevance(loc, qClean)
+      }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    if (scored.length > 0) {
+      return scored.map((item) => item.loc);
+    }
+
+    // Fallback: match any non-stop words if zero score
+    const words = qClean.replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(w => !SEARCH_STOP_WORDS.has(w) && w.length > 2);
+    if (words.length > 0) {
+      const fallback = baseList.filter((loc) =>
+        words.some(
+          (w) =>
+            loc.name.toLowerCase().includes(w) ||
+            loc.changeType.toLowerCase().includes(w) ||
+            loc.description.toLowerCase().includes(w) ||
+            loc.keywords.some((k) => k.includes(w))
+        )
+      );
+      if (fallback.length > 0) return fallback;
+    }
+
+    return [];
+  }, [
+    searchQuery,
+    selectedType,
+    selectedRegion,
+    selectedDistance,
+    selectedConfidence,
+    selectedSource,
+    selectedDateRange
+  ]);
+
+  // Active Location synchronization: always resolves to matching results
   const activeLocation = useMemo(() => {
-    return DEMO_BORDER_LOCATIONS.find((l) => l.id === activeLocationId) || DEMO_BORDER_LOCATIONS[0];
-  }, [activeLocationId]);
+    const found = filteredLocations.find((l) => l.id === activeLocationId);
+    if (found) return found;
+    if (filteredLocations.length > 0) return filteredLocations[0];
+    return DEMO_BORDER_LOCATIONS[0];
+  }, [filteredLocations, activeLocationId]);
+
+  // Keep activeLocationId in sync whenever search or filters update
+  useEffect(() => {
+    if (filteredLocations.length > 0) {
+      const match = filteredLocations.find((l) => l.id === activeLocationId);
+      if (!match) {
+        setActiveLocationId(filteredLocations[0].id);
+      }
+    }
+  }, [filteredLocations, activeLocationId]);
 
   // Timeline Step for active location and active year
   const activeTimelineStep = useMemo(() => {
@@ -799,66 +1033,6 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
     }, 1800);
     return () => clearInterval(timer);
   }, [isPlaying]);
-
-  // Natural-Language Semantic Search & Filtering Engine
-  const filteredLocations = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    const queryTerms = q.replace(/["']/g, '').split(/\s+/).filter((t) => t.length > 2);
-
-    return DEMO_BORDER_LOCATIONS.filter((loc) => {
-      // 1. Text Query Filter & Ranking
-      if (queryTerms.length > 0) {
-        const matchesTerm = queryTerms.some(
-          (t) =>
-            loc.name.toLowerCase().includes(t) ||
-            loc.changeType.toLowerCase().includes(t) ||
-            loc.region.toLowerCase().includes(t) ||
-            loc.description.toLowerCase().includes(t) ||
-            loc.keywords.some((k) => k.includes(t) || t.includes(k))
-        );
-        if (!matchesTerm) return false;
-      }
-
-      // 2. Change Type Filter
-      if (selectedType !== 'All' && loc.changeType !== selectedType) {
-        return false;
-      }
-
-      // 3. Region Filter
-      if (selectedRegion !== 'All' && loc.region !== selectedRegion) {
-        return false;
-      }
-
-      // 4. Distance Filter
-      if (selectedDistance === '< 5 km' && loc.borderDistanceKm >= 5) return false;
-      if (selectedDistance === '< 15 km' && loc.borderDistanceKm >= 15) return false;
-      if (selectedDistance === '< 30 km' && loc.borderDistanceKm >= 30) return false;
-
-      // 5. Confidence Filter
-      if (selectedConfidence === '90%+' && loc.confidence < 90) return false;
-      if (selectedConfidence === '95%+' && loc.confidence < 95) return false;
-
-      // 6. Source Filter
-      if (selectedSource !== 'All' && !loc.source.toLowerCase().includes(selectedSource.toLowerCase())) {
-        return false;
-      }
-
-      // 7. Date Range Filter
-      if (selectedDateRange !== 'All' && !loc.observationPeriod.includes(selectedDateRange)) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [
-    searchQuery,
-    selectedType,
-    selectedRegion,
-    selectedDistance,
-    selectedConfidence,
-    selectedSource,
-    selectedDateRange
-  ]);
 
   // Handle Swipe Slider Draggable Movement
   const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
@@ -950,8 +1124,21 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
             {exampleSearches.map((ex, idx) => (
               <button
                 key={idx}
-                onClick={() => setSearchQuery(ex)}
-                className="px-2.5 py-1 rounded-lg text-[11px] bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-[#94A3B8] hover:text-white whitespace-nowrap transition cursor-pointer shrink-0"
+                onClick={() => {
+                  // Clear conflicting filters so search query takes full effect
+                  setSelectedType('All');
+                  setSelectedRegion('All');
+                  setSelectedDistance('All');
+                  setSelectedConfidence('All');
+                  setSelectedSource('All');
+                  setSelectedDateRange('All');
+                  setSearchQuery(ex);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] border whitespace-nowrap transition cursor-pointer shrink-0 ${
+                  searchQuery === ex
+                    ? 'bg-[#00E5FF] text-[#070D16] border-[#00E5FF] font-bold shadow-[0_0_10px_rgba(0,229,255,0.4)]'
+                    : 'bg-[#0E1A2B] hover:bg-[#15273F] border-[#182A40] text-[#94A3B8] hover:text-white'
+                }`}
               >
                 {ex}
               </button>
@@ -1003,9 +1190,9 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                 className="bg-[#070D16] border border-[#182A40] text-white rounded-lg px-2 py-1 text-xs outline-none focus:border-[#00E5FF]"
               >
                 <option value="All">All Distances</option>
+                <option value="< 3 km">&lt; 3 km from border</option>
                 <option value="< 5 km">&lt; 5 km from border</option>
-                <option value="< 15 km">&lt; 15 km from border</option>
-                <option value="< 30 km">&lt; 30 km from border</option>
+                <option value="< 10 km">&lt; 10 km from border</option>
               </select>
             </div>
 
@@ -1047,6 +1234,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                 className="bg-[#070D16] border border-[#182A40] text-white rounded-lg px-2 py-1 text-xs outline-none focus:border-[#00E5FF]"
               >
                 <option value="All">All Observation Periods</option>
+                <option value="2023">2023 → 2026</option>
                 <option value="2022">2022 → 2026</option>
               </select>
             </div>
@@ -1145,6 +1333,34 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                   </text>
                 </svg>
 
+              {/* Empty State Overlay if no locations matched search */}
+              {filteredLocations.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center z-30 bg-black/75 backdrop-blur-sm pointer-events-auto p-4">
+                  <div className="bg-[#0B1523] border border-[#182A40] rounded-2xl p-5 max-w-sm text-center space-y-3 shadow-2xl">
+                    <AlertCircle className="w-8 h-8 text-[#F59E0B] mx-auto animate-bounce" />
+                    <div>
+                      <div className="text-sm font-bold text-white">No Strategic Points Found</div>
+                      <p className="text-xs text-[#94A3B8] mt-1">
+                        No locations matched "{searchQuery}" with the selected sector and filter parameters.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSelectedType('All');
+                        setSelectedRegion('All');
+                        setSelectedDistance('All');
+                        setSelectedConfidence('All');
+                        setSelectedSource('All');
+                        setSelectedDateRange('All');
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] text-xs font-semibold text-white transition cursor-pointer shadow"
+                    >
+                      Reset All Filters & Search
+                    </button>
+                  </div>
+                </div>
+              )}
                 {/* Detected Change Location Pins: Clean by default; info card only when selected! */}
                 {filteredLocations.map((loc) => {
                   const isSelected = activeLocation.id === loc.id;
