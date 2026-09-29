@@ -5,7 +5,6 @@ import {
   Plus,
   Minus,
   RotateCcw,
-  Activity,
   ChevronRight
 } from 'lucide-react';
 import { SearchResultItem } from '../components/search/SemanticSearchResults';
@@ -458,6 +457,15 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
               V2.4 LIVE
             </span>
           </div>
+
+          <button
+            onClick={handleFocusInSemanticSearch}
+            className="hidden xl:flex h-8 px-2.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white items-center space-x-1.5 text-xs font-medium transition cursor-pointer shadow"
+            title="Focus the selected station in Semantic Search"
+          >
+            <span>Focus in Search: {activeStation.stationCode}</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         {/* Center: Search & Parameter Filters */}
@@ -773,75 +781,7 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
           )}
         </div>
 
-        {/* 3. COORDINATE TELEMETRY INSPECTOR HUD (Bottom Left - styled like ocean-vision-3d) */}
-        <div
-          className="absolute bottom-16 left-4 z-30 pointer-events-auto max-w-sm w-88 animate-in fade-in slide-in-from-bottom-2 duration-200"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <div className="bg-[#070D16]/95 border border-[#182A40] rounded-xl p-3.5 shadow-2xl backdrop-blur-md text-xs font-sans space-y-2.5">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#182A40]/80 pb-2">
-              <div className="flex items-center space-x-2 text-[#00E5FF] font-bold text-xs">
-                <Activity className="w-4 h-4 animate-pulse" />
-                <span className="truncate">Coordinate Telemetry Inspector</span>
-              </div>
-              <span className="font-mono text-[10px] text-white bg-[#0E2238] px-2 py-0.5 rounded border border-[#1E3A5F]">
-                {activeStation.coordinates}
-              </span>
-            </div>
 
-            {/* Oceanographic Metric Matrix (matching reference) */}
-            <div className="space-y-1 font-mono text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-[#64748B]">Depth:</span>
-                <span className="text-[#38BDF8] font-bold">{activeStation.depth}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#64748B]">Pressure:</span>
-                <span className="text-white">{activeStation.pressure}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#64748B]">Sea Surface Temp:</span>
-                <span className="text-[#F59E0B] font-bold">{activeStation.sst}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#64748B]">Salinity:</span>
-                <span className="text-[#10B981] font-bold">{activeStation.salinity}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#64748B]">Dissolved Oxygen:</span>
-                <span className="text-white">{activeStation.dissolvedOxygen}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#64748B]">Chlorophyll-a:</span>
-                <span className="text-[#10B981]">{activeStation.chlorophyll}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#64748B]">Significant Wave Height:</span>
-                <span className="text-[#38BDF8]">{activeStation.waveHeight}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#64748B]">Wind Speed & Direction:</span>
-                <span className="text-white">{activeStation.windSpeed} ({activeStation.windDirection})</span>
-              </div>
-            </div>
-
-            {/* Direct Link to Semantic Search Card */}
-            <div className="pt-2 border-t border-[#182A40]/80 flex items-center justify-between">
-              <span className="text-[10px] text-[#64748B]">
-                Type: <strong className="text-white font-sans">{activeStation.typeLabel}</strong>
-              </span>
-              <button
-                onClick={handleFocusInSemanticSearch}
-                className="px-3 py-1.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white font-medium text-[11px] flex items-center space-x-1.5 transition shadow cursor-pointer"
-              >
-                <span>Focus in Semantic Search</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* 4. STATION & CURRENTS LEGEND (Right side - matching ocean-vision-3d) */}
         <div

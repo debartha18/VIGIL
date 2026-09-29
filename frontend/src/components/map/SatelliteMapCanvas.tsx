@@ -8,9 +8,7 @@ import {
   Check,
   Flame,
   Globe,
-  Activity,
   RotateCcw,
-  ChevronRight,
   Maximize2
 } from 'lucide-react';
 import { SearchResultItem } from '../search/SemanticSearchResults';
@@ -276,7 +274,6 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
   const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
   const [showLegend, setShowLegend] = useState<boolean>(true);
-  const [showInspector, setShowInspector] = useState<boolean>(true);
 
   // Active Selected Station / Coordinates
   const [currentCoords, setCurrentCoords] = useState<string>(coordinates);
@@ -713,95 +710,17 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
         )}
       </div>
 
-      {/* 4. COORDINATE TELEMETRY INSPECTOR HUD (Shown only in full mode) */}
-      {mode === 'compact' ? (
-        <div
-          className="absolute bottom-2.5 left-2.5 z-30 pointer-events-none"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="bg-[#070D16]/90 border border-[#182A40] rounded-lg px-2.5 py-1 backdrop-blur-md text-[10px] font-mono text-[#94A3B8] flex items-center space-x-2 shadow-lg">
-            <span className="text-[#00E5FF] font-semibold">{currentCoords}</span>
-            <span className="border-l border-[#182A40] pl-2 text-white truncate max-w-[200px]">{siteName}</span>
-          </div>
+      {/* Sleek Coordinate Badge (Bottom Left) */}
+      <div
+        className="absolute bottom-2.5 left-2.5 z-30 pointer-events-none"
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-[#070D16]/90 border border-[#182A40] rounded-lg px-2.5 py-1 backdrop-blur-md text-[10px] font-mono text-[#94A3B8] flex items-center space-x-2 shadow-lg">
+          <span className="text-[#00E5FF] font-semibold">{currentCoords}</span>
+          <span className="border-l border-[#182A40] pl-2 text-white truncate max-w-[200px]">{siteName}</span>
         </div>
-      ) : (
-        <div
-          className="absolute bottom-3 left-3 z-30 pointer-events-auto max-w-sm"
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="bg-[#070D16]/95 border border-[#182A40] rounded-xl p-3 shadow-2xl backdrop-blur-md text-xs font-sans space-y-2">
-            {/* Inspector Header */}
-            <div className="flex items-center justify-between border-b border-[#182A40]/80 pb-1.5">
-              <div className="flex items-center space-x-1.5 text-[#00E5FF] font-semibold text-[11px]">
-                <Activity className="w-3.5 h-3.5 animate-pulse" />
-                <span>Coordinate Telemetry Inspector</span>
-              </div>
-              <div className="flex items-center space-x-1.5">
-                <span className="font-mono text-[10px] text-white bg-[#0E2238] px-1.5 py-0.5 rounded border border-[#1E3A5F]">
-                  {currentCoords.replace('Lat: ', '').replace('Lon: ', '')}
-                </span>
-                <button
-                  onClick={() => setShowInspector(!showInspector)}
-                  className="text-[#64748B] hover:text-white px-1 text-xs cursor-pointer"
-                  title={showInspector ? 'Collapse' : 'Expand'}
-                >
-                  {showInspector ? '−' : '+'}
-                </button>
-              </div>
-            </div>
-
-            {showInspector && (
-              <>
-                {/* Telemetry Key-Value Matrix */}
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] font-mono">
-                  <div>
-                    <span className="text-[#64748B]">Target Station:</span>
-                    <div className="text-white font-sans font-medium truncate" title={activeStation.title || siteName}>
-                      {activeStation.title || siteName}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[#64748B]">Elevation / GSD:</span>
-                    <div className="text-[#38BDF8]">{activeStation.elevation}</div>
-                  </div>
-                  <div>
-                    <span className="text-[#64748B]">Surface Temp (SWIR):</span>
-                    <div className="text-[#F59E0B]">{activeStation.sst}</div>
-                  </div>
-                  <div>
-                    <span className="text-[#64748B]">Reflectance / Index:</span>
-                    <div className="text-[#10B981]">{activeStation.albedo}</div>
-                  </div>
-                  <div>
-                    <span className="text-[#64748B]">Atmospheric SCL:</span>
-                    <div className="text-white">{activeStation.cloudCover}</div>
-                  </div>
-                  <div>
-                    <span className="text-[#64748B]">Change Footprint:</span>
-                    <div className="text-[#00E5FF] font-bold">{activeStation.areaHa} (42k m²)</div>
-                  </div>
-                </div>
-
-                {/* Direct Synchronization Action Button */}
-                <div className="pt-1 border-t border-[#182A40]/60 flex items-center justify-between">
-                  <span className="text-[9px] text-[#64748B]">
-                    Confidence: <strong className="text-[#10B981]">{activeStation.confidencePct}%</strong>
-                  </span>
-                  <button
-                    onClick={() => handleSelectStation(activeStation)}
-                    className="px-2.5 py-1 rounded bg-[#0284C7] hover:bg-[#0369A1] text-white font-medium text-[10px] flex items-center space-x-1 transition shadow cursor-pointer"
-                  >
-                    <span>Focus in Semantic Search</span>
-                    <ChevronRight className="w-3 h-3" />
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* 5. STATION CATEGORY LEGEND (Shown only in full mode) */}
       {mode !== 'compact' && (
