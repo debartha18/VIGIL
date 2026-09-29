@@ -206,23 +206,22 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
 
   return (
     <>
-      {/* 1. COMPACT CIRCULAR LAUNCHER BUTTON (Bottom-Right, safe offset z-40) */}
+      {/* 1. COMPACT LAUNCHER BUTTON (Bottom-Right, safe offset z-40) */}
       {!isOpen && (
         <button
           onClick={() => {
             setIsOpen(true);
             setIsMinimized(false);
           }}
-          className="fixed bottom-5 right-5 z-40 flex items-center justify-center p-3 rounded-full bg-[#070D16] border-2 border-[#00E5FF] text-white shadow-[0_0_25px_rgba(0,229,255,0.45)] hover:shadow-[0_0_35px_rgba(0,229,255,0.75)] hover:scale-110 active:scale-95 transition-all duration-200 cursor-pointer font-sans group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00E5FF]"
-          title="Open VIGIL Assistant - AI satellite imagery copilot"
+          className="fixed bottom-5 right-5 z-40 flex items-center space-x-2 px-3 py-2 rounded-md bg-surface border border-border text-text shadow-subtle hover:bg-raised transition-colors duration-150 cursor-pointer font-sans group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          title="Open VIGIL Assistant"
           aria-label="Open VIGIL Assistant"
         >
           <div className="relative flex items-center justify-center">
-            <Bot className="w-6 h-6 text-[#00E5FF] group-hover:rotate-12 transition-transform duration-200" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+            <Bot className="w-4 h-4 text-accent" />
+            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-ok" />
           </div>
-          <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs group-hover:ml-2 text-xs font-bold font-mono text-[#00E5FF] transition-all duration-300">
+          <span className="text-xs font-semibold font-mono text-text">
             VIGIL AI
           </span>
         </button>
@@ -231,43 +230,43 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
       {/* 2. CHAT PANEL WINDOW */}
       {isOpen && (
         <div
-          className={`fixed z-50 transition-all duration-300 flex flex-col bg-[#070D16] border border-[#182A40] shadow-[0_10px_50px_rgba(0,0,0,0.85)] font-sans text-white ${
+          className={`fixed z-50 transition-all duration-200 flex flex-col bg-surface border border-border shadow-subtle font-sans text-text ${
             isMinimized
-              ? 'bottom-4 right-4 w-72 sm:w-80 h-14 rounded-2xl overflow-hidden'
+              ? 'bottom-4 right-4 w-72 sm:w-80 h-12 rounded-md overflow-hidden'
               : isMaximized
-              ? 'bottom-2 right-2 left-2 top-2 sm:bottom-4 sm:right-4 sm:left-auto sm:top-auto sm:w-[680px] sm:h-[760px] max-w-[calc(100vw-16px)] max-h-[calc(100vh-16px)] rounded-2xl'
-              : 'bottom-4 right-4 w-[calc(100vw-32px)] sm:w-[440px] h-[590px] max-h-[calc(100vh-40px)] rounded-2xl'
+              ? 'bottom-2 right-2 left-2 top-2 sm:bottom-4 sm:right-4 sm:left-auto sm:top-auto sm:w-[680px] sm:h-[760px] max-w-[calc(100vw-16px)] max-h-[calc(100vh-16px)] rounded-md'
+              : 'bottom-4 right-4 w-[calc(100vw-32px)] sm:w-[440px] h-[590px] max-h-[calc(100vh-40px)] rounded-md'
           }`}
         >
           {/* A. HEADER */}
-          <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#0B1523] border-b border-[#182A40] rounded-t-2xl shrink-0 select-none">
+          <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border rounded-t-md shrink-0 select-none">
             {/* Title & Status */}
-            <div className="flex items-center space-x-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-[#00E5FF]/10 border border-[#00E5FF]/40 flex items-center justify-center shrink-0">
-                <Bot className="w-4 h-4 text-[#00E5FF]" />
+            <div className="flex items-center space-x-2 min-w-0">
+              <div className="w-6 h-6 rounded bg-raised border border-border flex items-center justify-center shrink-0">
+                <Bot className="w-3.5 h-3.5 text-accent" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-xs font-bold text-white tracking-wide truncate">
+                  <h3 className="text-xs font-semibold text-text tracking-normal truncate">
                     VIGIL Assistant
                   </h3>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-[#10B981]/15 border border-[#10B981]/40 text-[#10B981]">
+                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-raised border border-border text-text-2">
                     {aiMode === 'LIVE_AI' ? 'Live AI' : 'Demo AI'}
                   </span>
                 </div>
-                <div className="flex items-center space-x-1.5 text-[10px] text-[#94A3B8]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                <div className="flex items-center space-x-1.5 text-[10px] text-text-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-ok" />
                   <span className="truncate">Context: {context.aoi.name}</span>
                 </div>
               </div>
             </div>
 
             {/* Header Control Buttons */}
-            <div className="flex items-center space-x-1 shrink-0 text-[#94A3B8]">
+            <div className="flex items-center space-x-1 shrink-0 text-text-2">
               {/* Clear History */}
               <button
                 onClick={handleClearChat}
-                className="p-1.5 hover:text-white hover:bg-[#15273F] rounded-md transition cursor-pointer"
+                className="p-1 hover:text-text hover:bg-raised rounded transition cursor-pointer"
                 title="Clear conversation history"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -276,7 +275,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               {/* Minimize / Restore */}
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="p-1.5 hover:text-white hover:bg-[#15273F] rounded-md transition cursor-pointer"
+                className="p-1 hover:text-text hover:bg-raised rounded transition cursor-pointer"
                 title={isMinimized ? 'Restore chat window' : 'Minimize chat window'}
               >
                 {isMinimized ? <ChevronUp className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
@@ -286,7 +285,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               {!isMinimized && (
                 <button
                   onClick={() => setIsMaximized(!isMaximized)}
-                  className="p-1.5 hover:text-white hover:bg-[#15273F] rounded-md transition cursor-pointer hidden sm:block"
+                  className="p-1 hover:text-text hover:bg-raised rounded transition cursor-pointer hidden sm:block"
                   title={isMaximized ? 'Dock window' : 'Expand window'}
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
@@ -296,7 +295,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               {/* Close */}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 hover:text-red-400 hover:bg-[#15273F] rounded-md transition cursor-pointer"
+                className="p-1 hover:text-flag hover:bg-raised rounded transition cursor-pointer"
                 title="Close VIGIL Assistant"
               >
                 <X className="w-4 h-4" />
@@ -308,12 +307,12 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
           {!isMinimized && (
             <>
               {/* B. ANALYST CONTEXT BAR & SUBHEADER CONTROLS */}
-              <div className="px-3.5 py-1.5 bg-[#070D16] border-b border-[#182A40]/80 flex flex-wrap items-center justify-between gap-1.5 text-[10px] shrink-0">
+              <div className="px-3 py-1.5 bg-bg border-b border-border flex flex-wrap items-center justify-between gap-1.5 text-[10px] shrink-0 font-sans">
                 {/* Active AOI Tag */}
-                <div className="flex items-center space-x-1.5 text-[#38BDF8] truncate max-w-[210px] sm:max-w-[260px]">
-                  <MapPin className="w-3 h-3 text-[#00E5FF] shrink-0" />
-                  <span className="font-semibold truncate">{context.aoi.name}</span>
-                  <span className="text-[#64748B] font-mono text-[9px] shrink-0 hidden sm:inline">
+                <div className="flex items-center space-x-1.5 text-text truncate max-w-[210px] sm:max-w-[260px]">
+                  <MapPin className="w-3 h-3 text-accent shrink-0" />
+                  <span className="font-medium truncate">{context.aoi.name}</span>
+                  <span className="text-text-2 font-mono text-[9px] shrink-0 hidden sm:inline">
                     ({context.imagery.sensor.split(' ')[0]})
                   </span>
                 </div>
@@ -321,11 +320,11 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                 {/* Right controls: Language + Analyst Mode Toggle */}
                 <div className="flex items-center space-x-2 ml-auto">
                   {/* Language Selector */}
-                  <div className="flex items-center bg-[#0B1523] border border-[#182A40] rounded-md p-0.5">
+                  <div className="flex items-center bg-surface border border-border rounded p-0.5">
                     <button
                       onClick={() => setLanguage('en')}
                       className={`px-1.5 py-0.5 rounded text-[9px] font-mono transition cursor-pointer ${
-                        language === 'en' ? 'bg-[#00E5FF] text-[#070D16] font-bold' : 'text-[#94A3B8] hover:text-white'
+                        language === 'en' ? 'bg-raised text-accent font-semibold' : 'text-text-2 hover:text-text'
                       }`}
                       title="English language"
                     >
@@ -334,7 +333,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                     <button
                       onClick={() => setLanguage('hi')}
                       className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition cursor-pointer ${
-                        language === 'hi' ? 'bg-[#00E5FF] text-[#070D16] font-bold' : 'text-[#94A3B8] hover:text-white'
+                        language === 'hi' ? 'bg-raised text-accent font-semibold' : 'text-text-2 hover:text-text'
                       }`}
                       title="हिन्दी (Hindi)"
                     >
@@ -343,7 +342,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                     <button
                       onClick={() => setLanguage('bn')}
                       className={`px-1.5 py-0.5 rounded text-[9px] font-medium transition cursor-pointer ${
-                        language === 'bn' ? 'bg-[#00E5FF] text-[#070D16] font-bold' : 'text-[#94A3B8] hover:text-white'
+                        language === 'bn' ? 'bg-raised text-accent font-semibold' : 'text-text-2 hover:text-text'
                       }`}
                       title="বাংলা (Bengali)"
                     >
@@ -354,12 +353,12 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                   {/* Analyst Mode Toggle */}
                   <button
                     onClick={() => setAnalystMode(!analystMode)}
-                    className={`px-2 py-0.5 rounded-md border text-[9px] font-mono uppercase transition flex items-center space-x-1 cursor-pointer ${
+                    className={`px-2 py-0.5 rounded border text-[9px] font-mono uppercase transition flex items-center space-x-1 cursor-pointer ${
                       analystMode
-                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold shadow-[0_0_10px_rgba(245,158,11,0.3)]'
-                        : 'bg-[#0B1523] border-[#182A40] text-[#94A3B8] hover:text-white'
+                        ? 'bg-raised border-accent text-accent font-medium'
+                        : 'bg-surface border-border text-text-2 hover:text-text'
                     }`}
-                    title="Toggle Analyst Mode (Structured SIH Evaluation Format)"
+                    title="Toggle Analyst Mode"
                   >
                     <Shield className="w-2.5 h-2.5" />
                     <span>Analyst Mode</span>
@@ -368,12 +367,12 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               </div>
 
               {/* C. QUICK ACTION CAROUSEL */}
-              <div className="px-3 py-1.5 bg-[#070D16]/60 border-b border-[#182A40]/40 overflow-x-auto no-scrollbar flex items-center space-x-1.5 shrink-0">
+              <div className="px-3 py-1.5 bg-bg/60 border-b border-border overflow-x-auto no-scrollbar flex items-center space-x-1.5 shrink-0">
                 {quickActions.map((qa) => (
                   <button
                     key={qa.label}
                     onClick={() => handleSendMessage(qa.query)}
-                    className="whitespace-nowrap px-2.5 py-1 rounded-full bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] hover:border-[#00E5FF]/60 text-[10px] text-[#38BDF8] transition cursor-pointer flex items-center space-x-1 shrink-0 active:scale-95"
+                    className="whitespace-nowrap px-2 py-0.5 rounded bg-surface hover:bg-raised border border-border text-[10px] text-text-2 hover:text-text transition cursor-pointer flex items-center space-x-1 shrink-0"
                   >
                     <span>{qa.label}</span>
                   </button>
@@ -562,7 +561,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               </div>
 
               {/* E. FIXED BOTTOM INPUT BAR */}
-              <div className="p-3 bg-[#0B1523] border-t border-[#182A40] rounded-b-2xl shrink-0">
+              <div className="p-3 bg-surface border-t border-border rounded-b-md shrink-0">
                 <form
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -575,10 +574,10 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                     <button
                       type="button"
                       onClick={toggleSpeechRecognition}
-                      className={`p-2 rounded-xl border transition cursor-pointer ${
+                      className={`p-2 rounded border transition cursor-pointer ${
                         isListening
-                          ? 'bg-red-500/20 border-red-500 text-red-400 animate-pulse'
-                          : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white hover:border-[#00E5FF]'
+                          ? 'bg-flag/20 border-flag text-flag'
+                          : 'bg-bg border-border text-text-2 hover:text-text hover:border-text-2'
                       }`}
                       title={isListening ? 'Stop listening' : 'Speak your question'}
                     >
@@ -600,7 +599,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                           ? 'এই স্যাটেলাইট চিত্র সম্পর্কে জিজ্ঞাসা করুন...'
                           : 'Ask about this satellite imagery...'
                       }
-                      className="w-full bg-[#070D16] border border-[#182A40] focus:border-[#00E5FF] focus:outline-none rounded-xl px-3.5 py-2 text-xs text-white placeholder-[#64748B] transition font-sans"
+                      className="w-full bg-bg border border-border focus:border-accent focus:outline-none rounded px-3 py-1.5 text-xs text-text placeholder-text-2/60 transition font-sans"
                     />
                   </div>
 
@@ -608,12 +607,17 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                   <button
                     type="submit"
                     disabled={!inputQuery.trim() || isTyping}
-                    className="p-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] disabled:opacity-40 disabled:cursor-not-allowed text-white shadow transition cursor-pointer flex items-center justify-center shrink-0"
+                    className="p-2 rounded bg-accent hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed text-[#0E1116] shadow-subtle transition cursor-pointer flex items-center justify-center shrink-0 font-medium"
                     title="Send query"
                   >
                     <Send className="w-4 h-4" />
                   </button>
                 </form>
+
+                {/* AI Assistant Disclaimer: Compact and muted */}
+                <div className="mt-1.5 text-center text-[11px] text-text-2 font-sans select-none">
+                  AI-assisted detection. Analyst verification required.
+                </div>
               </div>
             </>
           )}

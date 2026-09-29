@@ -205,7 +205,6 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
 
   // Progressive Tiled Loading state & skeleton
   const [isLoadingTiles, setIsLoadingTiles] = useState<boolean>(false);
-  const [hoveredStationId, setHoveredStationId] = useState<string | null>(null);
 
   // Spectral Layers & Heatmap
   const [activeLayer, setActiveLayer] = useState<string>('Sentinel-2 (True Color RGB)');
@@ -323,17 +322,6 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
     setPan({ x: 0, y: 0 });
     setZoom(1.0);
   };
-
-  // Zooming in on cluster
-  const handleClusterClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setViewMode('tactical');
-    setZoom(1.6);
-    setPan({ x: 0, y: 0 });
-  };
-
-  // Should cluster when zoomed out (< 1.25) or in regional view
-  const shouldCluster = zoom < 1.2 || viewMode === 'regional';
 
   return (
     <div
@@ -495,131 +483,80 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
 
         {/* Change Heatmap Density Overlay (when toggled) */}
         {showHeatmap && (
-          <div className="absolute inset-0 pointer-events-none animate-in fade-in duration-300">
+          <div className="absolute inset-0 pointer-events-none transition-opacity duration-200">
             <div
-              className="absolute w-72 h-72 rounded-full bg-red-600/35 blur-3xl"
+              className="absolute w-72 h-72 rounded-full bg-change/10 border border-change/25"
               style={{ top: '44%', left: '46%', transform: 'translate(-50%, -50%)' }}
             />
+          </div>
+        )}
+
+        {/* 3. NUMBERED LOCATION MARKERS matching results strip rank */}
+        {MAP_STATIONS.map((station, idx) => {
+          const isSelected = (selectedTargetId ? selectedTargetId === station.id : activeStation.id === station.id);
+          const posX = station.tacticalX;
+          const posY = station.tacticalY;
+          const rank = idx + 1;
+
+          return (
             <div
-              className="absolute w-96 h-96 rounded-full bg-amber-500/25 blur-3xl"
-              style={{ top: '48%', left: '50%', transform: 'translate(-50%, -50%)' }}
-            />
-          </div>
-        )}
-
-        {/* 3. CLUSTERING WHEN ZOOMED OUT OR INDIVIDUAL BEACON PINS */}
-        {shouldCluster ? (
-          /* CLUSTER BADGE: Groups 5 Nearby Coastal Targets into Clean Marker */
-          <div
-            onClick={handleClusterClick}
-            className="absolute z-25 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-            style={{ left: '38%', top: '34%' }}
-            title="Click to zoom into Hazira Coastal Cluster (5 Locations)"
-          >
-            <div className="w-12 h-12 rounded-full bg-[#00E5FF]/20 border border-[#00E5FF] animate-ping" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="px-2.5 py-1 rounded-full bg-[#070D16]/95 border-2 border-[#00E5FF] text-[#00E5FF] font-mono font-bold text-xs shadow-[0_0_15px_#00E5FF] group-hover:scale-110 transition flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                <span>5 Locations</span>
-              </div>
-            </div>
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#0B1523]/90 border border-[#182A40] text-[9px] font-mono px-2 py-0.5 rounded text-[#94A3B8]">
-              Hazira Maritime Sector
-            </div>
-          </div>
-        ) : (
-          /* UNCLUSTERED INDIVIDUAL BEACON DOTS (Only shows details card on active/hovered) */
-          MAP_STATIONS.map((station) => {
-            const isSelected = activeStation.id === station.id;
-            const isHovered = hoveredStationId === station.id;
-            const posX = station.tacticalX;
-            const posY = station.tacticalY;
-
-            return (
+              key={station.id}
+              onClick={(e) => handleSelectStation(station, e)}
+              className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
+              style={{ left: `${posX}%`, top: `${posY}%` }}
+              title={`#${rank} ${station.title} (${station.lat.toFixed(4)}°N, ${station.lon.toFixed(4)}°E)`}
+            >
+              {/* Numbered Marker Badge */}
               <div
-                key={station.id}
-                onClick={(e) => handleSelectStation(station, e)}
-                onMouseEnter={() => setHoveredStationId(station.id)}
-                onMouseLeave={() => setHoveredStationId(null)}
-                className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
-                style={{ left: `${posX}%`, top: `${posY}%` }}
-                title={`${station.title} (${station.coordinates})`}
+                className={`rounded-full flex items-center justify-center font-mono tabular-nums transition-all ${
+                  isSelected
+                    ? 'w-6 h-6 bg-surface border-2 border-accent text-accent font-bold text-xs shadow-subtle ring-2 ring-accent/30'
+                    : 'w-5 h-5 bg-surface border border-border text-text-2 hover:text-text hover:border-text-2 text-[10px] shadow-subtle'
+                }`}
               >
-                {/* Pulsing Beacon Waves */}
-                <div
-                  className="absolute inset-0 -m-3 rounded-full opacity-75 animate-ping"
-                  style={{
-                    backgroundColor: station.color,
-                    animationDuration: isSelected ? '1.5s' : '3.5s'
-                  }}
-                />
-
-                {/* Center Target Dot */}
-                <div
-                  className={`relative w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center shadow-lg ${
-                    isSelected
-                      ? 'scale-125 border-white bg-[#00E5FF] shadow-[0_0_15px_#00E5FF]'
-                      : 'border-[#070D16] group-hover:scale-110 shadow-md'
-                  }`}
-                  style={{ backgroundColor: isSelected ? '#00E5FF' : station.color }}
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                </div>
-
-                {/* Station Info Card: ONLY visible when active or hovered to reduce clutter */}
-                {(isSelected || isHovered) && (
-                  <div
-                    className="absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap px-2.5 py-1.5 rounded-xl border border-[#00E5FF] bg-[#070D16]/95 text-white shadow-[0_0_20px_rgba(0,229,255,0.5)] z-30 scale-105 backdrop-blur-md pointer-events-none animate-in fade-in"
-                  >
-                    <div className="flex items-center space-x-1.5 font-bold">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: station.color }} />
-                      <span className="text-white text-xs">{station.title.split(' ')[0]}</span>
-                      <span className="text-[#00E5FF] text-[10px] font-mono">• {station.confidencePct}% Detection Confidence</span>
-                    </div>
-                    <div className="text-[9px] font-mono text-[#F59E0B] mt-0.5">
-                      {station.lat.toFixed(4)}°N, {station.lon.toFixed(4)}°E
-                    </div>
-                  </div>
-                )}
+                {rank}
               </div>
-            );
-          })
-        )}
 
-        {/* Local AOI Bounding Box (In Local Mode) */}
+              {/* ONE small label for the selected AOI only (name + ID in mono) */}
+              {isSelected && (
+                <div className="absolute left-7 top-1/2 -translate-y-1/2 whitespace-nowrap px-2 py-0.5 rounded-md bg-surface/95 border border-border text-xs text-text shadow-subtle pointer-events-none flex items-center space-x-1.5 animate-in fade-in duration-150">
+                  <span className="font-medium">{station.title.split(' ')[0]}</span>
+                  <span className="font-mono text-text-2 text-[10px]">· {station.id}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* AOI boundary: 1.5-2px solid --boundary */}
         {viewMode === 'tactical' && (
           <div
-            className="absolute transition-all rounded-xl border-2 border-[#00E5FF] bg-[#00E5FF]/10 shadow-[0_0_20px_rgba(0,229,255,0.25)] pointer-events-none"
+            className="absolute rounded-md border-2 border-boundary bg-boundary/5 pointer-events-none"
             style={{
               top: '48%',
               left: '52%',
-              width: '250px',
-              height: '180px',
-              transform: 'translate(-50%, -50%) rotate(-14deg)',
+              width: '240px',
+              height: '170px',
+              transform: 'translate(-50%, -50%)',
             }}
-          >
-            <span className="absolute -top-3 right-2 bg-[#00E5FF] text-[#070D16] text-[9px] font-mono font-bold px-1.5 py-0.2 rounded shadow">
-              AOI-1 CORRIDOR
-            </span>
-            <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-[#0B1523] rounded-full border-2 border-[#00E5FF]" />
-            <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-[#0B1523] rounded-full border-2 border-[#00E5FF]" />
-            <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-[#0B1523] rounded-full border-2 border-[#00E5FF]" />
-            <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-[#0B1523] rounded-full border-2 border-[#00E5FF]" />
-          </div>
+          />
         )}
       </div>
 
-      {/* 4. SLEEK COORDINATE & TARGET BADGE (Bottom Left) */}
-      <div className="absolute bottom-2.5 left-2.5 z-30 pointer-events-none">
-        <div className="bg-[#070D16]/95 border border-[#182A40] rounded-lg px-2.5 py-1 backdrop-blur-md text-[11px] font-mono text-[#94A3B8] flex items-center space-x-2 shadow-lg" title={`${siteName} (${currentCoords})`}>
-          <span className="text-[#00E5FF] font-semibold">{currentCoords}</span>
-          <span className="border-l border-[#182A40] pl-2 text-white truncate max-w-[140px] sm:max-w-[220px]" title={siteName}>{siteName}</span>
+      {/* 4. SLEEK COORDINATE READOUT & DEMO NOTE (Bottom Left) */}
+      <div className="absolute bottom-2.5 left-2.5 z-30 pointer-events-none flex flex-wrap items-center gap-2">
+        <div className="bg-surface/90 border border-border rounded-md px-2 py-1 text-xs font-mono text-text-2 flex items-center space-x-2 shadow-subtle" title={`${siteName} (${currentCoords})`}>
+          <span className="text-text tabular-nums">{currentCoords}</span>
+          <span className="border-l border-border pl-2 text-text-2 truncate max-w-[160px]" title={siteName}>{siteName}</span>
+        </div>
+        <div className="bg-surface/90 border border-border rounded-md px-2 py-1 text-[11px] text-text-2 font-sans shadow-subtle">
+          Imagery: public/demo data
         </div>
       </div>
 
       {/* 5. FLOATING ZOOM & VIEW CONTROLS (Top Left) */}
       <div
-        className="absolute top-12 left-2.5 flex flex-col space-y-1.5 z-20 pointer-events-auto"
+        className="absolute top-12 left-2.5 flex flex-col space-y-1 z-20 pointer-events-auto"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
@@ -629,8 +566,9 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
             setTimeout(() => setIsLoadingTiles(false), 200);
             setZoom((z) => Math.min(z + 0.25, 2.5));
           }}
-          className="w-7 h-7 rounded-lg bg-[#070D16]/90 border border-[#182A40] hover:border-[#00E5FF] hover:text-[#00E5FF] flex items-center justify-center text-white transition backdrop-blur shadow cursor-pointer"
-          title="Zoom in (Level +1)"
+          className="w-6 h-6 rounded-md bg-surface/90 border border-border hover:bg-raised text-text-2 hover:text-text flex items-center justify-center transition cursor-pointer shadow-subtle focus-visible:ring-2 focus-visible:ring-accent"
+          title="Zoom in"
+          aria-label="Zoom in"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
@@ -640,32 +578,31 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
             setTimeout(() => setIsLoadingTiles(false), 200);
             setZoom((z) => Math.max(z - 0.25, 0.75));
           }}
-          className="w-7 h-7 rounded-lg bg-[#070D16]/90 border border-[#182A40] hover:border-[#00E5FF] hover:text-[#00E5FF] flex items-center justify-center text-white transition backdrop-blur shadow cursor-pointer"
+          className="w-6 h-6 rounded-md bg-surface/90 border border-border hover:bg-raised text-text-2 hover:text-text flex items-center justify-center transition cursor-pointer shadow-subtle focus-visible:ring-2 focus-visible:ring-accent"
           title="Zoom out"
+          aria-label="Zoom out"
         >
           <Minus className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={resetView}
-          className="w-7 h-7 rounded-lg bg-[#070D16]/90 border border-[#182A40] hover:border-[#00E5FF] hover:text-[#00E5FF] flex items-center justify-center text-white transition backdrop-blur shadow cursor-pointer"
+          className="w-6 h-6 rounded-md bg-surface/90 border border-border hover:bg-raised text-text-2 hover:text-text flex items-center justify-center transition cursor-pointer shadow-subtle focus-visible:ring-2 focus-visible:ring-accent"
           title="Reset pan and zoom"
+          aria-label="Reset pan and zoom"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
+          <RotateCcw className="w-3 h-3" />
         </button>
       </div>
 
-      {/* 6. SCALE BAR, RESOLUTION & NORTH ARROW (Bottom Right) */}
+      {/* 6. QUIET SCALE BAR & NORTH ARROW (Bottom Right) */}
       <div className="absolute bottom-2.5 right-2.5 z-20 flex items-center space-x-2 pointer-events-none">
-        {/* Metric Scale Bar */}
-        <div className="bg-[#070D16]/90 border border-[#182A40] px-2 py-0.5 rounded text-[9px] font-mono text-white/90 backdrop-blur flex items-center space-x-1.5 shadow">
-          <div className="w-12 h-1 border-b-2 border-l-2 border-r-2 border-[#00E5FF]" />
-          <span>{zoom >= 1.5 ? '100 m' : '500 m'}</span>
+        <div className="bg-surface/90 border border-border px-2 py-0.5 rounded-md text-[10px] font-mono text-text-2 flex items-center space-x-1.5 shadow-subtle">
+          <div className="w-10 h-1 border-b-2 border-l-2 border-r-2 border-text-2" />
+          <span>{zoom >= 1.5 ? '100 m' : '250 m'}</span>
         </div>
 
-        {/* North Indicator Compass */}
-        <div className="w-7 h-7 rounded-full bg-[#070D16]/90 border border-[#182A40] flex flex-col items-center justify-center text-[8px] font-mono text-white backdrop-blur shadow">
-          <span className="text-[#00E5FF] font-bold leading-none">N</span>
-          <div className="w-0.5 h-2 bg-[#00E5FF]" />
+        <div className="w-6 h-6 rounded-md bg-surface/90 border border-border flex items-center justify-center text-[10px] font-mono text-text-2 shadow-subtle">
+          <span className="font-semibold">N</span>
         </div>
       </div>
     </div>

@@ -59,27 +59,27 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
   };
 
   return (
-    <header className="h-16 bg-[#070D16] border-b border-[#182A40] px-3 sm:px-5 flex items-center justify-between select-none z-30 shrink-0 font-sans">
+    <header className="h-14 bg-surface border-b border-border px-3 sm:px-5 flex items-center justify-between select-none z-30 shrink-0 font-sans">
       {/* Left: Mobile Drawer Trigger + Orbital Intel Logo & Subtitle */}
-      <div className="flex items-center space-x-2 sm:space-x-3.5">
+      <div className="flex items-center space-x-2 sm:space-x-3">
         {/* Mobile Hamburger Toggle Button */}
         <button
           type="button"
           onClick={onToggleMobileNav}
-          className="md:hidden p-2 -ml-1 rounded-lg text-slate-300 hover:text-white hover:bg-[#182A40] transition-colors focus:outline-none"
+          className="md:hidden p-2 -ml-1 rounded text-text-2 hover:text-text hover:bg-raised transition-colors focus:outline-none"
           aria-label="Toggle navigation drawer"
           title="Open Navigation Menu"
         >
-          <Menu className="w-5 h-5 text-[#00E5FF]" />
+          <Menu className="w-5 h-5 text-accent" />
         </button>
 
-        <div className="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0">
+        <div className="relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0">
           {/* Custom Orbital Globe Icon */}
-          <svg className="w-8 h-8 sm:w-9 sm:h-9 text-[#00E5FF]" viewBox="0 0 36 36" fill="none">
-            <circle cx="18" cy="18" r="11" fill="#0E2238" stroke="#00E5FF" strokeWidth="1.8" />
+          <svg className="w-7 h-7 sm:w-8 sm:h-8 text-accent" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="11" fill="var(--raised)" stroke="currentColor" strokeWidth="1.8" />
             <path
               d="M6 18C6 24.6274 11.3726 30 18 30C24.6274 30 30 24.6274 30 18C30 11.3726 24.6274 6 18 6"
-              stroke="#00E5FF"
+              stroke="currentColor"
               strokeWidth="1.8"
               strokeDasharray="4 2"
             />
@@ -89,20 +89,19 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
               rx="16"
               ry="5.5"
               transform="rotate(-25 18 18)"
-              stroke="#22D3EE"
+              stroke="currentColor"
               strokeWidth="1.6"
             />
-            <circle cx="28" cy="12" r="2.2" fill="#00E5FF" />
+            <circle cx="28" cy="12" r="2.2" fill="currentColor" />
           </svg>
         </div>
 
         <div>
-          <h1 className="text-base sm:text-lg font-bold text-white flex items-center space-x-2 font-sans tracking-tight">
+          <h1 className="text-base sm:text-lg font-bold text-text flex items-center space-x-2 font-sans tracking-tight">
             <span>Orbital Intel</span>
           </h1>
-          <p className="hidden sm:block text-[11px] font-normal leading-tight text-[#22D3EE] font-sans">
-            Semantic retrieval & multi-temporal<br />
-            change analysis of satellite imagery
+          <p className="hidden sm:block text-[11px] font-normal leading-tight text-text-2 font-sans">
+            Semantic retrieval & multi-temporal change analysis of satellite imagery
           </p>
         </div>
       </div>
@@ -118,31 +117,23 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
             >
               <div className="relative">
                 <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center font-mono font-bold text-xs shadow-md transition border-2 ${
-                    isAdmin
-                      ? 'bg-[#A855F7]/15 border-[#A855F7] text-[#C084FC] shadow-[0_0_10px_rgba(168,85,247,0.25)]'
-                      : 'bg-[#0E1A2B] border-[#00E5FF] text-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.2)]'
-                  }`}
+                  className="w-8 h-8 rounded-full flex items-center justify-center font-mono font-semibold text-xs transition border border-border bg-raised text-accent shadow-subtle"
                 >
                   {initials || <User className="w-4 h-4" />}
                 </div>
                 {/* Active beacon indicator */}
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#10B981] border-2 border-[#070D16]" />
+                <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-ok border border-surface" />
               </div>
 
               <div className="text-left leading-tight">
-                <div className="text-xs font-semibold text-white group-hover:text-[#38BDF8] transition flex items-center space-x-1.5">
+                <div className="text-xs font-medium text-text group-hover:text-accent transition flex items-center space-x-1.5">
                   <span className="truncate max-w-[120px]">{displayName}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-[#64748B] group-hover:text-white transition" />
+                  <ChevronDown className="w-3.5 h-3.5 text-text-2 group-hover:text-text transition" />
                 </div>
                 <div className="flex items-center space-x-1.5 mt-0.5">
-                  <span className="text-[10px] font-mono text-[#94A3B8]">{displayId}</span>
+                  <span className="text-[10px] font-mono text-text-2">{displayId}</span>
                   <span
-                    className={`text-[9px] px-1 py-0.2 rounded font-mono font-medium uppercase ${
-                      isAdmin
-                        ? 'bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/40'
-                        : 'bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/40'
-                    }`}
+                    className="text-[9px] px-1 py-0.2 rounded font-mono font-medium uppercase bg-raised text-text-2 border border-border"
                   >
                     {isAdmin ? 'Admin' : 'User'}
                   </span>
@@ -152,22 +143,18 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
 
             {/* User Account Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 top-12 w-64 bg-[#0B1523] border border-[#182A40] rounded-xl shadow-2xl py-2 z-50 text-xs font-sans animate-in fade-in duration-150">
+              <div className="absolute right-0 top-11 w-64 bg-surface border border-border rounded-md shadow-subtle py-1.5 z-50 text-xs font-sans animate-in fade-in duration-150">
                 {/* User Identity Info Header */}
-                <div className="px-3.5 py-2.5 border-b border-[#182A40]/80 space-y-1">
-                  <div className="font-semibold text-white text-xs">{displayName}</div>
-                  <div className="text-[11px] font-mono text-[#94A3B8]">{user?.email || 'user@vigil.org'}</div>
+                <div className="px-3.5 py-2 border-b border-border space-y-1">
+                  <div className="font-semibold text-text text-xs">{displayName}</div>
+                  <div className="text-[11px] font-mono text-text-2">{user?.email || 'user@vigil.org'}</div>
                   <div className="flex items-center space-x-2 pt-1">
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
-                        isAdmin
-                          ? 'bg-[#A855F7]/20 text-[#C084FC] border border-[#A855F7]/50'
-                          : 'bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/50'
-                      }`}
+                      className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-raised text-text-2 border border-border"
                     >
                       {isAdmin ? 'Administrator' : 'Standard User'}
                     </span>
-                    <span className="text-[10px] text-[#10B981] font-mono bg-[#063327] px-1.5 py-0.5 rounded border border-[#10B981]/40">
+                    <span className="text-[10px] text-ok font-mono bg-raised px-1.5 py-0.5 rounded border border-border">
                       Active Session
                     </span>
                   </div>
@@ -180,9 +167,9 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
                       setIsDropdownOpen(false);
                       setIsUserProfileModalOpen(true);
                     }}
-                    className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
+                    className="w-full px-3.5 py-1.5 hover:bg-raised text-left flex items-center space-x-2.5 text-text-2 hover:text-text transition cursor-pointer"
                   >
-                    <User className="w-3.5 h-3.5 text-[#38BDF8]" />
+                    <User className="w-3.5 h-3.5 text-accent" />
                     <span>User Profile & Account</span>
                   </button>
 
@@ -191,9 +178,9 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
                       setIsDropdownOpen(false);
                       setIsProfileModalOpen(true);
                     }}
-                    className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
+                    className="w-full px-3.5 py-1.5 hover:bg-raised text-left flex items-center space-x-2.5 text-text-2 hover:text-text transition cursor-pointer"
                   >
-                    <UserCheck className="w-3.5 h-3.5 text-[#00E5FF]" />
+                    <UserCheck className="w-3.5 h-3.5 text-accent" />
                     <span>Operator Clearance (DGIS)</span>
                   </button>
 
@@ -203,9 +190,9 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
                         setIsDropdownOpen(false);
                         setIsAdminModalOpen(true);
                       }}
-                      className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#C084FC] hover:text-white transition cursor-pointer"
+                      className="w-full px-3.5 py-1.5 hover:bg-raised text-left flex items-center space-x-2.5 text-accent hover:text-text transition cursor-pointer"
                     >
-                      <ShieldAlert className="w-3.5 h-3.5 text-[#A855F7]" />
+                      <ShieldAlert className="w-3.5 h-3.5 text-accent" />
                       <span>Administration Console</span>
                     </button>
                   )}
@@ -215,18 +202,18 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
                       setIsDropdownOpen(false);
                       setIsUserProfileModalOpen(true);
                     }}
-                    className="w-full px-3.5 py-2 hover:bg-[#0E1A2B] text-left flex items-center space-x-2.5 text-[#94A3B8] hover:text-white transition cursor-pointer"
+                    className="w-full px-3.5 py-1.5 hover:bg-raised text-left flex items-center space-x-2.5 text-text-2 hover:text-text transition cursor-pointer"
                   >
-                    <Settings className="w-3.5 h-3.5 text-[#64748B]" />
+                    <Settings className="w-3.5 h-3.5 text-text-2" />
                     <span>Workstation Settings</span>
                   </button>
                 </div>
 
                 {/* Sign Out Option */}
-                <div className="pt-1 border-t border-[#182A40]/80">
+                <div className="pt-1 border-t border-border">
                   <button
                     onClick={() => setShowLogoutConfirm(true)}
-                    className="w-full px-3.5 py-2 hover:bg-[#2D1215]/60 text-left flex items-center space-x-2.5 text-[#EF4444] transition cursor-pointer"
+                    className="w-full px-3.5 py-1.5 hover:bg-raised text-left flex items-center space-x-2.5 text-flag transition cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign Out</span>
@@ -239,14 +226,14 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
           <div className="flex items-center space-x-2">
             <button
               onClick={() => onOpenAuth?.('signin')}
-              className="h-8 px-2.5 sm:px-3 rounded-lg bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-xs font-semibold text-white hover:text-[#00E5FF] transition cursor-pointer flex items-center space-x-1.5 shrink-0"
+              className="h-8 px-2.5 sm:px-3 rounded bg-surface hover:bg-raised border border-border text-xs font-medium text-text hover:text-accent transition cursor-pointer flex items-center space-x-1.5 shrink-0"
             >
-              <User className="w-3.5 h-3.5 text-[#00E5FF]" />
+              <User className="w-3.5 h-3.5 text-text-2" />
               <span>Sign In</span>
             </button>
             <button
               onClick={() => onOpenAuth?.('signup')}
-              className="hidden sm:inline-flex h-8 px-3.5 rounded-lg bg-gradient-to-r from-[#0284C7] to-[#00E5FF] hover:from-[#0369A1] hover:to-[#00B4D8] text-xs font-semibold text-black transition cursor-pointer shadow-md shadow-[#00E5FF]/20 shrink-0"
+              className="hidden sm:inline-flex h-8 px-3.5 rounded bg-accent hover:bg-accent/90 text-xs font-semibold text-[#0E1116] transition cursor-pointer shadow-subtle shrink-0"
             >
               <span>Create Account</span>
             </button>
@@ -261,29 +248,29 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
           onClick={() => setShowLogoutConfirm(false)}
         >
           <div
-            className="w-80 bg-[#0B1523] border border-[#182A40] rounded-xl p-5 space-y-4 shadow-2xl text-white"
+            className="w-80 bg-surface border border-border rounded-md p-5 space-y-4 shadow-subtle text-text"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-full bg-[#EF4444]/15 border border-[#EF4444]/40 flex items-center justify-center text-[#EF4444]">
+              <div className="w-8 h-8 rounded-full bg-raised border border-border flex items-center justify-center text-flag">
                 <LogOut className="w-4 h-4" />
               </div>
               <div className="leading-tight">
                 <div className="font-semibold text-sm">Sign Out from VIGIL?</div>
-                <div className="text-[11px] text-[#94A3B8]">Your OIT session will be terminated.</div>
+                <div className="text-[11px] text-text-2">Your session will be terminated.</div>
               </div>
             </div>
 
             <div className="flex items-center justify-end space-x-2 pt-2">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="h-7 px-3 rounded-lg bg-[#0E1A2B] text-[#94A3B8] hover:text-white text-xs cursor-pointer"
+                className="h-7 px-3 rounded bg-surface border border-border text-text-2 hover:text-text text-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="h-7 px-3.5 rounded-lg bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs font-medium cursor-pointer transition shadow"
+                className="h-7 px-3.5 rounded bg-flag hover:bg-flag/90 text-white text-xs font-medium cursor-pointer transition shadow-subtle"
               >
                 Confirm Sign Out
               </button>

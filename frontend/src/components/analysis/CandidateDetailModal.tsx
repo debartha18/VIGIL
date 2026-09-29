@@ -81,30 +81,30 @@ export const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({ item
 
   return (
     <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 lg:p-6 select-none animate-in fade-in duration-200">
-      <div className="w-full max-w-6xl h-[94vh] bg-[#0B1523] border border-[#182A40] rounded-2xl flex flex-col shadow-2xl overflow-hidden text-white font-sans print:h-auto print:max-w-none print:border-none print:shadow-none print:bg-white print:text-black">
+      <div className="w-full max-w-6xl h-[94vh] bg-surface border border-border rounded-md flex flex-col shadow-subtle overflow-hidden text-text font-sans print:h-auto print:max-w-none print:border-none print:shadow-none print:bg-white print:text-black">
         {/* Modal Top Header */}
-        <div className="h-14 bg-[#070D16] border-b border-[#182A40] px-6 flex items-center justify-between shrink-0 print:border-b-2 print:border-black print:bg-white print:text-black">
+        <div className="h-14 bg-surface border-b border-border px-6 flex items-center justify-between shrink-0 print:border-b-2 print:border-black print:bg-white print:text-black">
           <div className="flex items-center space-x-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-[#00E5FF] shadow-[0_0_8px_#00E5FF] print:hidden" />
-            <h2 className="text-sm font-semibold text-white tracking-normal print:text-black print:text-base">
-              Defence intelligence dossier // <span className="font-mono">{item.id}</span> — {item.title}
+            <div className="w-2.5 h-2.5 rounded-full bg-accent print:hidden" />
+            <h2 className="text-sm font-semibold text-text tracking-normal print:text-black print:text-base">
+              Geospatial Analysis Dossier // <span className="font-mono text-accent">{item.id}</span> — {item.title}
             </h2>
-            <span className="px-2 py-0.5 rounded bg-[#063327] border border-[#10B981]/50 text-[11px] text-[#10B981] font-medium print:border print:border-black print:text-black print:bg-transparent">
-              Verified real change (<span className="font-mono font-bold">{item.confidencePct}%</span>)
+            <span className="px-2 py-0.5 rounded bg-raised border border-border text-[11px] text-ok font-medium print:border print:border-black print:text-black print:bg-transparent">
+              Verified real change (<span className="font-mono font-semibold">{item.confidencePct}%</span>)
             </span>
           </div>
 
           <div className="flex items-center space-x-2.5 print:hidden">
             <button
               onClick={handlePrintReport}
-              className="px-3 py-1.5 bg-[#0E355A] hover:bg-[#0284C7] border border-[#0284C7] rounded text-xs text-white flex items-center space-x-1.5 transition font-medium shadow-[0_0_10px_rgba(2,132,199,0.3)] cursor-pointer"
+              className="px-3 py-1.5 bg-raised hover:bg-surface border border-border rounded text-xs text-text hover:text-accent flex items-center space-x-1.5 transition font-medium shadow-subtle cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Export dossier (Print / PDF)</span>
             </button>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-[#0E1B2D] hover:bg-[#1E3550] border border-[#182A40] flex items-center justify-center text-[#94A3B8] hover:text-white transition cursor-pointer"
+              className="w-7 h-7 rounded bg-surface hover:bg-raised border border-border flex items-center justify-center text-text-2 hover:text-text transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -125,15 +125,15 @@ export const CandidateDetailModal: React.FC<CandidateDetailModalProps> = ({ item
         {/* Modal Content Body */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 space-y-6 print:p-0 print:space-y-4 print:text-black">
           {/* Mode Switcher Tab Bar */}
-          <div className="flex items-center justify-between bg-[#070D16] border border-[#182A40] rounded-xl p-2 print:hidden">
+          <div className="flex items-center justify-between bg-bg border border-border rounded-md p-1.5 print:hidden">
             <div className="flex items-center space-x-1">
-              <span className="text-[11px] font-sans uppercase tracking-[0.05em] text-[#64748B] px-2 font-medium">Mode:</span>
+              <span className="text-[11px] font-sans uppercase tracking-[0.05em] text-text-2 px-2 font-medium">Mode:</span>
               <button
                 onClick={() => setComparisonMode('split')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
+                className={`px-3 py-1.5 rounded text-xs font-medium flex items-center space-x-1.5 transition ${
                   comparisonMode === 'split'
-                    ? 'bg-[#0E355A] text-[#00E5FF] border border-[#0284C7]'
-                    : 'text-[#94A3B8] hover:text-white hover:bg-[#0E1F33]'
+                    ? 'bg-raised text-accent border border-border shadow-subtle'
+                    : 'text-text-2 hover:text-text hover:bg-raised/60'
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5" />

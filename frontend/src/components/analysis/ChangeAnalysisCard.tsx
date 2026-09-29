@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ExternalLink,
   AlertCircle,
@@ -16,7 +16,7 @@ import {
   TimelinePass,
   computeMonthsBetween,
   computeObservationPeriod,
-  formatImageOverlayLabel
+  formatDateDisplay
 } from '../../data/groundTruthTargets';
 
 export type ChangeViewMode = 'visual' | 'comparison' | 'change-map';
@@ -142,11 +142,6 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
     { date: afterDate, label: 'Superstructure', month: 'Apr 2025', img: afterImgUrl, hasChange: true },
   ];
 
-  // Derived clean single-line overlay labels adhering to:
-  // "BEFORE · 12 Apr 2023 · 10 m · Cloud 0.8%" / "AFTER · 28 Apr 2025 · 10 m · Cloud 1.2%"
-  const beforeOverlayLabel = formatImageOverlayLabel('BEFORE', beforeDate, resolution, beforeCloudCover);
-  const afterOverlayLabel = formatImageOverlayLabel('AFTER', selectedTimelineDate, resolution, cloudCover);
-
   const activePhase = timelineMilestones.find((p) => p.date === selectedTimelineDate) || timelineMilestones[3];
 
   const handleQuickReview = async (verdict: 'CONFIRMED' | 'REJECTED') => {
@@ -198,118 +193,128 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
     return base;
   };
 
+  // Priority 2 / Item 8: Space shortcut toggles mask overlay
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setShowChangeMask((prev) => {
+          const next = !prev;
+          onToggleChangeMask?.(next);
+          return next;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onToggleChangeMask]);
+
   return (
-    <div className="w-full h-full bg-[#0B1523] border border-[#182A40] rounded-xl p-3 flex flex-col justify-between select-none overflow-hidden font-sans text-white text-xs shadow-2xl">
+    <div className="w-full h-full bg-surface border border-border rounded-md p-3 flex flex-col justify-between select-none overflow-hidden font-sans text-text text-xs shadow-subtle">
       {/* 1. TOP HEADER BAR: Viewing Modes & Quick Actions */}
-      <div className="flex items-center justify-between pb-2 border-b border-[#182A40]/80 shrink-0 gap-2">
-        {/* Left: Mode Title + Target Name */}
+      <div className="flex items-center justify-between pb-2 border-b border-border/80 shrink-0 gap-2">
+        {/* Left: Target Name & Coordinates */}
         <div className="flex items-center space-x-2 min-w-0">
-          <TrendingUp className="w-4 h-4 text-[#00E5FF] shrink-0" />
-          <h2 className="text-xs sm:text-sm font-semibold text-white tracking-normal font-sans truncate max-w-[190px] sm:max-w-xs" title={candidateTitle}>
+          <TrendingUp className="w-4 h-4 text-accent shrink-0" />
+          <h2 className="text-xs sm:text-sm font-semibold text-text tracking-normal font-sans truncate max-w-[190px] sm:max-w-xs" title={candidateTitle}>
             {candidateTitle}
           </h2>
-          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-[#070D16] border border-[#182A40] text-[11px] font-mono text-[#38BDF8] shrink-0" title={coordinates}>
+          <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-raised border border-border text-[11px] font-mono text-text-2 shrink-0" title={coordinates}>
             {coordinates.split(',')[0]}
           </span>
-          <span className="hidden md:inline-block px-1.5 py-0.5 rounded bg-[#070D16] border border-[#182A40] text-[11px] font-sans text-[#94A3B8] shrink-0" title={locationName}>
+          <span className="hidden md:inline-block px-1.5 py-0.5 rounded bg-raised border border-border text-[11px] font-sans text-text-2 shrink-0" title={locationName}>
             {locationName}
           </span>
         </div>
 
         {/* Center/Right: 3 Primary Viewing Modes (A. Visual | B. Before / After | C. Change Map) */}
-        <div className="flex items-center space-x-1.5 shrink-0">
-          <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
+        <div className="flex items-center space-x-2 shrink-0">
+          <div className="flex items-center bg-bg p-0.5 rounded-md border border-border" role="tablist" aria-label="Viewing mode">
             <button
+              role="tab"
+              aria-selected={viewMode === 'visual'}
               onClick={() => { setViewMode('visual'); onViewModeChange?.('visual'); }}
-              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
+              className={`h-6 px-2.5 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
                 viewMode === 'visual'
-                  ? 'bg-[#0284C7] text-white shadow font-semibold'
-                  : 'text-[#94A3B8] hover:text-white'
+                  ? 'bg-raised text-accent font-medium border-b-2 border-accent'
+                  : 'text-text-2 hover:text-text'
               }`}
-              title="A. Visual Mode: Normal high-resolution satellite imagery"
+              title="A. Visual mode: single high-resolution satellite imagery"
             >
-              <span>Visual</span>
+              Visual
             </button>
 
             <button
+              role="tab"
+              aria-selected={viewMode === 'comparison'}
               onClick={() => { setViewMode('comparison'); onViewModeChange?.('comparison'); }}
-              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
+              className={`h-6 px-2.5 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
                 viewMode === 'comparison'
-                  ? 'bg-[#0284C7] text-white shadow font-semibold'
-                  : 'text-[#94A3B8] hover:text-white'
+                  ? 'bg-raised text-accent font-medium border-b-2 border-accent'
+                  : 'text-text-2 hover:text-text'
               }`}
-              title="B. Before / After Mode: Multi-temporal comparative analysis"
+              title="B. Before / After mode: multi-temporal comparative analysis"
             >
-              <span>Before / After</span>
+              Before / After
             </button>
 
             <button
+              role="tab"
+              aria-selected={viewMode === 'change-map'}
               onClick={() => { setViewMode('change-map'); onViewModeChange?.('change-map'); }}
-              className={`h-6 px-2.5 rounded-md text-[11px] font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
+              className={`h-6 px-2.5 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
                 viewMode === 'change-map'
-                  ? 'bg-[#0284C7] text-white shadow font-semibold'
-                  : 'text-[#94A3B8] hover:text-white'
+                  ? 'bg-raised text-accent font-medium border-b-2 border-accent'
+                  : 'text-text-2 hover:text-text'
               }`}
-              title="C. Change Map Mode: Semi-transparent detected change mask"
+              title="C. Change Map mode: semi-transparent detected change mask"
             >
-              <span>Change Map</span>
+              Change Map
             </button>
           </div>
 
-          {/* Full Report Dossier Button */}
+          {/* Dossier Link Button */}
           <button
             onClick={onViewFullReport}
-            className="h-6 hidden md:flex items-center space-x-1 px-2 rounded-lg border border-[#0284C7]/50 text-[11px] text-[#38BDF8] hover:bg-[#0E2D4A] hover:border-[#38BDF8] transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none font-sans"
+            className="h-6 hidden md:flex items-center space-x-1 px-2.5 rounded-md border border-border bg-raised/50 text-xs text-text hover:bg-raised transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none font-sans"
             title="Open comprehensive intelligence dossier"
           >
             <span>Dossier</span>
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="w-3 h-3 text-text-2" />
           </button>
         </div>
       </div>
 
-      {/* 2. IMAGE TOOLBAR & ENHANCEMENT CONTROLS (Directly above the satellite imagery) */}
-      <div className="flex flex-wrap items-center justify-between py-1.5 border-b border-[#182A40]/60 gap-1.5 shrink-0 text-[11px]">
-        {/* Left: Spectral Band Switcher */}
-        <div className="flex items-center space-x-1">
-          <span className="text-[10px] uppercase font-bold text-[#64748B] mr-1 hidden sm:inline">Band:</span>
-          <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
-            <button
-              onClick={() => { setSpectralMode('RGB'); onSpectralModeChange?.('RGB'); }}
-              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
-                spectralMode === 'RGB' ? 'bg-[#00E5FF] text-[#070D16] font-bold shadow' : 'text-[#94A3B8] hover:text-white'
-              }`}
-              title="True Color RGB (B04, B03, B02)"
-            >
-              RGB
-            </button>
-            <button
-              onClick={() => { setSpectralMode('FALSE_COLOR'); onSpectralModeChange?.('FALSE_COLOR'); }}
-              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
-                spectralMode === 'FALSE_COLOR' ? 'bg-[#A855F7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
-              }`}
-              title="Color Infrared (NIR/Red/Green) - Vegetation & boundary contrast [DEMO simulation]"
-            >
-              False Color <span className="text-[8px] opacity-75">(DEMO)</span>
-            </button>
-            <button
-              onClick={() => { setSpectralMode('NDVI'); onSpectralModeChange?.('NDVI'); }}
-              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
-                spectralMode === 'NDVI' ? 'bg-[#10B981] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
-              }`}
-              title="Normalized Difference Vegetation Index [DEMO radiometric simulation]"
-            >
-              NDVI <span className="text-[8px] opacity-75">(DEMO)</span>
-            </button>
-            <button
-              onClick={() => { setSpectralMode('NDWI'); onSpectralModeChange?.('NDWI'); }}
-              className={`h-5 px-2 rounded text-[10px] font-mono font-medium transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
-                spectralMode === 'NDWI' ? 'bg-[#0284C7] text-white font-bold shadow' : 'text-[#94A3B8] hover:text-white'
-              }`}
-              title="Normalized Difference Water Index [DEMO water delineation]"
-            >
-              NDWI <span className="text-[8px] opacity-75">(DEMO)</span>
-            </button>
+      {/* 2. IMAGE TOOLBAR & ENHANCEMENT CONTROLS */}
+      <div className="flex flex-wrap items-center justify-between py-1.5 border-b border-border/60 gap-1.5 shrink-0 text-xs">
+        {/* Left: Spectral Band Segmented Control */}
+        <div className="flex items-center space-x-1.5">
+          <span className="text-xs text-text-2 mr-0.5 hidden sm:inline">Band:</span>
+          <div className="flex items-center bg-bg p-0.5 rounded-md border border-border" role="tablist" aria-label="Spectral band mode">
+            {(['RGB', 'FALSE_COLOR', 'NDVI', 'NDWI'] as const).map((band) => {
+              const isActive = spectralMode === band;
+              const label = band === 'RGB' ? 'RGB' : band === 'FALSE_COLOR' ? 'False Color' : band;
+              return (
+                <button
+                  key={band}
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => { setSpectralMode(band); onSpectralModeChange?.(band); }}
+                  className={`h-5 px-2 rounded text-[11px] font-mono transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
+                    isActive
+                      ? 'bg-raised text-accent font-medium border-b-2 border-accent'
+                      : 'text-text-2 hover:text-text'
+                  }`}
+                  title={`Spectral band: ${label}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -318,52 +323,54 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           {/* Change Mask Toggle */}
           <button
             onClick={() => { const next = !showChangeMask; setShowChangeMask(next); onToggleChangeMask?.(next); }}
-            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
+            aria-label="Toggle change mask overlay"
+            className={`h-6 px-2 rounded-md text-xs border flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
               showChangeMask
-                ? 'bg-[#EF4444]/20 border-[#EF4444] text-[#EF4444] font-semibold shadow'
-                : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
+                ? 'bg-raised border-change text-change font-medium'
+                : 'bg-bg border-border text-text-2 hover:text-text'
             }`}
-            title="Toggle semi-transparent change mask overlay"
+            title="Toggle mask overlay (Space)"
           >
-            {showChangeMask ? <Eye className="w-3 h-3 text-[#EF4444]" /> : <EyeOff className="w-3 h-3 text-[#94A3B8]" />}
-            <span>Mask Overlay</span>
+            {showChangeMask ? <Eye className="w-3.5 h-3.5 text-change" /> : <EyeOff className="w-3.5 h-3.5 text-text-2" />}
+            <span className="hidden sm:inline">Mask</span>
           </button>
 
-          {/* Bounding Box Secondary Toggle */}
+          {/* AOI Bounding Box Reference */}
           <button
             onClick={() => setShowBoundingBox(!showBoundingBox)}
-            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
+            aria-label="Toggle AOI boundary reference box"
+            className={`h-6 px-2 rounded-md text-xs border flex items-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
               showBoundingBox
-                ? 'bg-[#00E5FF]/20 border-[#00E5FF] text-[#00E5FF] font-semibold'
-                : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
+                ? 'bg-raised border-boundary text-boundary font-medium'
+                : 'bg-bg border-border text-text-2 hover:text-text'
             }`}
-            title="Toggle secondary AOI bounding box frame"
+            title="Toggle AOI boundary reference box"
           >
-            <span>Box Ref</span>
+            <span>AOI Box</span>
           </button>
 
           {/* Comparison Slider vs Dual Tile (When in comparison mode) */}
           {viewMode === 'comparison' && (
-            <div className="flex items-center bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
+            <div className="flex items-center bg-bg p-0.5 rounded-md border border-border" role="group" aria-label="Comparison view type">
               <button
                 onClick={() => setComparisonType('swipe')}
-                className={`h-5 px-1.5 rounded text-[10px] transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
-                  comparisonType === 'swipe' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
+                aria-label="Slider comparison"
+                className={`h-5 w-6 rounded flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
+                  comparisonType === 'swipe' ? 'bg-raised text-accent' : 'text-text-2 hover:text-text'
                 }`}
-                title="Draggable comparison slider"
+                title="Slider comparison"
               >
-                <Sliders className="w-2.5 h-2.5" />
-                <span className="hidden sm:inline">Slider</span>
+                <Sliders className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setComparisonType('side-by-side')}
-                className={`h-5 px-1.5 rounded text-[10px] transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 ${
-                  comparisonType === 'side-by-side' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
+                aria-label="Side-by-side comparison"
+                className={`h-5 w-6 rounded flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
+                  comparisonType === 'side-by-side' ? 'bg-raised text-accent' : 'text-text-2 hover:text-text'
                 }`}
                 title="Side-by-side dual tile comparison"
               >
-                <Columns className="w-2.5 h-2.5" />
-                <span className="hidden sm:inline">Dual</span>
+                <Columns className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
@@ -371,35 +378,36 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           {/* Adjustments Tray Toggle */}
           <button
             onClick={() => setShowAdjustments(!showAdjustments)}
-            className={`h-5 px-2 rounded text-[10px] font-medium border flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
+            aria-label="Adjust image brightness, contrast, and sharpness"
+            className={`h-6 w-6 rounded-md border flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
               showAdjustments || brightness !== 0 || contrast !== 0 || sharpness !== 'normal'
-                ? 'bg-[#F59E0B]/20 border-[#F59E0B] text-[#F59E0B] font-semibold'
-                : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
+                ? 'bg-raised border-accent text-accent font-medium'
+                : 'bg-bg border-border text-text-2 hover:text-text'
             }`}
-            title="Image enhancement controls (Brightness, Contrast, Sharpness)"
+            title="Image enhancements (Brightness, contrast, sharpness)"
           >
-            <Sliders className="w-2.5 h-2.5" />
-            <span className="hidden sm:inline">Enhance</span>
+            <Sliders className="w-3.5 h-3.5" />
           </button>
 
           {/* Reset View Button */}
           <button
             onClick={resetEnhancements}
-            className="w-5 h-5 rounded bg-[#070D16] hover:bg-[#15273F] border border-[#182A40] text-[#94A3B8] hover:text-white flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none"
-            title="Reset enhancements and views"
+            aria-label="Reset enhancements"
+            className="h-6 w-6 rounded-md bg-bg hover:bg-raised border border-border text-text-2 hover:text-text flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none"
+            title="Reset enhancements"
           >
-            <RotateCcw className="w-2.5 h-2.5" />
+            <RotateCcw className="w-3 h-3" />
           </button>
         </div>
       </div>
 
       {/* 3. OPTIONAL EXPANDABLE ENHANCEMENT CONTROLS TRAY */}
       {showAdjustments && (
-        <div className="bg-[#070D16] p-2.5 rounded-lg border border-[#182A40] my-1 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[10px] shrink-0 animate-in fade-in">
+        <div className="bg-bg p-2.5 rounded-md border border-border my-1 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs shrink-0 animate-in fade-in">
           <div>
-            <div className="flex justify-between text-[#94A3B8] mb-1">
+            <div className="flex justify-between text-text-2 mb-1">
               <span>Brightness:</span>
-              <span className="font-mono text-white">{brightness > 0 ? `+${brightness}` : brightness}%</span>
+              <span className="font-mono text-text">{brightness > 0 ? `+${brightness}` : brightness}%</span>
             </div>
             <input
               type="range"
@@ -407,12 +415,12 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               max="50"
               value={brightness}
               onChange={(e) => setBrightness(Number(e.target.value))}
-              className="w-full accent-[#00E5FF] h-1.5 bg-[#182A40] rounded-lg cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none"
+              className="w-full accent-accent h-1.5 bg-raised rounded cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none"
             />
           </div>
 
           <div>
-            <div className="flex justify-between text-[#94A3B8] mb-1">
+            <div className="flex justify-between text-text-2 mb-1">
               <span>Contrast:</span>
               <span className="font-mono text-white">{contrast > 0 ? `+${contrast}` : contrast}%</span>
             </div>
@@ -461,14 +469,14 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
       )}
 
       {/* 4. HERO SATELLITE IMAGERY WORKSPACE (Maximum Visual Focus) */}
-      <div className="flex-1 min-h-[220px] sm:min-h-[240px] relative rounded-xl border border-[#182A40] bg-[#020617] overflow-hidden my-1.5 flex flex-col justify-center">
+      <div className="flex-1 min-h-[220px] sm:min-h-[240px] relative rounded-md border border-border bg-bg overflow-hidden my-1.5 flex flex-col justify-center">
         {/* VIEW MODE A: VISUAL (Single Full-Size High-Resolution Viewport) */}
         {viewMode === 'visual' && (
           <div className="w-full h-full relative group">
             <img
               src={activePhase.img}
               alt="Satellite observation"
-              className="w-full h-full object-cover select-none transition-transform duration-300"
+              className="w-full h-full object-cover object-center select-none"
               style={{
                 filter: getFilterStyle(true),
                 imageRendering: 'auto'
@@ -485,10 +493,9 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                 <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <polygon
                     points="32,24 68,22 74,68 34,72"
-                    fill="rgba(239, 68, 68, 0.45)"
-                    stroke="#EF4444"
-                    strokeWidth="1.2"
-                    strokeDasharray="3 2"
+                    fill="rgba(245, 158, 11, 0.15)"
+                    stroke="#F59E0B"
+                    strokeWidth="2"
                   />
                 </svg>
               </div>
@@ -496,42 +503,41 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
             {/* Bounding Box Frame (Secondary Reference) */}
             {showBoundingBox && activePhase.hasChange && (
-              <div className="absolute top-[22%] left-[32%] w-[42%] h-[48%] border-2 border-dashed border-[#00E5FF] rounded-lg pointer-events-none shadow-[0_0_15px_rgba(0,229,255,0.4)] animate-pulse">
-                <span className="absolute -top-3 left-1 bg-[#00E5FF] text-[#070D16] text-[8px] font-mono font-bold px-1 rounded">
+              <div className="absolute top-[22%] left-[32%] w-[42%] h-[48%] border border-boundary rounded pointer-events-none">
+                <span className="absolute -top-2.5 left-1 bg-surface border border-boundary text-text-2 text-[8px] font-mono px-1 rounded">
                   AOI DETECTED CHANGE
                 </span>
               </div>
             )}
 
             {/* Metadata Tag directly on image (Top Left) */}
-            <div className="absolute top-2.5 left-2.5 z-20 bg-[#070D16]/90 border border-[#182A40] rounded-lg px-2.5 py-1 backdrop-blur-md text-[10px] font-mono space-y-0.5 shadow-lg">
-              <div className="text-white font-bold flex items-center space-x-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+            <div className="absolute top-2.5 left-2.5 z-20 bg-surface/90 border border-border rounded px-2.5 py-1 backdrop-blur text-[10px] font-mono space-y-0.5 shadow-subtle" title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}>
+              <div className="text-text font-medium flex items-center space-x-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-ok" />
                 <span>ACTIVE OBSERVATION</span>
               </div>
-              <div className="text-[#94A3B8] flex items-center space-x-2">
-                <span>{sensor}</span>
+              <div className="text-text-2 flex items-center space-x-2 text-[9px]">
+                <span>{sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'}</span>
                 <span>•</span>
-                <span className="text-[#00E5FF]">{selectedTimelineDate}</span>
+                <span className="text-text font-medium">{formatDateDisplay(selectedTimelineDate)}</span>
                 <span>•</span>
-                <span>{resolution}</span>
+                <span>{resolution.replace(/\s*Optical.*$/i, '').trim()}</span>
                 <span>•</span>
-                <span>Cloud: {cloudCover}</span>
+                <span>Cloud {cloudCover.replace(/\s*\(.*?\)/g, '').trim()}</span>
               </div>
             </div>
 
             {/* Orientation & Scale Overlay (Bottom) */}
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20">
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20 font-mono text-[9px]">
               {/* Metric Scale Bar */}
-              <div className="bg-[#070D16]/85 border border-[#182A40] px-2 py-0.5 rounded text-[9px] font-mono text-white/90 backdrop-blur flex items-center space-x-1.5">
-                <div className="w-16 h-1 border-b-2 border-l-2 border-r-2 border-[#00E5FF]" />
+              <div className="bg-surface/90 border border-border px-2 py-0.5 rounded text-text-2 backdrop-blur flex items-center space-x-1.5">
+                <div className="w-16 h-1 border-b border-l border-r border-text-2" />
                 <span>0 100 250 m</span>
               </div>
 
               {/* North Compass Arrow */}
-              <div className="w-7 h-7 rounded-full bg-[#070D16]/90 border border-[#182A40] flex flex-col items-center justify-center text-[9px] font-mono text-white backdrop-blur shadow">
-                <span className="text-[#00E5FF] font-bold leading-none">N</span>
-                <div className="w-0.5 h-2 bg-[#00E5FF]" />
+              <div className="w-6 h-6 rounded-full bg-surface/90 border border-border flex items-center justify-center text-text-2 backdrop-blur shadow-subtle">
+                <span className="font-semibold text-[8px]">N</span>
               </div>
             </div>
           </div>
@@ -550,7 +556,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                 <img
                   src={activePhase.img}
                   alt="After scene"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
                   style={{ filter: getFilterStyle(true) }}
                 />
 
@@ -563,9 +569,9 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                     <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                       <polygon
                         points="32,24 68,22 74,68 34,72"
-                        fill="rgba(239, 68, 68, 0.45)"
-                        stroke="#EF4444"
-                        strokeWidth="1.2"
+                        fill="rgba(245, 158, 11, 0.15)"
+                        stroke="#F59E0B"
+                        strokeWidth="2"
                       />
                     </svg>
                   </div>
@@ -573,37 +579,42 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
                 {/* Top Clipped: BEFORE / BASELINE OBSERVATION (T1) */}
                 <div
-                  className="absolute inset-0 overflow-hidden pointer-events-none border-r-2 border-[#00E5FF]"
-                  style={{ width: `${swipePos}%` }}
+                  className="absolute inset-0 overflow-hidden pointer-events-none"
+                  style={{ clipPath: `inset(0 ${100 - swipePos}% 0 0)` }}
                 >
                   <img
                     src={beforeImgUrl}
                     alt="Before scene"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    style={{
-                      width: '100%',
-                      maxWidth: 'none',
-                      filter: getFilterStyle(false)
-                    }}
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    style={{ filter: getFilterStyle(false) }}
                   />
-                  {/* BEFORE Single-line Metadata Tag on Left (Truncated, no wrap) */}
-                  <div className="absolute top-2 left-2 z-20 max-w-[48%] bg-[#070D16]/95 border border-[#182A40] rounded-md px-2.5 py-1 text-[10px] sm:text-[11px] font-mono text-white backdrop-blur truncate shadow" title={beforeOverlayLabel}>
-                    {beforeOverlayLabel}
-                  </div>
                 </div>
 
-                {/* AFTER Single-line Metadata Tag on Right (Truncated, no wrap) */}
-                <div className="absolute top-2 right-2 z-20 max-w-[48%] bg-[#070D16]/95 border border-[#182A40] rounded-md px-2.5 py-1 text-[10px] sm:text-[11px] font-mono text-white backdrop-blur truncate shadow" title={afterOverlayLabel}>
-                  {afterOverlayLabel}
-                </div>
-
-                {/* Draggable Divider Handle with Glow & Grip */}
+                {/* BEFORE 2-line Metadata Tag on Left */}
                 <div
-                  className="absolute top-0 bottom-0 w-0.5 bg-[#00E5FF] shadow-[0_0_12px_#00E5FF] pointer-events-none"
+                  className="absolute top-2 left-2 z-20 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto"
+                  title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}
+                >
+                  <div className="font-semibold text-text">BEFORE · {formatDateDisplay(beforeDate)}</div>
+                  <div className="text-text-2 text-[9px]">{sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'} · {resolution.replace(/\s*Optical.*$/i, '').trim()} · Cloud {beforeCloudCover.replace(/\s*\(.*?\)/g, '').trim()}</div>
+                </div>
+
+                {/* AFTER 2-line Metadata Tag on Right */}
+                <div
+                  className="absolute top-2 right-2 z-20 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto text-right"
+                  title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}
+                >
+                  <div className="font-semibold text-text">AFTER · {formatDateDisplay(selectedTimelineDate)}</div>
+                  <div className="text-text-2 text-[9px]">{sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'} · {resolution.replace(/\s*Optical.*$/i, '').trim()} · Cloud {cloudCover.replace(/\s*\(.*?\)/g, '').trim()}</div>
+                </div>
+
+                {/* Draggable Divider Line & Small Neutral Grip */}
+                <div
+                  className="absolute top-0 bottom-0 w-[2px] bg-border pointer-events-none z-20"
                   style={{ left: `${swipePos}%` }}
                 >
-                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-[#0E1A2B] border-2 border-[#00E5FF] flex items-center justify-center text-[10px] text-[#00E5FF] font-bold shadow-2xl">
-                    ⇄
+                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-7 rounded bg-surface border border-border flex items-center justify-center shadow-subtle">
+                    <div className="w-0.5 h-3.5 bg-text-2/40 rounded-full" />
                   </div>
                 </div>
 
@@ -618,16 +629,16 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                   aria-label="Swipe curtain comparison slider"
                 />
 
-                {/* Scale Bar & North Indicator in Slider View */}
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-20">
-                  <div className="bg-[#070D16]/85 border border-[#182A40] px-2 py-0.5 rounded text-[8px] font-mono text-white/90 backdrop-blur">
+                {/* Scale Bar & Position Indicator in Slider View */}
+                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-20 font-mono text-[9px]">
+                  <div className="bg-surface/85 border border-border px-2 py-0.5 rounded text-text-2 backdrop-blur">
                     0 100 250 m
                   </div>
-                  <div className="text-[9px] font-mono text-[#94A3B8] bg-[#070D16]/90 px-2 py-0.5 rounded border border-[#182A40]">
+                  <div className="text-text-2 bg-surface/90 px-2 py-0.5 rounded border border-border">
                     Drag slider to compare ({swipePos}%)
                   </div>
-                  <div className="w-5 h-5 rounded-full bg-[#070D16]/90 border border-[#182A40] flex flex-col items-center justify-center text-[7px] font-mono text-white">
-                    <span className="text-[#00E5FF] font-bold leading-none">N</span>
+                  <div className="w-5 h-5 rounded-full bg-surface/90 border border-border flex items-center justify-center text-[8px] text-text-2">
+                    <span>N</span>
                   </div>
                 </div>
               </div>
@@ -635,37 +646,37 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               /* LARGE SIDE-BY-SIDE DUAL TILE COMPARISON */
               <div className="grid grid-cols-2 gap-2 w-full h-full p-1.5">
                 {/* Left: BEFORE Tile */}
-                <div className="relative rounded-lg overflow-hidden border border-[#182A40] bg-[#070D16] flex flex-col">
+                <div className="relative rounded-lg overflow-hidden border border-border bg-bg flex flex-col">
                   {/* BEFORE Metadata directly above/on image */}
-                  <div className="bg-[#070D16] px-2 py-1 border-b border-[#182A40] text-[9px] font-mono flex items-center justify-between">
-                    <span className="text-white font-bold">BEFORE OBSERVATION</span>
-                    <span className="text-[#94A3B8]">{beforeDate}</span>
+                  <div className="bg-surface px-2.5 py-1 border-b border-border text-[10px] font-mono flex items-center justify-between" title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}>
+                    <span className="text-text font-medium">BEFORE · {formatDateDisplay(beforeDate)}</span>
+                    <span className="text-text-2 text-[9px]">Cloud {beforeCloudCover.replace(/\s*\(.*?\)/g, '').trim()}</span>
                   </div>
                   <div className="relative flex-1 min-h-0">
                     <img
                       src={beforeImgUrl}
                       alt="Before observation"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center"
                       style={{ filter: getFilterStyle(false) }}
                     />
-                    <div className="absolute bottom-1.5 left-1.5 bg-[#070D16]/90 border border-[#182A40] px-1.5 py-0.5 rounded text-[8px] font-mono text-[#94A3B8]">
-                      Sentinel-2 • {resolution} • Cloud: {beforeCloudCover}
+                    <div className="absolute bottom-1.5 left-1.5 bg-surface/90 border border-border px-1.5 py-0.5 rounded text-[8px] font-mono text-text-2">
+                      Sentinel-2 • {resolution.replace(/\s*Optical.*$/i, '').trim()}
                     </div>
                   </div>
                 </div>
 
                 {/* Right: AFTER Tile */}
-                <div className="relative rounded-lg overflow-hidden border border-[#182A40] bg-[#070D16] flex flex-col">
+                <div className="relative rounded-lg overflow-hidden border border-border bg-bg flex flex-col">
                   {/* AFTER Metadata directly above/on image */}
-                  <div className="bg-[#070D16] px-2 py-1 border-b border-[#182A40] text-[9px] font-mono flex items-center justify-between">
-                    <span className="text-[#00E5FF] font-bold">AFTER OBSERVATION</span>
-                    <span className="text-[#00E5FF]">{selectedTimelineDate}</span>
+                  <div className="bg-surface px-2.5 py-1 border-b border-border text-[10px] font-mono flex items-center justify-between" title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}>
+                    <span className="text-text font-medium">AFTER · {formatDateDisplay(selectedTimelineDate)}</span>
+                    <span className="text-text-2 text-[9px]">Cloud {cloudCover.replace(/\s*\(.*?\)/g, '').trim()}</span>
                   </div>
                   <div className="relative flex-1 min-h-0">
                     <img
                       src={activePhase.img}
                       alt="After observation"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center"
                       style={{ filter: getFilterStyle(true) }}
                     />
                     {showChangeMask && activePhase.hasChange && (
@@ -676,18 +687,18 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                           <polygon
                             points="32,24 68,22 74,68 34,72"
-                            fill="rgba(239, 68, 68, 0.45)"
-                            stroke="#EF4444"
-                            strokeWidth="1.2"
+                            fill="rgba(245, 158, 11, 0.15)"
+                            stroke="#F59E0B"
+                            strokeWidth="2"
                           />
                         </svg>
                       </div>
                     )}
                     {showBoundingBox && activePhase.hasChange && (
-                      <div className="absolute top-[24%] left-[30%] w-[42%] h-[48%] border-2 border-[#EF4444] rounded pointer-events-none animate-pulse" />
+                      <div className="absolute top-[24%] left-[30%] w-[42%] h-[48%] border border-boundary rounded pointer-events-none" />
                     )}
-                    <div className="absolute bottom-1.5 left-1.5 bg-[#070D16]/90 border border-[#182A40] px-1.5 py-0.5 rounded text-[8px] font-mono text-[#00E5FF]">
-                      Sentinel-2 • {resolution} • Cloud: {cloudCover}
+                    <div className="absolute bottom-1.5 left-1.5 bg-surface/90 border border-border px-1.5 py-0.5 rounded text-[8px] font-mono text-text-2">
+                      Sentinel-2 • {resolution.replace(/\s*Optical.*$/i, '').trim()}
                     </div>
                   </div>
                 </div>
@@ -702,7 +713,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             <img
               src={activePhase.img}
               alt="Detected change scene"
-              className="w-full h-full object-cover select-none"
+              className="w-full h-full object-cover object-center select-none"
               style={{ filter: getFilterStyle(true) }}
             />
 
@@ -716,19 +727,19 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                   {/* Subtle Grid Hatching Pattern */}
                   <defs>
                     <pattern id="changeHatch" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-                      <line x1="0" y1="0" x2="0" y2="4" stroke="#EF4444" strokeWidth="1" />
+                      <line x1="0" y1="0" x2="0" y2="4" stroke="#F59E0B" strokeWidth="1" />
                     </pattern>
                   </defs>
                   {/* Outer Diff Contour */}
                   <polygon
                     points="30,22 70,20 76,70 32,74"
                     fill="url(#changeHatch)"
-                    stroke="#EF4444"
-                    strokeWidth="1.5"
+                    stroke="#F59E0B"
+                    strokeWidth="2"
                   />
                   <polygon
                     points="30,22 70,20 76,70 32,74"
-                    fill="rgba(239, 68, 68, 0.35)"
+                    fill="rgba(245, 158, 11, 0.15)"
                   />
                 </svg>
               </div>
@@ -736,126 +747,149 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
             {/* Bounding Box Frame (Secondary Reference) */}
             {showBoundingBox && (
-              <div className="absolute top-[20%] left-[30%] w-[46%] h-[54%] border-2 border-dashed border-[#00E5FF] rounded-lg pointer-events-none shadow-[0_0_15px_rgba(0,229,255,0.4)]">
-                <span className="absolute -top-3 left-2 bg-[#00E5FF] text-[#070D16] text-[8px] font-mono font-bold px-1 rounded">
+              <div className="absolute top-[20%] left-[30%] w-[46%] h-[54%] border border-dashed border-boundary rounded pointer-events-none">
+                <span className="absolute -top-2.5 left-2 bg-surface border border-border text-text-2 text-[8px] font-mono px-1 rounded">
                   DIFF FOOTPRINT: {areaHa} ({changePercentage})
                 </span>
               </div>
             )}
 
             {/* Change Map Legend Overlay (Top Left) */}
-            <div className="absolute top-2.5 left-2.5 z-20 bg-[#070D16]/95 border border-[#182A40] rounded-lg p-2 backdrop-blur text-[10px] font-mono space-y-1 shadow-xl">
-              <div className="text-white font-bold flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#EF4444] animate-ping" />
-                <span>SEMI-TRANSPARENT CHANGE MASK</span>
+            <div className="absolute top-2.5 left-2.5 z-20 bg-surface/95 border border-border rounded p-2 backdrop-blur text-[10px] font-mono space-y-1 shadow-subtle">
+              <div className="text-text font-medium flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-change" />
+                <span>CHANGE MASK</span>
               </div>
-              <div className="text-[#94A3B8] text-[9px]">
-                Detected Feature: <b className="text-white">{changeType}</b>
+              <div className="text-text-2 text-[9px]">
+                Detected Feature: <b className="text-text font-medium">{changeType}</b>
               </div>
-              <div className="text-[#10B981] font-bold text-[9px]">
+              <div className="text-ok font-medium text-[9px]">
                 Delta: {changePercentage} • Area: {areaHa}
               </div>
             </div>
 
             {/* Scale Bar & North Indicator */}
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20">
-              <div className="bg-[#070D16]/85 border border-[#182A40] px-2 py-0.5 rounded text-[9px] font-mono text-white/90 backdrop-blur">
+            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20 font-mono text-[9px]">
+              <div className="bg-surface/85 border border-border px-2 py-0.5 rounded text-text-2 backdrop-blur">
                 0 100 250 m
               </div>
-              <div className="w-7 h-7 rounded-full bg-[#070D16]/90 border border-[#182A40] flex flex-col items-center justify-center text-[9px] font-mono text-white backdrop-blur shadow">
-                <span className="text-[#00E5FF] font-bold leading-none">N</span>
-                <div className="w-0.5 h-2 bg-[#00E5FF]" />
+              <div className="w-6 h-6 rounded-full bg-surface/90 border border-border flex items-center justify-center text-text-2 backdrop-blur shadow-subtle">
+                <span className="font-semibold text-[8px]">N</span>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* 5. MULTI-TEMPORAL CONTINUOUS MILESTONES SCRUBBER */}
-      <div className="bg-[#070D16] px-3 py-2 rounded-lg border border-[#182A40] flex items-center justify-between gap-2 shrink-0 text-xs font-mono">
-        <span className="text-[#94A3B8] uppercase font-bold shrink-0 text-xs">Passes:</span>
-        <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar py-0.5">
+      {/* 5. MULTI-TEMPORAL CONTINUOUS MILESTONES SCRUBBER (Tertiary: flat and low contrast) */}
+      <div className="bg-bg px-3 py-1.5 rounded-md border border-border flex items-center justify-between gap-2 shrink-0 text-xs font-sans">
+        <span className="text-text-2 text-xs shrink-0 font-medium">Passes:</span>
+        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
           {timelineMilestones.map((m) => {
             const isSel = selectedTimelineDate === m.date;
             return (
               <button
                 key={m.date}
                 onClick={() => setSelectedTimelineDate(m.date)}
-                className={`px-2.5 py-1 rounded-md text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none flex items-center space-x-1 shrink-0 focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
+                className={`px-2.5 py-1 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none flex items-center space-x-1 shrink-0 ${
                   isSel
-                    ? 'bg-[#00E5FF] text-[#070D16] font-bold shadow'
-                    : 'bg-[#0B1523] text-[#94A3B8] hover:text-white border border-[#182A40]'
+                    ? 'bg-raised text-text font-medium border border-border'
+                    : 'bg-transparent text-text-2 hover:text-text'
                 }`}
                 title={`Pass ${m.month}: ${m.label} (${m.date})`}
               >
                 <span>{m.month}</span>
-                <span className="text-[10px] opacity-80">({m.label})</span>
+                <span className="text-[11px] text-text-2">({m.label})</span>
               </button>
             );
           })}
         </div>
-        <span className="text-[#38BDF8] shrink-0 font-semibold text-xs hidden sm:inline">
-          Period: {computedPeriod} ({computedTimeGap})
+        <span className="text-text-2 shrink-0 text-xs font-mono tabular-nums hidden sm:inline">
+          {computedPeriod} · {computedTimeGap}
         </span>
       </div>
 
-      {/* 6. QUANTIFIED CHANGE METRICS & MANDATORY ANALYST BANNER */}
-      <div className="pt-2 border-t border-[#182A40]/80 space-y-1.5 shrink-0 font-sans">
-        {/* Change Metrics Grid - High-Contrast 12-13px labels for Projector Display */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono">
-          <div className="p-2 rounded-lg bg-[#070D16] border border-[#182A40]">
-            <span className="text-[#94A3B8] block uppercase text-xs font-semibold tracking-wider">Changed Area</span>
-            <span className="text-[#38BDF8] text-sm sm:text-base font-bold block mt-0.5">{areaHa}</span>
+      {/* 6. QUANTIFIED CHANGE METRICS & MANDATORY ANALYST ACTION BAR */}
+      <div className="pt-2 border-t border-border/60 space-y-2 shrink-0 font-sans">
+        {/* Metric Cards Grid - Secondary hierarchy: compact, hairline dividers, no heavy boxes */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {/* Card 1: Changed Area */}
+          <div className="bg-bg border border-border rounded-md p-2.5">
+            <span className="text-text-2 text-xs block">Changed area</span>
+            <div className="mt-1 font-mono text-xl font-semibold text-text tabular-nums">
+              {areaHa.split(' ')[0]} {areaHa.split(' ')[1] || 'ha'}
+            </div>
+            <div className="text-[11px] text-text-2 font-mono tabular-nums">
+              {areaHa.includes('(') ? areaHa.slice(areaHa.indexOf('(') + 1, areaHa.indexOf(')')) : '42,000 m²'}
+            </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-[#070D16] border border-[#182A40]">
-            <span className="text-[#94A3B8] block uppercase text-xs font-semibold tracking-wider">Change Delta</span>
-            <span className="text-[#10B981] text-sm sm:text-base font-bold block mt-0.5">{changePercentage}</span>
+          {/* Card 2: Detection Confidence */}
+          <div className="bg-bg border border-border rounded-md p-2.5">
+            <span className="text-text-2 text-xs block">Detection confidence</span>
+            <div className="mt-1 font-mono text-xl font-semibold text-text tabular-nums">
+              {confidence}%
+            </div>
+            <div className="text-[11px] text-text-2">
+              Analyst verification req.
+            </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-[#070D16] border border-[#182A40]">
-            <span className="text-[#94A3B8] block uppercase text-xs font-semibold tracking-wider">Detection Confidence</span>
-            <span className="text-[#F59E0B] text-sm sm:text-base font-bold block mt-0.5">{confidence}%</span>
+          {/* Card 3: Change Delta */}
+          <div className="bg-bg border border-border rounded-md p-2.5">
+            <span className="text-text-2 text-xs block">Change delta</span>
+            <div className="mt-1 font-mono text-xl font-semibold text-text tabular-nums">
+              {changePercentage}
+            </div>
+            <div className="text-[11px] text-text-2 truncate" title={changeType}>
+              {changeType}
+            </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-[#070D16] border border-[#182A40]">
-            <span className="text-[#94A3B8] block uppercase text-xs font-semibold tracking-wider">Coordinates</span>
-            <span className="text-white text-xs sm:text-sm font-bold truncate block mt-0.5" title={coordinates}>{coordinates}</span>
+          {/* Card 4: Coordinates */}
+          <div className="bg-bg border border-border rounded-md p-2.5">
+            <span className="text-text-2 text-xs block">Coordinates</span>
+            <div className="mt-1 font-mono text-sm sm:text-base font-semibold text-text tabular-nums truncate" title={coordinates}>
+              {coordinates}
+            </div>
+            <div className="text-[11px] text-text-2 truncate" title={locationName}>
+              {locationName}
+            </div>
           </div>
         </div>
 
-        {/* Mandatory Intelligence Notice & Analyst Workflow Decision Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 text-[11px]">
-          <div className="flex items-center space-x-1.5 text-[#F59E0B] text-[10px] font-sans">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+        {/* Mandatory Verification Note & Review Actions */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 text-xs">
+          <div className="flex items-center space-x-1.5 text-text-2 text-xs">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-text-2" />
             <span>AI-assisted detection. Analyst verification required.</span>
           </div>
 
           {/* Quick Review Buttons */}
-          <div className="flex items-center space-x-1.5 w-full sm:w-auto justify-end">
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
             <button
               onClick={() => handleQuickReview('CONFIRMED')}
               disabled={isSubmitting || analystVerdict === 'CONFIRMED'}
-              className={`h-6 px-2.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
+              aria-label="Confirm detected change"
+              className={`h-7 px-3 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
                 analystVerdict === 'CONFIRMED'
-                  ? 'bg-[#10B981] text-white shadow'
-                  : 'bg-[#0E355A] hover:bg-[#10B981]/80 text-[#38BDF8] hover:text-white border border-[#0284C7]'
+                  ? 'bg-ok text-bg'
+                  : 'bg-accent hover:bg-accent/90 active:bg-accent/80 text-bg'
               }`}
             >
-              <CheckCircle2 className="w-3 h-3" />
+              <CheckCircle2 className="w-3.5 h-3.5" />
               <span>{analystVerdict === 'CONFIRMED' ? 'Confirmed' : 'Confirm Change'}</span>
             </button>
 
             <button
               onClick={() => handleQuickReview('REJECTED')}
               disabled={isSubmitting || analystVerdict === 'REJECTED'}
-              className={`h-6 px-2 rounded-lg text-xs font-medium flex items-center space-x-1 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none ${
-                analystVerdict === 'REJECTED'
-                  ? 'bg-[#EF4444] text-white'
-                  : 'bg-[#070D16] hover:bg-[#EF4444]/20 text-[#94A3B8] hover:text-[#EF4444] border border-[#182A40]'
+              aria-label="Flag detection as false positive"
+              className={`h-7 px-3 rounded-md text-xs font-normal border border-border bg-transparent text-text-2 hover:text-flag hover:border-flag/60 flex items-center space-x-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-flag focus:outline-none ${
+                analystVerdict === 'REJECTED' ? 'border-flag text-flag bg-flag/10' : ''
               }`}
             >
-              <XCircle className="w-3 h-3" />
+              <XCircle className="w-3.5 h-3.5" />
               <span>Flag False</span>
             </button>
           </div>

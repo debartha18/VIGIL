@@ -448,42 +448,40 @@ const VigilPlatform: React.FC = () => {
           ) : (
             /* Main Signature Grid: Responsive with guaranteed visibility on all screen sizes */
             <div className="flex-1 p-2 sm:p-3 flex flex-col gap-3 overflow-y-auto min-h-0 pb-28 w-full max-w-full">
-              {/* Priority 5: Compact Horizontal Results Strip directly under search bar / above map for instant visibility on 1080p laptops */}
-              <div className="bg-[#0B1523] border border-[#182A40] rounded-xl px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+              {/* Priority 5 / Phase 2: Professional Geospatial Results Strip */}
+              <div className="bg-surface border border-border rounded-md px-3 py-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
                 <div className="flex items-center space-x-2 shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-[#00E5FF] animate-pulse" />
-                  <span className="text-xs font-mono font-semibold text-white tracking-wide">
-                    {searchResults.length} {searchResults.length === 1 ? 'Location' : 'Locations'} Retrieved
+                  <span className="text-xs font-semibold text-text">
+                    {searchResults.length} {searchResults.length === 1 ? 'location' : 'locations'} retrieved
                   </span>
                   {currentQuery && (
-                    <span className="text-[11px] text-[#94A3B8] font-mono hidden md:inline truncate max-w-[220px]" title={currentQuery}>
-                      for <span className="text-[#00E5FF] font-sans italic">{currentQuery}</span>
+                    <span className="text-xs text-text-2 truncate max-w-[200px]" title={currentQuery}>
+                      for <span className="text-text">{currentQuery}</span>
                     </span>
                   )}
                 </div>
 
-                {/* Quick selection pills for instant switching */}
-                <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full">
+                {/* Flat tabs with 2px bottom accent border on selected */}
+                <div className="flex items-center overflow-x-auto no-scrollbar gap-1 max-w-full" role="tablist" aria-label="Retrieved locations">
                   {searchResults.map((item, idx) => {
                     const isSelected = item.id === selectedResultId;
                     return (
                       <button
                         key={item.id}
+                        role="tab"
+                        aria-selected={isSelected}
                         onClick={() => handleSelectResult(item)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00E5FF] ${
+                        className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center space-x-2 shrink-0 cursor-pointer border-b-2 ${
                           isSelected
-                            ? 'bg-[#00E5FF]/15 border-[#00E5FF] text-white shadow-[0_0_12px_rgba(0,229,255,0.25)] font-semibold'
-                            : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white hover:border-[#38BDF8]/60'
-                        }`}
-                        title={`${item.title} (${item.confidencePct}% Detection Confidence)`}
+                            ? 'border-accent text-text bg-raised'
+                            : 'border-transparent text-text-2 hover:text-text hover:bg-raised/50'
+                        } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+                        title={`${item.title} (${item.relevanceScore || item.confidencePct}% Relevance, ${item.changeType})`}
                       >
-                        <span className={`text-[10px] font-mono px-1 py-0.2 rounded ${isSelected ? 'bg-[#00E5FF] text-black font-bold' : 'bg-[#182A40] text-[#94A3B8]'}`}>
-                          #{idx + 1}
-                        </span>
+                        <span className="font-mono text-xs text-text-2">#{idx + 1}</span>
                         <span className="truncate max-w-[120px] sm:max-w-[150px]">{item.title}</span>
-                        <span className={`text-[10px] font-mono ${isSelected ? 'text-[#00E5FF]' : 'text-[#64748B]'}`}>
-                          {item.confidencePct}%
-                        </span>
+                        <span className="font-mono text-xs text-text-2">{item.relevanceScore || item.confidencePct}%</span>
+                        <span className="text-[11px] text-text-2 hidden md:inline">· {item.changeType}</span>
                       </button>
                     );
                   })}
@@ -539,7 +537,7 @@ const VigilPlatform: React.FC = () => {
               </div>
 
               {/* Bottom Row: Semantic Search Results + Optional Collapsible System Analytics */}
-              <div className={`grid grid-cols-1 ${showBottomAnalytics ? 'lg:grid-cols-[3.2fr_1fr]' : 'lg:grid-cols-1'} gap-3 shrink-0 min-h-[250px] pb-2 transition-all`}>
+              <div className={`grid grid-cols-1 ${showBottomAnalytics ? 'lg:grid-cols-[3.2fr_1fr]' : 'lg:grid-cols-1'} gap-3 shrink-0 min-h-[250px] pb-16 transition-all`}>
                 {/* Semantic Search Results (5 Cards) */}
                 <div className="h-full min-h-0 relative">
                   <SemanticSearchResults
@@ -551,7 +549,7 @@ const VigilPlatform: React.FC = () => {
                   {!showBottomAnalytics && (
                     <button
                       onClick={() => setShowBottomAnalytics(true)}
-                      className="absolute top-2.5 right-28 h-6 px-2.5 rounded-md bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-[11px] text-[#38BDF8] flex items-center space-x-1 cursor-pointer transition font-sans"
+                      className="absolute top-2.5 right-28 h-6 px-2.5 rounded bg-surface hover:bg-raised border border-border text-xs text-text-2 hover:text-text flex items-center space-x-1 cursor-pointer transition font-sans shadow-subtle"
                       title="Show system analytics gauges"
                     >
                       <span>Show analytics</span>

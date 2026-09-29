@@ -3,16 +3,32 @@
 @tailwind utilities;
 
 :root {
-  --bg-0: #07090D;
-  --bg-1: #0D1219;
-  --bg-2: #131A24;
-  --line: #1F2A38;
-  --text-0: #E6EDF5;
-  --text-1: #8FA1B5;
-  --cyan: #22D3EE;
-  --green: #34D399;
-  --amber: #F59E0B;
-  --red: #EF4444;
+  --bg: #0E1116;
+  --surface: #151A21;
+  --raised: #1C222B;
+  --border: #2A313C;
+  --text: #E6EAF0;
+  --text-2: #9AA4B2;      /* minimum 4.5:1 contrast on --surface */
+  --accent: #22D3EE;      /* ONLY: primary action button + active selection */
+  --change: #F59E0B;      /* detected change */
+  --boundary: #60A5FA;    /* AOI outline */
+  --ok: #34D399;          /* confirmed */
+  --flag: #F87171;        /* flagged / false */
+  --radius: 8px;
+  --font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-data: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Aliases for backward compatibility */
+  --bg-0: var(--bg);
+  --bg-1: var(--surface);
+  --bg-2: var(--raised);
+  --line: var(--border);
+  --text-0: var(--text);
+  --text-1: var(--text-2);
+  --cyan: var(--accent);
+  --green: var(--ok);
+  --amber: var(--change);
+  --red: var(--flag);
 }
 
 *, *:before, *:after {
@@ -31,11 +47,18 @@ body,
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-0);
-  color: var(--text-0);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
   min-height: 100vh;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular numeric alignment for data readouts */
+.font-mono, code, pre, [data-tabular] {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Utility to hide scrollbars in horizontal touch scroll elements */
@@ -53,59 +76,32 @@ input, textarea, select, [contenteditable="true"] {
   -webkit-user-select: text !important;
 }
 
-/* Suppress default Edge / IE password reveal button to prevent collision with custom eye toggle */
+/* Suppress default Edge / IE password reveal button */
 input::-ms-reveal,
 input::-ms-clear {
   display: none;
 }
 
-code, pre, .font-mono {
-  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-/* High-contrast smooth dark scrollbars */
+/* Clean, subdued neutral scrollbars without glow */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #0284C7 #08121E;
+  scrollbar-color: var(--border) var(--bg);
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #08121E;
-  border-left: 1px solid #182A40;
+  background: var(--bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #0284C7;
-  border-radius: 4px;
-  border: 1px solid #00E5FF/40;
+  background: var(--border);
+  border-radius: var(--radius);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00E5FF;
-  box-shadow: 0 0 8px #00E5FF;
-}
-
-/* Pulse animation for candidates */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.8;
-  }
-  50% {
-    transform: scale(1.4);
-    opacity: 0.2;
-  }
-  100% {
-    transform: scale(0.9);
-    opacity: 0.8;
-  }
-}
-
-.animate-pulse-ring {
-  animation: pulse-ring 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background: var(--text-2);
 }
