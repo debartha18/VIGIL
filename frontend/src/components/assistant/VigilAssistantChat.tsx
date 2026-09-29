@@ -60,14 +60,14 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
     {
       id: 'welcome-msg',
       sender: 'assistant',
-      text: `Welcome to **VIGIL Assistant** — your AI geospatial intelligence copilot.\n\nContext loaded for **${context.aoi.name}** (\`${context.aoi.coordinates}\`).\n\n• **Satellite:** ${context.imagery.sensor} (${context.imagery.resolution})\n• **Detected Change:** ${context.changeAnalysis.changeType}\n• **Changed Area:** ${context.changeAnalysis.changedArea}\n• **Confidence:** **${context.changeAnalysis.confidenceScore}**\n\nAsk any question about this imagery, request date comparisons, or select a quick action below.\n\n*AI-assisted visual analysis. Analyst verification required.*`,
+      text: `Welcome to **VIGIL Assistant** — your AI geospatial intelligence copilot.\n\nContext loaded for **${context.aoi.name}**.\n\nAsk any question about this satellite imagery, or select a quick action below.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       suggestedFollowUps: [
         'What changed here?',
+        'What is the confidence?',
+        'Give me the coordinates',
         'Compare the two dates',
-        'Why was this detected?',
-        'Show imagery metadata',
-        'Generate an analyst summary'
+        'What satellite was used?'
       ]
     }
   ]);
@@ -187,7 +187,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
       {
         id: `welcome-${Date.now()}`,
         sender: 'assistant',
-        text: `Conversation cleared.\n\nAnalysis context remains active for **${context.aoi.name}** (\`${context.aoi.coordinates}\`).\n\n• **Satellite Sensor:** ${context.imagery.sensor}\n• **Change Type:** ${context.changeAnalysis.changeType}\n• **Confidence Score:** **${context.changeAnalysis.confidenceScore}**\n\nHow can I assist your imagery interpretation?`,
+        text: `Conversation cleared. Context active for **${context.aoi.name}**.\n\nWhat would you like to know about this imagery?`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         suggestedFollowUps: ['What changed here?', 'Compare the two dates', 'Why was this detected?', 'Generate an analyst summary']
       }
@@ -195,13 +195,13 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
   };
 
   const quickActions = [
-    { label: 'What changed here?', query: 'What changed here?' },
-    { label: 'Compare the two dates', query: 'Compare the two dates' },
-    { label: 'Why was this detected?', query: 'Why was this detected?' },
-    { label: 'Show imagery metadata', query: 'Show imagery metadata' },
-    { label: 'Explain confidence score', query: 'Explain the confidence score' },
-    { label: 'Summarize this AOI', query: 'Summarize this AOI' },
-    { label: 'Generate analyst summary', query: 'Generate an analyst summary' }
+    { label: 'What changed?', query: 'What changed here?' },
+    { label: 'Compare dates', query: 'Compare the two dates' },
+    { label: 'Confidence score', query: 'What is the confidence?' },
+    { label: 'Coordinates', query: 'Give me the coordinate for this location' },
+    { label: 'Satellite used', query: 'What satellite was used?' },
+    { label: 'Observation dates', query: 'What are the dates?' },
+    { label: 'Full analysis', query: 'Give me the full analysis' }
   ];
 
   return (
@@ -261,7 +261,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                 </div>
                 <div className="flex items-center space-x-1.5 text-[10px] text-[#94A3B8]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                  <span className="truncate">Analysis context active</span>
+                  <span className="truncate">Context: {context.aoi.name}</span>
                 </div>
               </div>
             </div>

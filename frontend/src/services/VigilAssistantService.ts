@@ -55,7 +55,7 @@ export class VigilAssistantService {
     // Try server-side assistant API first (keeps API keys secure on server)
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2500);
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
 
       const res = await fetch(`${API_BASE}/assistant/chat`, {
         method: 'POST',
@@ -65,7 +65,7 @@ export class VigilAssistantService {
           context: this.currentContext,
           language,
           analystMode,
-          history: this.conversationHistory.slice(-6).map(m => ({ sender: m.sender, text: m.text }))
+          history: this.conversationHistory.slice(-4).map(m => ({ sender: m.sender, text: m.text }))
         }),
         signal: controller.signal
       });
@@ -113,8 +113,9 @@ export class VigilAssistantService {
   }
 
   /**
-   * Deterministic, context-grounded response engine.
-   * Completely avoids hallucinations, strictly utilizes actual context numbers & metadata.
+   * Deterministic, question-focused response engine.
+   * Answers ONLY what the user asked for.
+   * Never dumps the entire analysis context or unsolicited metadata.
    */
   private generateLocalResponse(
     query: string,
@@ -132,47 +133,23 @@ export class VigilAssistantService {
     if (!ctx || !ctx.aoi) {
       return {
         text: language === 'hi'
-          ? 'वर्तमान में कोई AOI चयनित नहीं है। कृपया पहले मानचित्र या खोज से एक लक्ष्य चुनें।'
+          ? 'वर्तमान में कोई AOI चयनित नहीं है। कृपया पहले एक लक्ष्य चुनें।'
           : language === 'bn'
-          ? 'বর্তমানে কোনো AOI নির্বাচন করা হয়নি। অনুগ্রহ করে মানচিত্র বা অনুসন্ধান থেকে একটি লক্ষ্য নির্বাচন করুন।'
-          : 'No AOI is currently selected. Please select a target from the map or search results first.',
+          ? 'বর্তমানে কোনো AOI নির্বাচন করা হয়নি। অনুগ্রহ করে একটি লক্ষ্য নির্বাচন করুন।'
+          : 'No AOI is currently selected. Please select a target first.',
         suggestedFollowUps: ['Select Hazira Deepwater Wharf', 'Show recent targets']
       };
     }
 
-    const { aoi, imagery, temporalComparison, changeAnalysis, searchContext } = ctx;
+    const { aoi, imagery, temporalComparison, changeAnalysis } = ctx;
 
-    // Detect Intent
-    const isChangeQuery = /what changed|kya badla|ki poriborton|change|difference|difference.*detected|बदलाव|পরিবর্তন/.test(q);
-    const isCompareQuery = /compare|comparison|two dates|both dates|tula|baseline.*current|तुलना/.test(q);
-    const isWhyDetectedQuery = /why.*detected|kyun|keno|cause|evidence|reason|saboot|প্রমাণ|कारण/.test(q);
-    const isMetadataQuery = /metadata|satellite|sensor|resolution|cloud|date|acquisition|उपग्रह|রেজোলিউশন|উপগ্রহ/.test(q);
-    const isConfidenceQuery = /confidence|score|reliable|accuracy|vishwas|নির্ভরযোগ্যতা|विश्वसनीयता/.test(q);
-    const isSummarizeQuery = /summarize|summary|overview|about this|parichay|সারসংক্ষেপ|विवरण/.test(q);
-    const isReportQuery = /report|dossier|analyst summary|generate.*report|প্রতিবেদন|रिपोर्ट/.test(q);
-    const isMaskQuery = /mask|change mask|overlay|show mask|highlight.*area/.test(q);
-    const isVisualQuery = /visual|normal|current image|after image|original/.test(q);
-    const isNdviQuery = /ndvi|vegetation index|false color|ndwi/.test(q);
-    const isSearchQuery = /find|search|look for|dhoondo|khonjo|construction near|पोर्ट|নদী/.test(q);
-    const isBorderQuery = /border|distance|boundary|coastal.*distance|सीमा|সীমানা/.test(q);
-    const isFalseChangeQuery = /false.*change|false.*alarm|check|validation|filter/.test(q);
-    const isHighestConfidenceQuery = /highest.*confidence|most.*reliable|rank|top.*result/.test(q);
-
-    // Standard Evidence Items
-    const standardEvidence: EvidenceItem[] = [
-      { label: 'Baseline', value: `${imagery.sensor.split(' ')[0]}, ${temporalComparison.baselineDate}`, tag: 'PRE-EVENT' },
-      { label: 'Current', value: `${imagery.sensor.split(' ')[0]}, ${temporalComparison.currentDate}`, tag: 'POST-EVENT' },
-      { label: 'Changed Area', value: changeAnalysis.changedArea, tag: 'GEOMETRIC' },
-      { label: 'Confidence', value: `${changeAnalysis.confidenceScore}`, tag: 'VERIFIED' }
-    ];
-
-    // 1. UI Control: Change Mask
-    if (isMaskQuery) {
+    // 1. UI ACTIONS (Action performed + 1 short confirmation sentence)
+    if (/show.*(change )?mask|enable.*mask|change mask|overlay/i.test(q)) {
       const text = language === 'hi'
-        ? `परिवर्तन मास्क (Change Mask) सक्रिय कर दिया गया है। ${aoi.name} के लिए संरेखित लाल ओवरले नए पहचाने गए संरचनात्मक बदलावों को प्रदर्शित करता है।\n\nAI-assisted visual analysis. Analyst verification required.`
+        ? 'परिवर्तन मास्क (Change Mask) सक्रिय किया गया।'
         : language === 'bn'
-        ? `চেঞ্জ মাস্ক (Change Mask) সক্রিয় করা হয়েছে। ${aoi.name}-এর লাল ওভারলে নতুন সনাক্ত কাঠামোগত পরিবর্তন প্রদর্শন করছে।\n\nAI-assisted visual analysis. Analyst verification required.`
-        : `Change mask overlay enabled for ${aoi.name}. The semi-transparent red layer highlights the specific pixels contributing to the detected structural change.\n\nAI-assisted visual analysis. Analyst verification required.`;
+        ? 'চেঞ্জ মাস্ক (Change Mask) সক্রিয় করা হয়েছে।'
+        : 'Change mask enabled.';
 
       return {
         text,
@@ -180,19 +157,16 @@ export class VigilAssistantService {
           type: 'SET_VIEW_MODE',
           payload: 'change-map',
           description: 'Enable Change Mask viewing mode'
-        },
-        evidence: standardEvidence,
-        suggestedFollowUps: ['Compare the two dates', 'Why was this detected?', 'Generate analyst summary']
+        }
       };
     }
 
-    // 2. UI Control: Compare Before / After
-    if (isCompareQuery) {
+    if (/compare.*(dates|images|two|imagery|both)|switch.*compare|before.*after|slider/i.test(q)) {
       const text = language === 'hi'
-        ? `Before/After तुलना दृश्य सक्रिय कर दिया गया है। आप स्लाइडर को ड्रैग करके ${temporalComparison.baselineDate} और ${temporalComparison.currentDate} के बीच का अंतर देख सकते हैं।\n\nअवलोकन अवधि: ${temporalComparison.observationPeriod} (${temporalComparison.timeGap})\nसेंसर: ${imagery.sensor}`
+        ? 'Before/After तुलना दृश्य सक्रिय किया गया।'
         : language === 'bn'
-        ? `Before/After তুলনামূলক দৃশ্য সক্রিয় করা হয়েছে। আপনি স্লাইডার টেনে ${temporalComparison.baselineDate} এবং ${temporalComparison.currentDate}-এর মধ্যকার পার্থক্য দেখতে পারেন।\n\nপর্যবেক্ষণ সময়কাল: ${temporalComparison.observationPeriod} (${temporalComparison.timeGap})\nসেন্সর: ${imagery.sensor}`
-        : `Switched to Before/After comparison mode. Drag the central split-slider to inspect multi-temporal alterations between ${temporalComparison.baselineDate} and ${temporalComparison.currentDate}.\n\n• Observation Gap: ${temporalComparison.timeGap} (${temporalComparison.observationPeriod})\n• Sensor: ${imagery.sensor} (Resolution: ${imagery.resolution})`;
+        ? 'Before/After তুলনামূলক দৃশ্য সক্রিয় করা হয়েছে।'
+        : 'Before/After comparison enabled.';
 
       return {
         text,
@@ -200,199 +174,263 @@ export class VigilAssistantService {
           type: 'SET_VIEW_MODE',
           payload: 'comparison',
           description: 'Switch to Before/After slider mode'
-        },
-        evidence: standardEvidence,
-        suggestedFollowUps: ['Why was this detected?', 'Show me the change mask', 'Generate an analyst summary']
+        }
       };
     }
 
-    // 3. UI Control: Show Visual Mode
-    if (isVisualQuery) {
+    if (/show.*visual|visual mode|normal view|current image|after image/i.test(q)) {
+      const text = language === 'hi'
+        ? 'विजुअल मोड (Visual Mode) सक्रिय किया गया।'
+        : language === 'bn'
+        ? 'ভিজ্যুয়াল মোড (Visual Mode) সক্রিয় করা হয়েছে।'
+        : 'Visual mode enabled.';
+
       return {
-        text: `Switched to high-resolution Visual mode displaying current post-event observation (${temporalComparison.currentDate}) from ${imagery.sensor}.`,
+        text,
         uiAction: {
           type: 'SET_VIEW_MODE',
           payload: 'visual',
           description: 'Switch to current Visual mode'
-        },
-        suggestedFollowUps: ['Compare the two dates', 'Show me the change mask']
+        }
       };
     }
 
-    // 4. UI Control: NDVI or Spectral Bands
-    if (isNdviQuery) {
+    if (/show.*ndvi|ndvi|vegetation index/i.test(q)) {
+      const text = language === 'hi'
+        ? 'NDVI स्पेक्ट्रल सिमुलेशन सक्रिय किया गया।'
+        : language === 'bn'
+        ? 'NDVI স্পেকট্রাল সিমুলেশন সক্রিয় করা হয়েছে।'
+        : 'NDVI spectral simulation enabled.';
+
       return {
-        text: `NDVI (Normalized Difference Vegetation Index) radiometric band simulation activated.\n\nNotice: This is a client-side DEMO radiometric index simulation derived from Sentinel-2 visible and NIR reflectance. Operational multi-spectral pipelines should verify against calibrated BOA Level-2A surface reflectance.`,
+        text,
         uiAction: {
           type: 'SET_SPECTRAL_MODE',
           payload: 'NDVI',
           description: 'Activate NDVI spectral filter'
-        },
-        suggestedFollowUps: ['Switch back to RGB', 'Show me the change mask']
+        }
       };
     }
 
-    // 5. Semantic Search Query Action
-    if (isSearchQuery && (q.includes('find') || q.includes('search') || q.includes('look for'))) {
-      const extractedSearch = query.replace(/^(find|search|look for|dhoondo|khonjo)\s+/i, '').trim();
+    if (/^(find|search|look for|dhoondo|khonjo)\s+(.+)/i.test(q)) {
+      const match = q.match(/^(find|search|look for|dhoondo|khonjo)\s+(.+)/i);
+      const searchTarget = match ? match[2].trim() : q;
+      const text = language === 'hi'
+        ? `"${searchTarget}" के लिए खोज शुरू की जा रही है...`
+        : language === 'bn'
+        ? `"${searchTarget}"-এর জন্য অনুসন্ধান শুরু করা হচ্ছে...`
+        : `Searching for "${searchTarget}"...`;
+
       return {
-        text: language === 'hi'
-          ? `"${extractedSearch}" के लिए सेमांटिक सैटेलाइट खोज शुरू की गई...\n\nतटीय और नदीय गलियारों से संबंधित परिणाम खोजे जा रहे हैं।`
-          : language === 'bn'
-          ? `"${extractedSearch}"-এর জন্য সেম্যান্টিক স্যাটেলাইট অনুসন্ধান শুরু করা হয়েছে...\n\nউপকূলীয় ও নদী তীরবর্তী প্রাসঙ্গিক অঞ্চলগুলি অনুসন্ধান করা হচ্ছে।`
-          : `Searching for "${extractedSearch}" across satellite imagery archive...\n\nFilters applied: Multi-temporal Optical (10m) & SAR Radar. Retrieved candidate targets updated in search panel below.`,
+        text,
         uiAction: {
           type: 'EXECUTE_SEARCH',
-          payload: extractedSearch,
-          description: `Execute semantic search for "${extractedSearch}"`
-        },
-        suggestedFollowUps: ['What changed here?', 'Show imagery metadata']
+          payload: searchTarget,
+          description: `Execute search for "${searchTarget}"`
+        }
       };
     }
 
-    // 6. Report Generation Action
-    if (isReportQuery) {
+    // 2. EXPLICIT FULL ANALYSIS OR REPORT REQUEST (Only provided when explicitly requested)
+    const isExplicitFullRequest =
+      analystMode ||
+      /full analysis|complete details|summarize.*aoi|summarize.*location|explain everything|detailed report|analysis summary|all metadata|full report|generate.*report|বিশদ|সম্পূর্ণ|विस्तृत/i.test(
+        q
+      );
+
+    if (isExplicitFullRequest) {
+      const reportEvidence: EvidenceItem[] = [
+        { label: 'Baseline', value: `${imagery.sensor.split(' ')[0]}, ${temporalComparison.baselineDate}`, tag: 'PRE-EVENT' },
+        { label: 'Current', value: `${imagery.sensor.split(' ')[0]}, ${temporalComparison.currentDate}`, tag: 'POST-EVENT' },
+        { label: 'Changed Area', value: changeAnalysis.changedArea, tag: 'GEOMETRIC' },
+        { label: 'Confidence', value: `${changeAnalysis.confidenceScore}`, tag: 'VERIFIED' }
+      ];
+
       if (analystMode) {
         return {
-          text: `VIGIL ANALYSIS SUMMARY\n\nAOI:\n${aoi.name} (${aoi.locationName})\n\nCoordinates:\n${aoi.coordinates}\n\nObservation period:\n${temporalComparison.baselineDate} → ${temporalComparison.currentDate} (${temporalComparison.timeGap})\n\nSatellite:\n${imagery.sensor} (${imagery.resolution})\n\nDetected change:\n${changeAnalysis.changeType}\n\nChanged area:\n${changeAnalysis.changedArea}\n\nConfidence:\n${changeAnalysis.confidenceScore}\n\nEvidence:\n• Visual shift across B04/B03/B02\n• Mask extent: ${changeAnalysis.changedArea}\n• Delta: ${changeAnalysis.changePercentage}\n\nFalse-change assessment:\n${changeAnalysis.falseChangeChecks}\n\nAnalyst note:\nNeutral structural development observed within coastal boundary corridor. No operational intent inferred from visual spectrum alone.\n\nDisclaimer:\n"AI-assisted analysis based on available imagery. Analyst verification required."`,
+          text: `OBSERVATION\nA verified ${changeAnalysis.changeType.toLowerCase()} change was detected between ${temporalComparison.baselineDate} and ${temporalComparison.currentDate}.\n\nEVIDENCE\n• Baseline: ${temporalComparison.baselineDate} (${imagery.sensor})\n• Current: ${temporalComparison.currentDate} (${imagery.sensor})\n• Sensor: ${imagery.sensor}\n• Resolution: ${imagery.resolution}\n• Changed area: ${changeAnalysis.changedArea}\n• Delta: ${changeAnalysis.changePercentage}\n\nCONFIDENCE\n${changeAnalysis.confidenceScore}\n\nINTERPRETATION\n${changeAnalysis.detectionExplanation}\n\nVERIFICATION\nAI-assisted detection. Analyst verification required.`,
+          evidence: reportEvidence,
           uiAction: {
             type: 'VIEW_FULL_REPORT',
-            description: 'Open full intelligence report dossier'
-          },
-          evidence: standardEvidence,
-          suggestedFollowUps: ['Compare the two dates', 'Explain the confidence score']
+            description: 'Open complete intelligence dossier'
+          }
         };
       }
 
       return {
-        text: `### VIGIL ANALYSIS SUMMARY\n\n* **AOI:** ${aoi.name}\n* **Coordinates:** \`${aoi.coordinates}\`\n* **Observation Period:** ${temporalComparison.baselineDate} → ${temporalComparison.currentDate} (${temporalComparison.timeGap})\n* **Satellite:** ${imagery.sensor} (${imagery.resolution})\n* **Detected Change:** ${changeAnalysis.changeType}\n* **Changed Area:** ${changeAnalysis.changedArea} (${changeAnalysis.changePercentage})\n* **Confidence:** **${changeAnalysis.confidenceScore}**\n\n#### False-Change Verification\n${changeAnalysis.falseChangeChecks}\n\n#### Analyst Note\nObservable physical alteration confirmed between baseline and current acquisition. Requires senior photo-interpreter sign-off before operational dissemination.\n\n> **Disclaimer:** AI-assisted detection based on publicly available imagery. Analyst verification required.`,
+        text: `### ANALYSIS SUMMARY\n\n* **Location:** ${aoi.name} (${aoi.locationName})\n* **Coordinates:** ${aoi.coordinates}\n* **Observation Period:** ${temporalComparison.observationPeriod} (${temporalComparison.timeGap})\n* **Sensor:** ${imagery.sensor} (${imagery.resolution})\n* **Detected Change:** ${changeAnalysis.changeType}\n* **Changed Area:** ${changeAnalysis.changedArea} (${changeAnalysis.changePercentage})\n* **Confidence:** ${changeAnalysis.confidenceScore}\n* **Source:** ${imagery.imageSource}\n\n**Evidence:**\n${changeAnalysis.detectionExplanation}\n\n**Verification:**\nAI-assisted visual analysis. Analyst verification required.`,
+        evidence: reportEvidence,
         uiAction: {
           type: 'VIEW_FULL_REPORT',
-          description: 'Open full intelligence report dossier'
-        },
-        evidence: standardEvidence,
-        suggestedFollowUps: ['Compare the two dates', 'Explain the confidence score']
+          description: 'Open complete intelligence dossier'
+        }
       };
     }
 
-    // 7. What Changed Here?
-    if (isChangeQuery) {
-      if (analystMode) {
-        return {
-          text: `OBSERVATION\nA verified visual change was detected between the baseline and current observation windows.\n\nEVIDENCE\n• Baseline: ${temporalComparison.baselineDate} (${imagery.sensor})\n• Current: ${temporalComparison.currentDate} (${imagery.sensor})\n• Type: ${changeAnalysis.changeType}\n• Changed area: ${changeAnalysis.changedArea}\n• Relative expansion: ${changeAnalysis.changePercentage}\n\nCONFIDENCE\n${changeAnalysis.confidenceScore}\n\nINTERPRETATION\nThe imagery demonstrates new surface construction and impervious ground coverage within the designated perimeter.\n\nVERIFICATION\nAI-assisted visual analysis. Analyst verification required.`,
-          evidence: standardEvidence,
-          suggestedFollowUps: ['Compare the two dates', 'Why was this detected?', 'Generate an analyst summary']
-        };
-      }
-
+    // 3. MULTI-PART SPECIFIC QUESTIONS
+    if (/change.*confidence|confidence.*change/i.test(q)) {
       if (language === 'hi') {
-        return {
-          text: `${temporalComparison.baselineDate} और ${temporalComparison.currentDate} के बीच एक संरचनात्मक बदलाव पहचाना गया है।\n\nपहचाना गया परिवर्तन:\n• प्रकार: ${changeAnalysis.changeType}\n• परिवर्तित क्षेत्र: ${changeAnalysis.changedArea}\n• परिवर्तन अनुपात: ${changeAnalysis.changePercentage}\n• विश्वसनीयता (Confidence): ${changeAnalysis.confidenceScore}\n\nलाल रंग से चिह्नित क्षेत्र मुख्य रूप से पाए गए दृश्य अंतर का प्रतिनिधित्व करता है।\n\nAI-assisted visual analysis. Analyst verification required.`,
-          evidence: standardEvidence,
-          suggestedFollowUps: ['दो तिथियों की तुलना करें', 'यह परिवर्तन क्यों पहचाना गया?', 'विश्लेषक सारांश उत्पन्न करें']
-        };
+        return { text: `${changeAnalysis.confidenceScore} विश्वसनीयता के साथ एक ${changeAnalysis.changeType} परिवर्तन पहचाना गया।` };
       }
-
       if (language === 'bn') {
-        return {
-          text: `${temporalComparison.baselineDate} এবং ${temporalComparison.currentDate}-এর মধ্যে একটি কাঠামোগত পরিবর্তন সনাক্ত করা হয়েছে।\n\nসনাক্তকৃত পরিবর্তন:\n• ধরন: ${changeAnalysis.changeType}\n• পরিবর্তিত এলাকা: ${changeAnalysis.changedArea}\n• পরিবর্তনের হার: ${changeAnalysis.changePercentage}\n• আত্মবিশ্বাস (Confidence): ${changeAnalysis.confidenceScore}\n\nচিহ্নিত চেঞ্জ মাস্ক এলাকাটি সর্বাধিক দৃশ্যমান পার্থক্যের অঞ্চল প্রদর্শন করে।\n\nAI-assisted visual analysis. Analyst verification required.`,
-          evidence: standardEvidence,
-          suggestedFollowUps: ['উভয় তারিখের তুলনা করুন', 'কেন এটি সনাক্ত করা হলো?', 'বিশ্লেষক সারসংক্ষেপ তৈরি করুন']
-        };
+        return { text: `${changeAnalysis.confidenceScore} আত্মবিশ্বাসের সাথে একটি ${changeAnalysis.changeType} পরিবর্তন সনাক্ত করা হয়েছে।` };
       }
-
-      return {
-        text: `A structural change was detected between **${temporalComparison.baselineDate}** and **${temporalComparison.currentDate}**.\n\n**Detected Change Metrics:**\n• **Type:** ${changeAnalysis.changeType}\n• **Changed Area:** ${changeAnalysis.changedArea}\n• **Change Delta:** ${changeAnalysis.changePercentage}\n• **Confidence Score:** **${changeAnalysis.confidenceScore}**\n\nThe highlighted change mask shows the spatial polygon contributing most significantly to the detected difference.\n\n*AI-assisted visual analysis. Analyst verification required.*`,
-        evidence: standardEvidence,
-        suggestedFollowUps: ['Compare the two dates', 'Why was this detected?', 'Generate an analyst summary']
-      };
+      return { text: `${changeAnalysis.changeType} was detected with a confidence of ${changeAnalysis.confidenceScore}.` };
     }
 
-    // 8. Why Was This Detected? / Evidence
-    if (isWhyDetectedQuery) {
-      if (analystMode) {
-        return {
-          text: `OBSERVATION\nAutomated change detection algorithm triggered based on significant spectral reflectance delta in visible/NIR bands.\n\nEVIDENCE\n• Sensor: ${imagery.sensor}\n• Baseline Date: ${temporalComparison.baselineDate} (Cloud cover: ${imagery.beforeCloudCover || '1.1%'})\n• Current Date: ${temporalComparison.currentDate} (Cloud cover: ${imagery.cloudCoverage})\n• Detected Area: ${changeAnalysis.changedArea}\n• Spectral Gradient: Elevated reflectance consistent with cured concrete and structural groundwork.\n\nCONFIDENCE\n${changeAnalysis.confidenceScore}\n\nINTERPRETATION\n${changeAnalysis.detectionExplanation}\n\nVERIFICATION\n${changeAnalysis.falseChangeChecks}\nAnalyst verification required before operational reporting.`,
-          evidence: standardEvidence,
-          suggestedFollowUps: ['Show imagery metadata', 'Compare the two dates', 'Generate an analyst summary']
-        };
+    if (/change.*(area|size)|(area|size).*change/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `${changeAnalysis.changeType} परिवर्तन पहचाना गया, जो लगभग ${changeAnalysis.changedArea} को कवर करता है।` };
       }
-
-      return {
-        text: `The system detected a significant visual and radiometric difference between baseline and current observations.\n\n**Available Geospatial Evidence:**\n• **Baseline Observation:** ${imagery.sensor}, ${temporalComparison.baselineDate}\n• **Current Observation:** ${imagery.sensor}, ${temporalComparison.currentDate}\n• **Spatial Footprint:** ${changeAnalysis.changedArea} (${changeAnalysis.changePercentage})\n• **Detection Logic:** ${changeAnalysis.detectionExplanation}\n• **Confidence:** **${changeAnalysis.confidenceScore}**\n\n**False-Change Checks:**\n${changeAnalysis.falseChangeChecks}\n\n*The result should be reviewed by an analyst before drawing operational conclusions.*`,
-        evidence: standardEvidence,
-        suggestedFollowUps: ['Show me the change mask', 'Compare the two dates', 'Generate an analyst summary']
-      };
+      if (language === 'bn') {
+        return { text: `${changeAnalysis.changeType} পরিবর্তন সনাক্ত করা হয়েছে যা প্রায় ${changeAnalysis.changedArea} এলাকা জুড়ে রয়েছে।` };
+      }
+      return { text: `A ${changeAnalysis.changeType.toLowerCase()} change was detected covering approximately ${changeAnalysis.changedArea}.` };
     }
 
-    // 9. Imagery Metadata
-    if (isMetadataQuery) {
-      return {
-        text: `### Satellite Imagery Metadata\n\n* **AOI Name:** ${aoi.name}\n* **Sector / Location:** ${aoi.locationName}\n* **Coordinates:** \`${aoi.coordinates}\`\n* **Sensor:** ${imagery.sensor}\n* **Resolution:** ${imagery.resolution}\n* **Current Acquisition Date:** ${temporalComparison.currentDate}\n* **Baseline Date:** ${temporalComparison.baselineDate}\n* **Current Cloud Cover:** ${imagery.cloudCoverage}\n* **Baseline Cloud Cover:** ${imagery.beforeCloudCover || '0.8%'}\n* **Image Source:** ${imagery.imageSource}\n* **Scene Identifiers:** \`${imagery.imageIds.join(', ')}\``,
-        evidence: [
-          { label: 'Sensor', value: imagery.sensor, tag: 'PAYLOAD' },
-          { label: 'Resolution', value: imagery.resolution, tag: 'GSD' },
-          { label: 'Cloud Cover', value: imagery.cloudCoverage, tag: 'ATMOSPHERE' },
-          { label: 'Source', value: imagery.imageSource, tag: 'CATALOG' }
-        ],
-        suggestedFollowUps: ['What changed here?', 'Compare the two dates']
-      };
+    // 4. PRECISE FIELD INQUIRIES (Exact field output ONLY)
+
+    // A. COORDINATES
+    if (/coordinate|coordinates|lat|lon|latitude|longitude|निर्देशांक|स्थानांक/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `निर्देशांक ${aoi.coordinates} हैं।` };
+      }
+      if (language === 'bn') {
+        return { text: `স্থানাঙ্ক হলো ${aoi.coordinates}।` };
+      }
+      return { text: `The coordinates are ${aoi.coordinates}.` };
     }
 
-    // 10. Explain Confidence Score
-    if (isConfidenceQuery) {
-      return {
-        text: `The **${changeAnalysis.confidenceScore}** confidence score is calculated from three independent remote-sensing factors:\n\n1. **Spectral Contrast (40% weight):** Substantial delta across Visible (B02, B03, B04) and Near-Infrared (B08) bands between dates.\n2. **Multi-temporal Persistence (35% weight):** The feature is persistent across intermediate passes and not a transient artifact or passing vessel.\n3. **Geometric Structure & Edge Coherence (25% weight):** Coherent rectilinear boundaries conforming to structural engineering patterns rather than natural seasonal vegetation variation.\n\n*AI-assisted assessment. High confidence indicates high visual divergence from baseline, but photo-interpreter confirmation remains mandatory.*`,
-        evidence: standardEvidence,
-        suggestedFollowUps: ['Why was this detected?', 'What changed here?', 'Generate an analyst summary']
-      };
+    // B. CONFIDENCE
+    if (/confidence|confident|reliability|accuracy|विश्वसनीयता|आत्मविश्वास/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `पहचान विश्वसनीयता (Confidence) ${changeAnalysis.confidenceScore} है।` };
+      }
+      if (language === 'bn') {
+        return { text: `সনাক্তকরণ আত্মবিশ্বাস (Confidence) হলো ${changeAnalysis.confidenceScore}।` };
+      }
+      return { text: `The detection confidence is ${changeAnalysis.confidenceScore}.` };
     }
 
-    // 11. False Change Check Query
-    if (isFalseChangeQuery) {
-      return {
-        text: `### False-Alarm & Environmental Filter Status\n\n${changeAnalysis.falseChangeChecks}\n\nAll automated environmental suppression filters have cleared this candidate with confidence score **${changeAnalysis.confidenceScore}**.`,
-        evidence: standardEvidence,
-        suggestedFollowUps: ['Why was this detected?', 'Generate an analyst summary']
-      };
+    // C. HOW LARGE / AREA
+    if (/how (large|big)|area|extent|size|क्षेत्रफल|কতটা এলাকা|ক্ষেত্রফল/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `पहचाना गया परिवर्तन लगभग ${changeAnalysis.changedArea} (${changeAnalysis.changePercentage}) को कवर करता है।` };
+      }
+      if (language === 'bn') {
+        return { text: `সনাক্তকৃত পরিবর্তনটি প্রায় ${changeAnalysis.changedArea} (${changeAnalysis.changePercentage}) এলাকা জুড়ে বিস্তৃত।` };
+      }
+      return { text: `The detected change covers approximately ${changeAnalysis.changedArea} (${changeAnalysis.changePercentage}).` };
     }
 
-    // 12. Border & Distance Query
-    if (isBorderQuery) {
-      return {
-        text: `**Geographic Positioning & Maritime Corridor:**\n• **AOI:** ${aoi.name}\n• **Coordinates:** \`${aoi.coordinates}\`\n• **Regional Corridor:** ${aoi.region}\n• **Corridor Context:** ${aoi.distanceFromBorder || 'Located in coastal maritime approach zone (~18 km from open shipping lanes)'}.\n\n*Note: Public satellite imagery does not establish sovereign boundaries or security designations. Analyst verification required.*`,
-        suggestedFollowUps: ['What changed here?', 'Show imagery metadata']
-      };
+    // D. SATELLITE / SENSOR
+    if (/satellite|sensor|instrument|what was used|satellite used|उपग्रह|উপগ্রহ/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `${imagery.sensor}, ${imagery.resolution}।` };
+      }
+      if (language === 'bn') {
+        return { text: `${imagery.sensor}, ${imagery.resolution}।` };
+      }
+      return { text: `${imagery.sensor}, ${imagery.resolution}.` };
     }
 
-    // 13. Summarize AOI
-    if (isSummarizeQuery) {
-      return {
-        text: `### Location Summary: ${aoi.name}\n\n* **Location:** ${aoi.locationName} (\`${aoi.coordinates}\`)\n* **Primary Feature:** ${changeAnalysis.changeType}\n* **Changed Area:** ${changeAnalysis.changedArea}\n* **Observation Timeline:** ${temporalComparison.observationPeriod}\n* **Satellite Sensor:** ${imagery.sensor} at ${imagery.resolution}\n* **Status:** Candidate flagged with **${changeAnalysis.confidenceScore}** confidence for visual change.\n\n*AI-assisted detection. Analyst verification required.*`,
-        evidence: standardEvidence,
-        suggestedFollowUps: ['What changed here?', 'Compare the two dates', 'Generate an analyst summary']
-      };
+    // E. RESOLUTION
+    if (/resolution|gsd|spatial resolution|रेज़ोल्यूशन|রেজোলিউশন/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `स्थानिक रेज़ोल्यूशन (Resolution) ${imagery.resolution} है।` };
+      }
+      if (language === 'bn') {
+        return { text: `স্থানিক রেজোলিউশন (Resolution) হলো ${imagery.resolution}।` };
+      }
+      return { text: `The spatial resolution is ${imagery.resolution}.` };
     }
 
-    // 14. Highest Confidence Query
-    if (isHighestConfidenceQuery && searchContext.allResultsSummary) {
-      const topResults = [...searchContext.allResultsSummary].sort((a, b) => b.confidence - a.confidence);
-      const topList = topResults.map((r, i) => `${i + 1}. **${r.title}** — Confidence: **${r.confidence}%** (${r.sensor})`).join('\n');
-      return {
-        text: `Here are the retrieved locations ranked by change confidence score:\n\n${topList}\n\nThe currently selected target is **${aoi.name}** with **${changeAnalysis.confidenceScore}** confidence.`,
-        suggestedFollowUps: ['What changed here?', 'Compare the two dates']
-      };
+    // F. DATES / TIMELINE
+    if (/date|dates|acquisition|baseline|observation period|when was this|time gap|timeline|अवधि|তারিখ/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `तुलना अवधि ${temporalComparison.observationPeriod} (${temporalComparison.timeGap}) को कवर करती है।` };
+      }
+      if (language === 'bn') {
+        return { text: `তুলনামূলক পর্যবেক্ষণ ${temporalComparison.observationPeriod} (${temporalComparison.timeGap}) জুড়ে রয়েছে।` };
+      }
+      return { text: `The comparison covers ${temporalComparison.observationPeriod} (${temporalComparison.timeGap}).` };
     }
 
-    // Default Fallback Response
+    // G. CLOUD COVER
+    if (/cloud|cloud cover|cloudiness|बादल|মেঘ/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `वर्तमान अवलोकन के लिए क्लाउड कवर ${imagery.cloudCoverage} है (बेसलाइन: ${imagery.beforeCloudCover || '0.8%'})।` };
+      }
+      if (language === 'bn') {
+        return { text: `বর্তমান পর্যবেক্ষণে ক্লাউড কভার ${imagery.cloudCoverage} (বেসলাইন: ${imagery.beforeCloudCover || '0.8%'})।` };
+      }
+      return { text: `Cloud cover is ${imagery.cloudCoverage} for the current observation and ${imagery.beforeCloudCover || '0.8%'} for the baseline.` };
+    }
+
+    // H. SOURCE
+    if (/source|origin|provider|copernicus|स्रोत|উৎস/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `उपग्रह डेटा स्रोत ${imagery.imageSource} है।` };
+      }
+      if (language === 'bn') {
+        return { text: `চিত্রের উৎস হলো ${imagery.imageSource}।` };
+      }
+      return { text: `The imagery source is ${imagery.imageSource}.` };
+    }
+
+    // I. LOCATION / PLACE NAME
+    if (/where is this|location|which place|sector|name of this|स्थान|जगह/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `${aoi.name} (${aoi.locationName})।` };
+      }
+      if (language === 'bn') {
+        return { text: `${aoi.name} (${aoi.locationName})।` };
+      }
+      return { text: `${aoi.name} (${aoi.locationName}).` };
+    }
+
+    // J. BORDER PROXIMITY
+    if (/border|distance|how far|boundary|सीमा|সীমানা/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `${aoi.distanceFromBorder || 'तटीय समुद्री दृष्टिकोण क्षेत्र में स्थित (~18 किमी)'}।` };
+      }
+      if (language === 'bn') {
+        return { text: `${aoi.distanceFromBorder || 'উপকূলীয় সামুদ্রিক অ্যাপ্রোচ জোনে অবস্থিত (~১৮ কিমি)'}।` };
+      }
+      return { text: `${aoi.distanceFromBorder || 'Located in coastal maritime approach zone (~18 km from open waters)'}.` };
+    }
+
+    // K. WHY DETECTED / EVIDENCE
+    if (/why.*detected|cause|evidence|reason|saboot|प्रमाण|कारण|কারণ/i.test(q)) {
+      if (language === 'hi') {
+        return { text: 'सिस्टम ने दृश्यमान और NIR बैंड में बेसलाइन और वर्तमान अवलोकनों के बीच महत्वपूर्ण दृश्य अंतर का पता लगाया।' };
+      }
+      if (language === 'bn') {
+        return { text: 'সিস্টেমটি দৃশ্যমান এবং NIR ব্যান্ডে বেসলাইন ও বর্তমান পর্যবেক্ষণের মধ্যে উল্লেখযোগ্য ভিজ্যুয়াল পার্থক্য সনাক্ত করেছে।' };
+      }
+      return { text: 'The system detected a significant visual difference between the selected observations.' };
+    }
+
+    // L. WHAT CHANGED HERE? (Primary question)
+    if (/what changed|kya badla|ki poriborton|what is the change|बदलाव|পরিবর্তন/i.test(q)) {
+      if (language === 'hi') {
+        return { text: `एक नया ${changeAnalysis.changeType} परिवर्तन पहचाना गया। परिवर्तित क्षेत्र लगभग ${changeAnalysis.changedArea} है।` };
+      }
+      if (language === 'bn') {
+        return { text: `একটি নতুন ${changeAnalysis.changeType} পরিবর্তন সনাক্ত করা হয়েছে। সনাক্তকৃত পরিবর্তনটি প্রায় ${changeAnalysis.changedArea} এলাকা জুড়ে রয়েছে।` };
+      }
+      return { text: `A ${changeAnalysis.changeType.toLowerCase()} change was detected. The detected change covers approximately ${changeAnalysis.changedArea}.` };
+    }
+
+    // M. DEFAULT / UNMATCHED (1-2 sentences maximum, strictly direct)
+    if (language === 'hi') {
+      return { text: `${aoi.name} के लिए ${changeAnalysis.changeType} परिवर्तन दर्ज है (${changeAnalysis.changedArea}, ${changeAnalysis.confidenceScore} विश्वसनीयता)।` };
+    }
+    if (language === 'bn') {
+      return { text: `${aoi.name}-এর জন্য ${changeAnalysis.changeType} পরিবর্তন নথিভুক্ত রয়েছে (${changeAnalysis.changedArea}, ${changeAnalysis.confidenceScore} আত্মবিশ্বাস)।` };
+    }
     return {
-      text: language === 'hi'
-        ? `वर्तमान विश्लेषित लक्ष्य **${aoi.name}** है (${aoi.coordinates})।\n\n• सेंसर: ${imagery.sensor}\n• परिवर्तन प्रकार: ${changeAnalysis.changeType}\n• परिवर्तित क्षेत्र: ${changeAnalysis.changedArea}\n• विश्वसनीयता: ${changeAnalysis.confidenceScore}\n\nआप परिवर्तन विवरण, तिथियों की तुलना, या विश्लेषक रिपोर्ट के बारे में पूछ सकते हैं।\n\nAI-assisted visual analysis. Analyst verification required.`
-        : language === 'bn'
-        ? `বর্তমানে নির্বাচিত লক্ষ্য **${aoi.name}** (${aoi.coordinates})।\n\n• সেন্সর: ${imagery.sensor}\n• পরিবর্তনের ধরন: ${changeAnalysis.changeType}\n• পরিবর্তিত এলাকা: ${changeAnalysis.changedArea}\n• আত্মবিশ্বাস: ${changeAnalysis.confidenceScore}\n\nআপনি পরিবর্তনের কারণ, তারিখ তুলনা বা বিশ্লেষক সারসংক্ষেপ সম্পর্কে জিজ্ঞাসা করতে পারেন।\n\nAI-assisted visual analysis. Analyst verification required.`
-        : `Analysis context active for **${aoi.name}** (\`${aoi.coordinates}\`).\n\n• **Sensor:** ${imagery.sensor} (${imagery.resolution})\n• **Detected Change:** ${changeAnalysis.changeType}\n• **Extent:** ${changeAnalysis.changedArea} (${changeAnalysis.changePercentage})\n• **Confidence Score:** **${changeAnalysis.confidenceScore}**\n• **Observation Period:** ${temporalComparison.observationPeriod}\n\nAsk any question about this imagery, or select a suggested quick action below.\n\n*AI-assisted visual analysis. Analyst verification required.*`,
-      evidence: standardEvidence,
-      suggestedFollowUps: ['What changed here?', 'Compare the two dates', 'Why was this detected?', 'Generate an analyst summary']
+      text: `For ${aoi.name}, a ${changeAnalysis.changeType.toLowerCase()} change was detected (${changeAnalysis.changedArea}, confidence ${changeAnalysis.confidenceScore}).`
     };
   }
 }

@@ -387,7 +387,7 @@ class AssistantChatPayload(BaseModel):
     analystMode: Optional[bool] = False
     history: Optional[List[Dict[str, str]]] = None
 
-@router.post("/assistant/chat")
+@router.post("/api/assistant/chat")
 def assistant_chat(payload: AssistantChatPayload):
     api_key = os.environ.get("GEMINI_API_KEY")
     ctx = payload.context or {}
@@ -400,47 +400,101 @@ def assistant_chat(payload: AssistantChatPayload):
     if api_key:
         try:
             system_prompt = (
-                f"You are VIGIL Assistant, a professional satellite imagery analysis copilot.\\n"
-                f"Analyze context-aware satellite data with ZERO hallucination. Never invent coordinates or values.\\n"
-                f"Use neutral terminology. Never state hostile/military conclusions.\\n"
-                f"Current Context: AOI={json.dumps(aoi)}, Imagery={json.dumps(imagery)}, Temporal={json.dumps(temporal)}, Change={json.dumps(change)}.\\n"
+                "You are VIGIL Assistant, a professional satellite imagery analysis copilot.
+"
+                "PRIMARY RULE: Answer ONLY the user's exact question in 1-2 concise sentences.
+"
+                "DO NOT dump all metadata, coordinates, sensors, or observation dates unless specifically asked.
+"
+                "Do NOT append disclaimers to simple factual questions.
+"
+                "Never invent values. Use only the provided context.
+"
+                "Never state hostile or military conclusions.
+"
+                f"Context: AOI={json.dumps(aoi)}, Imagery={json.dumps(imagery)}, Temporal={json.dumps(temporal)}, Change={json.dumps(change)}.
+"
                 f"Language: {payload.language}. AnalystMode: {payload.analystMode}."
             )
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
             body = json.dumps({
                 "contents": [
-                    {"role": "user", "parts": [{"text": f"System Context:\\n{system_prompt}\\n\\nAnalyst Query: {payload.message}"}]}
+                    {"role": "user", "parts": [{"text": f"System Context:
+{system_prompt}
+
+Analyst Query: {payload.message}"}]}
                 ],
-                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 600}
+                "generationConfig": {"temperature": 0.1, "maxOutputTokens": 300}
             }).encode('utf-8')
             req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=5) as response:
+            with urllib.request.urlopen(req, timeout=4) as response:
                 result = json.loads(response.read().decode('utf-8'))
-                text = result["candidates"][0]["content"]["parts"][0]["text"]
+                text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
                 return {"reply": text, "source": "GEMINI_SERVER"}
         except Exception:
             pass
 
+    # Server-Side Intent Router (Question-focused, Zero Context Dump)
     ui_action = None
+    reply_text = ""
+
+    # UI Actions
     if "mask" in msg:
         ui_action = {"type": "SET_VIEW_MODE", "payload": "change-map", "description": "Enable change mask mode"}
-    elif "compare" in msg or "two dates" in msg:
+        reply_text = "Change mask enabled."
+    elif "compare" in msg or "two dates" in msg or "images" in msg:
         ui_action = {"type": "SET_VIEW_MODE", "payload": "comparison", "description": "Switch to before/after comparison mode"}
+        reply_text = "Before/After comparison enabled."
     elif "visual" in msg:
         ui_action = {"type": "SET_VIEW_MODE", "payload": "visual", "description": "Switch to visual mode"}
-    elif "report" in msg:
+        reply_text = "Visual mode enabled."
+    elif "full analysis" in msg or "report" in msg or "summarize" in msg or payload.analystMode:
         ui_action = {"type": "VIEW_FULL_REPORT", "description": "Open comprehensive dossier"}
+        reply_text = (
+            f"### ANALYSIS SUMMARY
 
-    reply_text = (
-        f"A structural change was detected at {aoi.get('name', 'selected target')} between "
-        f"{temporal.get('baselineDate', '2023-08-12')} and {temporal.get('currentDate', '2025-04-28')}.\\n\\n"
-        f"• Sensor: {imagery.get('sensor', 'Sentinel-2 (10m)')}\\n"
-        f"• Type: {change.get('changeType', 'New Construction')}\\n"
-        f"• Changed Area: {change.get('changedArea', '4.2 ha')}\\n"
-        f"• Delta: {change.get('changePercentage', '+34.8%')}\\n"
-        f"• Confidence Score: {change.get('confidenceScore', '94%')}\\n\\n"
-        f"AI-assisted visual analysis. Analyst verification required."
-    )
+"
+            f"* **Location:** {aoi.get('name', 'Hazira Deepwater Wharf')}
+"
+            f"* **Coordinates:** {aoi.get('coordinates', '21.4587° N, 72.7812° E')}
+"
+            f"* **Observation Period:** {temporal.get('observationPeriod', 'Apr 2023 → Apr 2025')}
+"
+            f"* **Sensor:** {imagery.get('sensor', 'Sentinel-2 (10m)')}
+"
+            f"* **Detected Change:** {change.get('changeType', 'New Construction')}
+"
+            f"* **Changed Area:** {change.get('changedArea', '4.2 ha')}
+"
+            f"* **Confidence:** {change.get('confidenceScore', '96%')}
+
+"
+            f"AI-assisted visual analysis. Analyst verification required."
+        )
+    # Coordinates
+    elif any(k in msg for k in ["coordinate", "coordinates", "lat", "lon", "latitude", "longitude"]):
+        reply_text = f"The coordinates are {aoi.get('coordinates', '21.4587° N, 72.7812° E')}."
+    # Confidence
+    elif any(k in msg for k in ["confidence", "confident", "reliability", "accuracy"]):
+        reply_text = f"The detection confidence is {change.get('confidenceScore', '96%')}."
+    # Size / Area
+    elif any(k in msg for k in ["large", "big", "area", "size", "extent"]):
+        reply_text = f"The detected change covers approximately {change.get('changedArea', '4.2 ha')}."
+    # Satellite / Sensor
+    elif any(k in msg for k in ["satellite", "sensor", "instrument", "what was used"]):
+        reply_text = f"{imagery.get('sensor', 'Sentinel-2 Optical')}, {imagery.get('resolution', '10 m resolution')}."
+    # Dates / Timeline
+    elif any(k in msg for k in ["date", "dates", "acquisition", "baseline", "period", "when"]):
+        reply_text = f"The comparison covers {temporal.get('observationPeriod', 'April 2023 to April 2025')}."
+    # Why detected / Evidence
+    elif any(k in msg for k in ["why", "cause", "evidence", "reason"]):
+        reply_text = "The system detected a significant visual difference between the selected observations."
+    # What changed
+    elif "changed" in msg or "change" in msg:
+        reply_text = f"A {change.get('changeType', 'new construction').lower()} change was detected. The detected change covers approximately {change.get('changedArea', '4.2 ha')}."
+    # Fallback Default (1 short sentence)
+    else:
+        reply_text = f"For {aoi.get('name', 'the selected target')}, a {change.get('changeType', 'structural change').lower()} was detected ({change.get('changedArea', '4.2 ha')}, confidence {change.get('confidenceScore', '96%')}管)."
 
     return {
         "reply": reply_text,
