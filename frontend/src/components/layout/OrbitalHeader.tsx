@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  ShieldCheck,
   User,
   LogOut,
   Settings,
@@ -108,53 +107,13 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
         </div>
       </div>
 
-      {/* Middle-Left: DGIS Ground Station Emblem (Preserved on Desktop, Hidden on Mobile) */}
-      <div className="hidden md:flex items-center space-x-3 pl-8 border-l border-[#182A40]/80">
-        <div className="w-8 h-8 flex items-center justify-center">
-          <svg className="w-7 h-7 text-[#E2E8F0]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C10.89 2 10 2.89 10 4V6H7V8H17V6H14V4C14 2.89 13.11 2 12 2ZM6 9V11H18V9H6ZM7 12C6.45 12 6 12.45 6 13V18H9V14H15V18H18V13C18 12.45 17.55 12 17 12H7ZM5 19V21H19V19H5Z" />
-          </svg>
-        </div>
-
-        <div className="text-left">
-          <div className="text-xs font-bold text-white tracking-wide">
-            DGIS Ground Station
-          </div>
-          <div className="text-[11px] text-[#94A3B8]">
-            Ministry of Defence
-          </div>
-        </div>
-      </div>
-
-      {/* Right side containers */}
-      <div className="flex items-center space-x-4">
-        {/* Prototype / Demonstration Notice */}
-        <div className="hidden lg:flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-[#0F2238] border border-[#1E3A5F] text-[10px] font-mono text-[#38BDF8]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-pulse" />
-          <span>Operational Prototype // System Demonstration</span>
-        </div>
-
-        {/* On-Premise Ready Badge */}
-        <div className="hidden md:flex items-center space-x-2.5 px-3 py-1.5 rounded-md bg-[#0B1D28] border border-[#144A3F]">
-          <div className="w-6 h-6 rounded bg-[#063327] flex items-center justify-center text-[#10B981]">
-            <ShieldCheck className="w-4 h-4" />
-          </div>
-          <div className="text-left leading-tight">
-            <div className="text-[11px] font-bold text-[#10B981] tracking-wide">
-              On-Premise Ready
-            </div>
-            <div className="text-[10px] text-[#94A3B8]">
-              Secure &nbsp;•&nbsp; Isolated &nbsp;•&nbsp; Deployable on Defence Network
-            </div>
-          </div>
-        </div>
-
-        {/* Authenticated User Badge & Dropdown or Public Sign In/Up */}
+      {/* Right side: Authenticated User Badge & Dropdown or Public Sign In/Up */}
+      <div className="flex items-center space-x-3">
         {isAuthenticated ? (
           <div className="relative" ref={dropdownRef}>
             <div
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="group relative flex items-center space-x-3 pl-3 border-l border-[#182A40] cursor-pointer hover:opacity-95 transition"
+              className="group relative flex items-center space-x-3 cursor-pointer hover:opacity-95 transition"
               title="Click to view user account, profile, and session options"
             >
               <div className="relative">
@@ -277,7 +236,7 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
             )}
           </div>
         ) : (
-          <div className="flex items-center space-x-2 pl-2 sm:pl-3 border-l border-[#182A40]">
+          <div className="flex items-center space-x-2">
             <button
               onClick={() => onOpenAuth?.('signin')}
               className="h-8 px-2.5 sm:px-3 rounded-lg bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-xs font-semibold text-white hover:text-[#00E5FF] transition cursor-pointer flex items-center space-x-1.5 shrink-0"
