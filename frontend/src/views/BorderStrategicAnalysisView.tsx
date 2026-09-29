@@ -1,20 +1,22 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import {
   Search,
-  Filter,
   Calendar,
   Sparkles,
   ShieldAlert,
   FileText,
   RotateCcw,
-  Sliders,
   AlertCircle,
   Printer,
   Download,
   X,
   Plus,
   Minus,
-  ExternalLink
+  ExternalLink,
+  Play,
+  Pause,
+  Layers,
+  Maximize2
 } from 'lucide-react';
 
 export type BorderChangeType =
@@ -33,6 +35,9 @@ export interface TimelineStep {
   status: string;
   notes: string;
   imgUrl: string;
+  builtFootprint: string;
+  activityLevel: string;
+  yearDelta: string;
 }
 
 export interface BorderLocationItem {
@@ -77,11 +82,11 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     mapY: 22,
     borderDistanceKm: 4.2,
     borderDistanceStr: '4.2 km from International Boundary',
-    observationPeriod: '2023 → 2026',
+    observationPeriod: '2022 → 2026',
     changedArea: '32,500 m² (3.2 ha)',
     changedAreaM2: 32500,
     source: 'Sentinel-2 (10m Optical)',
-    beforeDate: '2023-04-18',
+    beforeDate: '2022-05-10',
     afterDate: '2026-02-24',
     beforeImageUrl: '/assets/before_scene.jpg',
     afterImageUrl: '/assets/card_1_construction.jpg',
@@ -90,11 +95,61 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     ndviDelta: '-0.21 NDVI',
     keywords: ['construction', 'new', 'buildings', 'structure', 'deck', 'valley', 'north', 'near', 'border'],
     timelineProgression: [
-      { year: 2022, date: '2022-05-10', stage: 'Baseline Terrain', status: 'No significant change', notes: 'Natural mountain scree and alluvial fan without artificial features.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2023, date: '2023-04-18', stage: 'Surveying & Access Track', status: 'Initial clearing detected', notes: 'Initial vehicle tracks and survey markers identified.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2024, date: '2024-06-22', stage: 'Earthworks & Foundation Pits', status: 'Excavation active', notes: 'Earth leveling across 2.1 hectares, excavation pits visible.', imgUrl: '/assets/card_5_land.jpg' },
-      { year: 2025, date: '2025-07-14', stage: 'Structural Erection', status: 'Vertical structures visible', notes: 'Multiple concrete foundation slabs and framing erected.', imgUrl: '/assets/card_1_construction.jpg' },
-      { year: 2026, date: '2026-02-24', stage: 'Completed Structural Deck', status: 'Completed expansion', notes: 'Fully surfaced modular deck with perimeter enclosure.', imgUrl: '/assets/card_1_construction.jpg' }
+      {
+        year: 2022,
+        date: '2022-05-10',
+        stage: 'Baseline Terrain',
+        status: 'No significant change',
+        notes: 'Natural mountain scree and alluvial fan without artificial features.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '0 m²',
+        activityLevel: 'Baseline (0%)',
+        yearDelta: '0 m² (Baseline)'
+      },
+      {
+        year: 2023,
+        date: '2023-04-18',
+        stage: 'Surveying & Access Track',
+        status: 'Initial clearing detected',
+        notes: 'Initial vehicle tracks, survey markers, and perimeter flagging identified along natural drainage contour.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '3,200 m²',
+        activityLevel: 'Survey & Clearing (15%)',
+        yearDelta: '+3,200 m² access clearing'
+      },
+      {
+        year: 2024,
+        date: '2024-06-22',
+        stage: 'Earthworks & Foundation Pits',
+        status: 'Excavation active',
+        notes: 'Mechanical soil leveling across 2.1 hectares; deep concrete foundation pits and drainage trenches dug.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '14,800 m²',
+        activityLevel: 'Earthworks (45%)',
+        yearDelta: '+11,600 m² grading'
+      },
+      {
+        year: 2025,
+        date: '2025-07-14',
+        stage: 'Structural Erection',
+        status: 'Vertical framing assembled',
+        notes: 'Multiple reinforced concrete foundation slabs cast; steel framing and vertical support pylons assembled.',
+        imgUrl: '/assets/card_1_construction.jpg',
+        builtFootprint: '26,400 m²',
+        activityLevel: 'Structural Erection (80%)',
+        yearDelta: '+11,600 m² structures'
+      },
+      {
+        year: 2026,
+        date: '2026-02-24',
+        stage: 'Completed Modular Deck',
+        status: 'Completed expansion',
+        notes: 'Fully surfaced modular deck with perimeter security enclosure, power conduit bays, and access links.',
+        imgUrl: '/assets/card_1_construction.jpg',
+        builtFootprint: '32,500 m²',
+        activityLevel: 'Operational Deck (100%)',
+        yearDelta: '+6,100 m² final surfacing'
+      }
     ]
   },
   {
@@ -110,11 +165,11 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     mapY: 26,
     borderDistanceKm: 2.8,
     borderDistanceStr: '2.8 km from International Boundary',
-    observationPeriod: '2023 → 2026',
+    observationPeriod: '2022 → 2026',
     changedArea: '78,000 m² (12.4 km corridor)',
     changedAreaM2: 78000,
     source: 'Sentinel-1 (SAR C-Band)',
-    beforeDate: '2023-06-12',
+    beforeDate: '2022-07-04',
     afterDate: '2026-01-19',
     beforeImageUrl: '/assets/before_scene.jpg',
     afterImageUrl: '/assets/card_4_bridge.jpg',
@@ -123,11 +178,61 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     ndviDelta: '-0.18 NDVI',
     keywords: ['road', 'development', 'widening', 'pass', 'highway', 'transport', 'paving', 'near', 'border'],
     timelineProgression: [
-      { year: 2022, date: '2022-07-04', stage: 'Narrow Dirt Track', status: 'No significant change', notes: 'Single-lane unpaved dirt path vulnerable to seasonal snow.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2023, date: '2023-06-12', stage: 'Slope Blasting & Clearing', status: 'Corridor widening started', notes: 'Earth clearing and rock slope blasting along 6 km corridor.', imgUrl: '/assets/card_5_land.jpg' },
-      { year: 2024, date: '2024-08-19', stage: 'Sub-Base Grading', status: 'Heavy machinery active', notes: 'Aggregate sub-base laid and compacted across 12 km stretch.', imgUrl: '/assets/card_4_bridge.jpg' },
-      { year: 2025, date: '2025-05-30', stage: 'Bituminous Surfacing', status: 'Paving underway', notes: 'Black-top asphalt layer applied with drainage channels.', imgUrl: '/assets/card_4_bridge.jpg' },
-      { year: 2026, date: '2026-01-19', stage: 'All-Weather Highway', status: 'Operational corridor', notes: 'Completed dual-lane transit corridor with reinforced retention.', imgUrl: '/assets/card_4_bridge.jpg' }
+      {
+        year: 2022,
+        date: '2022-07-04',
+        stage: 'Narrow Dirt Track',
+        status: 'Baseline unpaved track',
+        notes: 'Single-lane unpaved dirt path vulnerable to seasonal snow cover and rockfall washouts.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '8,000 m²',
+        activityLevel: 'Baseline Track (10%)',
+        yearDelta: '0 m² (Baseline)'
+      },
+      {
+        year: 2023,
+        date: '2023-06-12',
+        stage: 'Slope Blasting & Clearing',
+        status: 'Corridor widening started',
+        notes: 'Heavy machinery slope blasting and earth clearing along 6 km mountain pass right-of-way.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '22,000 m²',
+        activityLevel: 'Slope Blasting (30%)',
+        yearDelta: '+14,000 m² right-of-way'
+      },
+      {
+        year: 2024,
+        date: '2024-08-19',
+        stage: 'Sub-Base Grading & Culverts',
+        status: 'Heavy machinery active',
+        notes: 'Crushed stone aggregate sub-base compacted across 12 km stretch; precast concrete culvert pipes installed.',
+        imgUrl: '/assets/card_4_bridge.jpg',
+        builtFootprint: '45,000 m²',
+        activityLevel: 'Sub-Base Compaction (60%)',
+        yearDelta: '+23,000 m² sub-base'
+      },
+      {
+        year: 2025,
+        date: '2025-05-30',
+        stage: 'Bituminous Surfacing',
+        status: 'Paving underway',
+        notes: 'Black-top bituminous asphalt surfacing applied with reinforced hillside retention netting.',
+        imgUrl: '/assets/card_4_bridge.jpg',
+        builtFootprint: '65,000 m²',
+        activityLevel: 'Asphalt Paving (85%)',
+        yearDelta: '+20,000 m² black-top'
+      },
+      {
+        year: 2026,
+        date: '2026-01-19',
+        stage: 'All-Weather Highway',
+        status: 'Operational corridor',
+        notes: 'Completed dual-lane transit corridor with reinforced retention barriers, signage, and run-off culverts.',
+        imgUrl: '/assets/card_4_bridge.jpg',
+        builtFootprint: '78,000 m²',
+        activityLevel: 'Operational Highway (100%)',
+        yearDelta: '+13,000 m² shoulders'
+      }
     ]
   },
   {
@@ -156,11 +261,61 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     ndviDelta: '-0.14 NDVI',
     keywords: ['structural', 'expansion', 'warehouse', 'logistics', 'terminal', 'buildings', 'west', 'border'],
     timelineProgression: [
-      { year: 2022, date: '2022-10-15', stage: 'Initial Terminal', status: 'Baseline operational size', notes: 'Existing compact depot with limited uncovered parking.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2023, date: '2023-11-20', stage: 'Perimeter Extension', status: 'Land boundary expanded', notes: 'Security perimeter fence relocated outward by 250 meters.', imgUrl: '/assets/card_5_land.jpg' },
-      { year: 2024, date: '2024-04-12', stage: 'Foundation Pouring', status: 'Construction active', notes: 'Concrete slabs poured for 3 industrial warehouse footprints.', imgUrl: '/assets/card_1_construction.jpg' },
-      { year: 2025, date: '2025-08-05', stage: 'Roof Truss Assembly', status: 'Structural erection', notes: 'Large span roof trusses installed on warehousing units.', imgUrl: '/assets/card_3_port.jpg' },
-      { year: 2026, date: '2026-02-10', stage: 'Expanded Logistics Hub', status: 'Fully expanded footprint', notes: 'Operational logistics complex with high-capacity bays.', imgUrl: '/assets/card_3_port.jpg' }
+      {
+        year: 2022,
+        date: '2022-10-15',
+        stage: 'Initial Terminal',
+        status: 'Baseline depot size',
+        notes: 'Existing compact storage depot with limited unpaved open parking and small administration block.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '12,000 m²',
+        activityLevel: 'Baseline Depot (25%)',
+        yearDelta: '0 m² (Baseline)'
+      },
+      {
+        year: 2023,
+        date: '2023-11-20',
+        stage: 'Perimeter Extension',
+        status: 'Land boundary expanded',
+        notes: 'Outer perimeter fence relocated outward by 250 meters; 2 hectares of desert scrub leveled.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '18,500 m²',
+        activityLevel: 'Perimeter Expansion (40%)',
+        yearDelta: '+6,500 m² perimeter'
+      },
+      {
+        year: 2024,
+        date: '2024-04-12',
+        stage: 'Foundation Pouring',
+        status: 'Construction active',
+        notes: 'Reinforced concrete foundation slabs poured for 3 industrial warehouse footprints; heavy crane pads ready.',
+        imgUrl: '/assets/card_1_construction.jpg',
+        builtFootprint: '32,000 m²',
+        activityLevel: 'Foundation Slabs (65%)',
+        yearDelta: '+13,500 m² concrete'
+      },
+      {
+        year: 2025,
+        date: '2025-08-05',
+        stage: 'Roof Truss Assembly',
+        status: 'Structural erection',
+        notes: 'High-span steel roof trusses and prefabricated wall panels installed on 3 large warehouse units.',
+        imgUrl: '/assets/card_3_port.jpg',
+        builtFootprint: '46,000 m²',
+        activityLevel: 'Roof Framing (85%)',
+        yearDelta: '+14,000 m² roofing'
+      },
+      {
+        year: 2026,
+        date: '2026-02-10',
+        stage: 'Expanded Logistics Hub',
+        status: 'Fully expanded footprint',
+        notes: 'Fully operational logistics complex with paved container stacking bays, fueling pads, and security gates.',
+        imgUrl: '/assets/card_3_port.jpg',
+        builtFootprint: '54,000 m²',
+        activityLevel: 'Operational Terminal (100%)',
+        yearDelta: '+8,000 m² apron'
+      }
     ]
   },
   {
@@ -176,12 +331,12 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     mapY: 42,
     borderDistanceKm: 1.6,
     borderDistanceStr: '1.6 km from International Boundary',
-    observationPeriod: '2023 → 2025',
+    observationPeriod: '2022 → 2026',
     changedArea: '46,000 m² (4.6 ha)',
     changedAreaM2: 46000,
     source: 'Sentinel-2 (10m Optical)',
-    beforeDate: '2023-03-29',
-    afterDate: '2025-11-14',
+    beforeDate: '2022-04-02',
+    afterDate: '2026-01-20',
     beforeImageUrl: '/assets/before_scene.jpg',
     afterImageUrl: '/assets/card_5_land.jpg',
     description: 'Systematic vegetation removal and mechanical leveling across riverine silt island, with linear bund earthworks to prevent seasonal high-water inundation.',
@@ -189,11 +344,61 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     ndviDelta: '-0.36 NDVI',
     keywords: ['land', 'clearance', 'vegetation', 'river', 'island', 'riparian', 'east', 'border', 'cleared'],
     timelineProgression: [
-      { year: 2022, date: '2022-04-02', stage: 'Dense Riparian Vegetation', status: 'Natural reed cover', notes: 'Dense seasonal reeds, scrub, and undisturbed silt sandbars.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2023, date: '2023-03-29', stage: 'Canopy Thinning', status: 'Vegetation clearance detected', notes: 'Systematic clearing of brush across north-south strip.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2024, date: '2024-02-18', stage: 'Bulldozer Leveling', status: 'Bare earth exposed', notes: 'Mechanical soil leveling across 4.6 hectares.', imgUrl: '/assets/card_5_land.jpg' },
-      { year: 2025, date: '2025-11-14', stage: 'Consolidated Bund', status: 'Earthworks stabilized', notes: 'Compacted earthen bund with perimeter drainage ditches.', imgUrl: '/assets/card_5_land.jpg' },
-      { year: 2026, date: '2026-01-20', stage: 'Prepared Open Surface', status: 'Ready for use', notes: 'Maintained dry surface above seasonal flood watermark.', imgUrl: '/assets/card_5_land.jpg' }
+      {
+        year: 2022,
+        date: '2022-04-02',
+        stage: 'Dense Riparian Vegetation',
+        status: 'Natural reed cover',
+        notes: 'Dense seasonal reeds, scrub, and undisturbed silt sandbars along river boundary corridor.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '0 m²',
+        activityLevel: 'Natural Wetland (0%)',
+        yearDelta: '0 m² (Baseline)'
+      },
+      {
+        year: 2023,
+        date: '2023-03-29',
+        stage: 'Canopy & Brush Clearing',
+        status: 'Vegetation clearance detected',
+        notes: 'Systematic clearing of brush and tree felling across 1.2 km north-south sandbar strip.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '8,500 m²',
+        activityLevel: 'Brush Removal (20%)',
+        yearDelta: '+8,500 m² cleared'
+      },
+      {
+        year: 2024,
+        date: '2024-02-18',
+        stage: 'Bulldozer Soil Leveling',
+        status: 'Bare earth exposed',
+        notes: 'Mechanical soil leveling exposing bare compacted clay across 4.6 hectares.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '24,000 m²',
+        activityLevel: 'Bulldozer Leveling (55%)',
+        yearDelta: '+15,500 m² leveled'
+      },
+      {
+        year: 2025,
+        date: '2025-11-14',
+        stage: 'Consolidated Flood Bund',
+        status: 'Earthworks stabilized',
+        notes: 'Compacted earthen bund constructed with stone rip-rap to prevent seasonal monsoon inundation.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '38,000 m²',
+        activityLevel: 'Bund Stabilization (80%)',
+        yearDelta: '+14,000 m² bund'
+      },
+      {
+        year: 2026,
+        date: '2026-01-20',
+        stage: 'Prepared Open Surface',
+        status: 'Ready for use',
+        notes: 'Consolidated dry open staging surface maintained above maximum recorded flood watermark.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '46,000 m²',
+        activityLevel: 'Prepared Surface (100%)',
+        yearDelta: '+8,000 m² final grading'
+      }
     ]
   },
   {
@@ -222,11 +427,61 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     ndviDelta: '-0.12 NDVI',
     keywords: ['water', 'stream', 'river', 'culvert', 'crossing', 'embankment', 'extent', 'border'],
     timelineProgression: [
-      { year: 2022, date: '2022-12-05', stage: 'Natural Braided Stream', status: 'Baseline hydrography', notes: 'Meandering shallow watercourse without crossing structures.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2023, date: '2023-10-14', stage: 'Stream Diversion', status: 'Channel diverted', notes: 'Temporary coffer dam and diversion ditch excavated.', imgUrl: '/assets/card_2_riverside.jpg' },
-      { year: 2024, date: '2024-11-25', stage: 'Culvert Box Placement', status: 'Concrete placement', notes: 'Precast concrete box culvert barrels aligned in streambed.', imgUrl: '/assets/card_4_bridge.jpg' },
-      { year: 2025, date: '2025-09-18', stage: 'Stone Gabions Laid', status: 'Bank revetment active', notes: 'Wire-mesh stone gabion mattresses placed on both banks.', imgUrl: '/assets/card_2_riverside.jpg' },
-      { year: 2026, date: '2026-02-01', stage: 'Stabilized Crossing', status: 'Revetment completed', notes: 'All-weather watercourse crossing with stabilized banks.', imgUrl: '/assets/card_2_riverside.jpg' }
+      {
+        year: 2022,
+        date: '2022-12-05',
+        stage: 'Natural Braided Stream',
+        status: 'Baseline hydrography',
+        notes: 'Meandering shallow watercourse without crossing structures; water body subject to seasonal shifts.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '0 m²',
+        activityLevel: 'Natural Stream (0%)',
+        yearDelta: '0 m² (Baseline)'
+      },
+      {
+        year: 2023,
+        date: '2023-10-14',
+        stage: 'Stream Diversion Trench',
+        status: 'Channel diverted',
+        notes: 'Temporary coffer dam built and main stream flow diverted through bypass trench for foundation prep.',
+        imgUrl: '/assets/card_2_riverside.jpg',
+        builtFootprint: '5,000 m²',
+        activityLevel: 'Channel Diversion (25%)',
+        yearDelta: '+5,000 m² channel diversion'
+      },
+      {
+        year: 2024,
+        date: '2024-11-25',
+        stage: 'Box Culvert Placement',
+        status: 'Concrete placement',
+        notes: 'Four precast reinforced concrete box culvert barrels aligned and bedded in prepared streambed.',
+        imgUrl: '/assets/card_4_bridge.jpg',
+        builtFootprint: '14,000 m²',
+        activityLevel: 'Culvert Footing (55%)',
+        yearDelta: '+9,000 m² culverts'
+      },
+      {
+        year: 2025,
+        date: '2025-09-18',
+        stage: 'Stone Gabions Laid',
+        status: 'Bank revetment active',
+        notes: 'Wire-mesh stone gabion mattresses placed on both upstream and downstream banks to lock watercourse.',
+        imgUrl: '/assets/card_2_riverside.jpg',
+        builtFootprint: '22,500 m²',
+        activityLevel: 'Gabion Mattresses (80%)',
+        yearDelta: '+8,500 m² revetment'
+      },
+      {
+        year: 2026,
+        date: '2026-02-01',
+        stage: 'Stabilized Riparian Crossing',
+        status: 'Revetment completed',
+        notes: 'Permanent all-weather crossing with reinforced stone rip-rap embankments and stabilized channel banks.',
+        imgUrl: '/assets/card_2_riverside.jpg',
+        builtFootprint: '29,000 m²',
+        activityLevel: 'Stabilized Crossing (100%)',
+        yearDelta: '+6,500 m² final roadway'
+      }
     ]
   },
   {
@@ -242,11 +497,11 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     mapY: 34,
     borderDistanceKm: 8.2,
     borderDistanceStr: '8.2 km from International Boundary',
-    observationPeriod: '2023 → 2026',
+    observationPeriod: '2022 → 2026',
     changedArea: '38,000 m² (3.8 ha)',
     changedAreaM2: 38000,
     source: 'Landsat-8/9 (15m)',
-    beforeDate: '2023-05-11',
+    beforeDate: '2022-06-15',
     afterDate: '2026-01-28',
     beforeImageUrl: '/assets/before_scene.jpg',
     afterImageUrl: '/assets/card_5_land.jpg',
@@ -255,11 +510,227 @@ export const DEMO_BORDER_LOCATIONS: BorderLocationItem[] = [
     ndviDelta: '-0.39 NDVI',
     keywords: ['vegetation', 'forest', 'canopy', 'clearing', 'mast', 'ridge', 'himalayan', 'border'],
     timelineProgression: [
-      { year: 2022, date: '2022-06-15', stage: 'Continuous Pine Canopy', status: 'Dense forest cover', notes: 'Undisturbed temperate conifer forest canopy on ridge spine.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2023, date: '2023-05-11', stage: 'Trail Clearing', status: 'Linear gap emerging', notes: 'Access path cleared along watershed ridge line.', imgUrl: '/assets/before_scene.jpg' },
-      { year: 2024, date: '2024-07-20', stage: 'Circular Cleared Pad', status: 'Canopy cleared', notes: 'Roughly 1.5-hectare circular opening logged and stumped.', imgUrl: '/assets/card_5_land.jpg' },
-      { year: 2025, date: '2025-06-04', stage: 'Foundation & Guy Anchors', status: 'Foundation visible', notes: 'Central concrete mast pad and four guy-wire anchor points.', imgUrl: '/assets/card_1_construction.jpg' },
-      { year: 2026, date: '2026-01-28', stage: 'Operational Mast Site', status: 'Maintained opening', notes: 'Paved equipment pad with fenced perimeter on cleared ridge.', imgUrl: '/assets/card_5_land.jpg' }
+      {
+        year: 2022,
+        date: '2022-06-15',
+        stage: 'Continuous Pine Canopy',
+        status: 'Dense forest cover',
+        notes: 'Undisturbed temperate conifer forest canopy on high watershed ridge spine.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '0 m²',
+        activityLevel: 'Dense Forest (0%)',
+        yearDelta: '0 m² (Baseline)'
+      },
+      {
+        year: 2023,
+        date: '2023-05-11',
+        stage: 'Ridge Trail Access Clearing',
+        status: 'Linear gap emerging',
+        notes: 'Narrow 3-meter access trail cleared through conifer canopy along ridge crest.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '4,000 m²',
+        activityLevel: 'Trail Clearing (15%)',
+        yearDelta: '+4,000 m² trail'
+      },
+      {
+        year: 2024,
+        date: '2024-07-20',
+        stage: 'Circular Cleared Pad',
+        status: 'Canopy cleared',
+        notes: 'Roughly 1.5-hectare circular opening clear-felled, stumped, and graded with light tracked vehicles.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '16,000 m²',
+        activityLevel: 'Circular Clearing (45%)',
+        yearDelta: '+12,000 m² clear-felling'
+      },
+      {
+        year: 2025,
+        date: '2025-06-04',
+        stage: 'Foundation & Guy Anchors',
+        status: 'Foundation visible',
+        notes: 'Central reinforced concrete mast pad cast with 4 guy-wire bedrock anchor footings.',
+        imgUrl: '/assets/card_1_construction.jpg',
+        builtFootprint: '28,000 m²',
+        activityLevel: 'Mast Footing (75%)',
+        yearDelta: '+12,000 m² foundations'
+      },
+      {
+        year: 2026,
+        date: '2026-01-28',
+        stage: 'Operational Relay Site',
+        status: 'Maintained opening',
+        notes: 'Paved equipment shelter pad with perimeter chain-link fence on cleared ridge spine.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '38,000 m²',
+        activityLevel: 'Operational Site (100%)',
+        yearDelta: '+10,000 m² perimeter enclosure'
+      }
+    ]
+  },
+  {
+    id: 'LOC-STRAT-07',
+    name: 'Border Township Urban Extension & Grid',
+    region: 'Western Arid Sector',
+    changeType: 'Structural Expansion',
+    confidence: 93,
+    coordinates: '31.6340° N, 74.8723° E',
+    lat: 31.6340,
+    lon: 74.8723,
+    mapX: 35,
+    mapY: 31,
+    borderDistanceKm: 5.6,
+    borderDistanceStr: '5.6 km from International Boundary',
+    observationPeriod: '2022 → 2026',
+    changedArea: '64,000 m² (6.4 ha)',
+    changedAreaM2: 64000,
+    source: 'Sentinel-2 (10m Optical)',
+    beforeDate: '2022-03-14',
+    afterDate: '2026-02-18',
+    beforeImageUrl: '/assets/before_scene.jpg',
+    afterImageUrl: '/assets/card_3_port.jpg',
+    description: 'Systematic urban expansion extending township boundary toward outer ring road, creating new rectangular street layout and concrete commercial blocks.',
+    ndbiDelta: '+0.42 NDBI',
+    ndviDelta: '-0.24 NDVI',
+    keywords: ['urban', 'settlement', 'expansion', 'town', 'grid', 'buildings', 'west', 'border'],
+    timelineProgression: [
+      {
+        year: 2022,
+        date: '2022-03-14',
+        stage: 'Peripheral Fallow Land',
+        status: 'Undeveloped land',
+        notes: 'Uncultivated arid open scrub at township periphery with no formal road layout.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '0 m²',
+        activityLevel: 'Baseline Fallow (0%)',
+        yearDelta: '0 m² (Baseline)'
+      },
+      {
+        year: 2023,
+        date: '2023-04-22',
+        stage: 'Surveyed Street Grid',
+        status: 'Road grid cut',
+        notes: 'Rectangular arterial street grid surveyed; unpaved gravel access avenues graded.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '12,000 m²',
+        activityLevel: 'Grid Survey (25%)',
+        yearDelta: '+12,000 m² road grid'
+      },
+      {
+        year: 2024,
+        date: '2024-05-18',
+        stage: 'Subdivision Demarcation',
+        status: 'Plots outlined',
+        notes: 'Subsurface drainage conduits laid; 24 separate building parcels enclosed with low masonry boundary walls.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '34,000 m²',
+        activityLevel: 'Parcel Enclosure (50%)',
+        yearDelta: '+22,000 m² masonry bounds'
+      },
+      {
+        year: 2025,
+        date: '2025-08-11',
+        stage: 'Multi-Structure Masonry',
+        status: 'Vertical construction active',
+        notes: 'Multiple concrete-frame modular buildings and commercial structures under active vertical construction.',
+        imgUrl: '/assets/card_1_construction.jpg',
+        builtFootprint: '52,000 m²',
+        activityLevel: 'Active Masonry (80%)',
+        yearDelta: '+18,000 m² structural framing'
+      },
+      {
+        year: 2026,
+        date: '2026-02-18',
+        stage: 'Settled Urban Grid',
+        status: 'Operational township',
+        notes: 'Dense settled urban extension with paved avenues, vehicle staging bays, and electrical power connections.',
+        imgUrl: '/assets/card_3_port.jpg',
+        builtFootprint: '64,000 m²',
+        activityLevel: 'Settled Extension (100%)',
+        yearDelta: '+12,000 m² paved completion'
+      }
+    ]
+  },
+  {
+    id: 'LOC-STRAT-08',
+    name: 'Valley Agrarian Conversion to Staging Apron',
+    region: 'Central Himalayan Sector',
+    changeType: 'Land Clearance',
+    confidence: 90,
+    coordinates: '27.5330° N, 88.5122° E',
+    lat: 27.5330,
+    lon: 88.5122,
+    mapX: 68,
+    mapY: 37,
+    borderDistanceKm: 6.8,
+    borderDistanceStr: '6.8 km from International Boundary',
+    observationPeriod: '2022 → 2026',
+    changedArea: '48,500 m² (4.8 ha)',
+    changedAreaM2: 48500,
+    source: 'Sentinel-2 (10m Optical)',
+    beforeDate: '2022-09-08',
+    afterDate: '2026-01-14',
+    beforeImageUrl: '/assets/before_scene.jpg',
+    afterImageUrl: '/assets/card_3_port.jpg',
+    description: 'Conversion of agricultural terraced land into compacted crushed-stone staging apron with heavy equipment loading bays and boundary berms.',
+    ndbiDelta: '+0.36 NDBI',
+    ndviDelta: '-0.33 NDVI',
+    keywords: ['agricultural', 'land', 'conversion', 'terrace', 'apron', 'staging', 'himalayan', 'border'],
+    timelineProgression: [
+      {
+        year: 2022,
+        date: '2022-09-08',
+        stage: 'Terraced Agricultural Fields',
+        status: 'Active agriculture',
+        notes: 'Traditional terraced hillside agricultural plots cultivating seasonal valley crops.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '0 m²',
+        activityLevel: 'Active Agriculture (0%)',
+        yearDelta: '0 m² (Baseline)'
+      },
+      {
+        year: 2023,
+        date: '2023-10-19',
+        stage: 'Topsoil Stripping & Leveling',
+        status: 'Land repurposed',
+        notes: 'Farming activity discontinued; topsoil scraped off and natural terraced ridges mechanically excavated.',
+        imgUrl: '/assets/before_scene.jpg',
+        builtFootprint: '10,000 m²',
+        activityLevel: 'Topsoil Stripping (20%)',
+        yearDelta: '+10,000 m² stripped'
+      },
+      {
+        year: 2024,
+        date: '2024-03-27',
+        stage: 'Tiered Plateau Leveling',
+        status: 'Earthworks active',
+        notes: 'Multiple agricultural terraces flattened into unified contiguous tiered plateaus with crushed rock backfill.',
+        imgUrl: '/assets/card_5_land.jpg',
+        builtFootprint: '28,000 m²',
+        activityLevel: 'Plateau Leveling (55%)',
+        yearDelta: '+18,000 m² leveling'
+      },
+      {
+        year: 2025,
+        date: '2025-06-30',
+        stage: 'Compacted Hardstand Apron',
+        status: 'Surfacing underway',
+        notes: 'Heavy roller compactor applied thick aggregate base course; perimeter drainage culverts and rock retaining walls built.',
+        imgUrl: '/assets/card_1_construction.jpg',
+        builtFootprint: '41,000 m²',
+        activityLevel: 'Hardstand Base (80%)',
+        yearDelta: '+13,000 m² aggregate base'
+      },
+      {
+        year: 2026,
+        date: '2026-01-14',
+        stage: 'Operational Staging Apron',
+        status: 'Fully surfaced',
+        notes: 'Completed all-weather heavy vehicle staging apron with reinforced perimeter gates and lighting pylons.',
+        imgUrl: '/assets/card_3_port.jpg',
+        builtFootprint: '48,500 m²',
+        activityLevel: 'Operational Apron (100%)',
+        yearDelta: '+7,500 m² surfacing'
+      }
     ]
   }
 ];
@@ -279,14 +750,14 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
   const [selectedConfidence, setSelectedConfidence] = useState<string>('All');
   const [selectedSource, setSelectedSource] = useState<string>('All');
   const [selectedDateRange, setSelectedDateRange] = useState<string>('All');
-  const [showFiltersModal, setShowFiltersModal] = useState(false);
 
   // Active Location State
   const [activeLocationId, setActiveLocationId] = useState<string>('LOC-STRAT-01');
   const [activeTimelineYear, setActiveTimelineYear] = useState<number>(2026);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
 
   // Comparison Workspace State
-  const [viewMode, setViewMode] = useState<'dual' | 'swipe'>('dual');
+  const [viewMode, setViewMode] = useState<'dual' | 'swipe' | 'schematic'>('dual');
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(50); // percentage for swipe curtain
 
@@ -294,11 +765,14 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
   const [mapZoom, setMapZoom] = useState(1.0);
   const [mapPan, setMapPan] = useState({ x: 0, y: 0 });
 
-  // Report Modal State
+  // Modals State
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showSchematicModal, setShowSchematicModal] = useState(false);
   const [analystNotes, setAnalystNotes] = useState(
     'Initial AI multi-temporal change detection verified against Sentinel-2 10m L2A imagery. Visual difference confirms new structural expansion within 5 km of boundary line. Requires ground-level/high-resolution confirmation prior to briefing.'
   );
+
+  const sliderContainerRef = useRef<HTMLDivElement>(null);
 
   const activeLocation = useMemo(() => {
     return DEMO_BORDER_LOCATIONS.find((l) => l.id === activeLocationId) || DEMO_BORDER_LOCATIONS[0];
@@ -311,6 +785,20 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
       activeLocation.timelineProgression[activeLocation.timelineProgression.length - 1]
     );
   }, [activeLocation, activeTimelineYear]);
+
+  // Auto-play Year-by-Year progression
+  useEffect(() => {
+    if (!isPlaying) return;
+    const years = [2022, 2023, 2024, 2025, 2026];
+    const timer = setInterval(() => {
+      setActiveTimelineYear((curr) => {
+        const idx = years.indexOf(curr);
+        const nextIdx = (idx + 1) % years.length;
+        return years[nextIdx];
+      });
+    }, 1800);
+    return () => clearInterval(timer);
+  }, [isPlaying]);
 
   // Natural-Language Semantic Search & Filtering Engine
   const filteredLocations = useMemo(() => {
@@ -355,24 +843,32 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
         return false;
       }
 
-      return true;
-    }).sort((a, b) => {
-      // Prioritize smaller distance and higher confidence
-      return a.borderDistanceKm - b.borderDistanceKm || b.confidence - a.confidence;
-    });
-  }, [searchQuery, selectedType, selectedRegion, selectedDistance, selectedConfidence, selectedSource]);
+      // 7. Date Range Filter
+      if (selectedDateRange !== 'All' && !loc.observationPeriod.includes(selectedDateRange)) {
+        return false;
+      }
 
-  // Handle Swipe Slider Drag
-  const sliderContainerRef = useRef<HTMLDivElement>(null);
+      return true;
+    });
+  }, [
+    searchQuery,
+    selectedType,
+    selectedRegion,
+    selectedDistance,
+    selectedConfidence,
+    selectedSource,
+    selectedDateRange
+  ]);
+
+  // Handle Swipe Slider Draggable Movement
   const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     if (!sliderContainerRef.current) return;
     const rect = sliderContainerRef.current.getBoundingClientRect();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const offset = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    setSliderPosition((offset / rect.width) * 100);
+    const position = ((clientX - rect.left) / rect.width) * 100;
+    setSliderPosition(Math.max(0, Math.min(100, position)));
   };
 
-  // Preset Searches
   const exampleSearches = [
     'Find newly constructed structures near an international border',
     'Show areas with road development between 2023 and 2026',
@@ -381,121 +877,71 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#070D16] text-white font-sans overflow-y-auto select-none">
-      {/* 1. TOP HEADER & PUBLIC DEMO BADGE */}
-      <div className="bg-[#0B1523]/95 border-b border-[#182A40] px-4 sm:px-6 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 backdrop-blur-md">
-        <div>
-          <div className="flex items-center space-x-2.5">
-            <ShieldAlert className="w-5 h-5 text-[#00E5FF]" />
-            <h1 className="text-base sm:text-lg font-bold text-white tracking-wide">
-              Border & Strategic Change Analysis
-            </h1>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#0284C7]/20 text-[#38BDF8] border border-[#0284C7]/40 tracking-wider">
-              PUBLIC IMAGERY DEMO
-            </span>
-          </div>
-          <p className="text-xs text-[#94A3B8] mt-0.5">
-            Analyze publicly available satellite imagery for multi-temporal geospatial changes near international borders.
-          </p>
+    <div className="flex-1 flex flex-col min-h-0 bg-[#070D16] text-white font-sans overflow-y-auto selection:bg-[#00E5FF]/30 selection:text-white">
+      {/* 1. TOP BANNER / DISCLAIMER NOTICE */}
+      <div className="bg-[#0B1523] border-b border-[#182A40] px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
+        <div className="flex items-center space-x-2 text-xs">
+          <ShieldAlert className="w-4 h-4 text-[#F59E0B] shrink-0" />
+          <span className="font-semibold text-white">
+            BORDER & STRATEGIC CHANGE ANALYSIS • UNCLASSIFIED OPEN SOURCE / SYNTHETIC DEMONSTRATION
+          </span>
         </div>
-
-        <div className="flex items-center space-x-2">
-          {/* Neutral disclaimer badge */}
-          <div className="hidden xl:flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-[#0E1A2B] border border-[#182A40] text-[11px] text-[#94A3B8]">
-            <AlertCircle className="w-3.5 h-3.5 text-[#F59E0B]" />
-            <span>AI-assisted detection. Analyst verification required.</span>
-          </div>
-
-          <button
-            onClick={() => setShowReportModal(true)}
-            className="h-8 px-3 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-white text-xs font-semibold flex items-center space-x-1.5 transition shadow cursor-pointer"
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Generate Change Report</span>
-          </button>
+        <div className="flex items-center space-x-2 text-[11px] font-mono text-[#64748B]">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+          <span>AI-assisted detection. Analyst verification required.</span>
         </div>
       </div>
 
-      {/* 2. DASHBOARD KPI CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 p-3 sm:px-6 sm:py-3 bg-[#070D16] border-b border-[#182A40]/80">
-        <div className="bg-[#0B1523] border border-[#182A40] rounded-xl p-2.5">
-          <div className="text-[10px] uppercase font-bold text-[#64748B] flex items-center justify-between">
-            <span>Locations Analyzed</span>
-            <span className="text-[9px] font-mono text-[#00E5FF]">DEMO</span>
-          </div>
-          <div className="text-lg font-bold font-mono text-white mt-1">142</div>
-          <div className="text-[10px] text-[#94A3B8] truncate">Public boundary sectors</div>
+      {/* 2. STATS OVERVIEW CARDS */}
+      <div className="px-4 pt-4 pb-2 grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
+        <div className="bg-[#0B1523] border border-[#182A40] p-3 rounded-xl shadow">
+          <div className="text-[10px] font-mono text-[#64748B] uppercase">Monitored Border Zones</div>
+          <div className="text-xl font-bold font-mono text-white mt-1">4 Active Sectors</div>
+          <div className="text-[10px] text-[#38BDF8] mt-0.5">Northern, Western, Eastern & Himalayan</div>
         </div>
 
-        <div className="bg-[#0B1523] border border-[#182A40] rounded-xl p-2.5">
-          <div className="text-[10px] uppercase font-bold text-[#64748B] flex items-center justify-between">
-            <span>Changes Detected</span>
-            <span className="text-[9px] font-mono text-[#38BDF8]">MULTI-TEMP</span>
+        <div className="bg-[#0B1523] border border-[#182A40] p-3 rounded-xl shadow">
+          <div className="text-[10px] font-mono text-[#64748B] uppercase">Detected Change Events</div>
+          <div className="text-xl font-bold font-mono text-[#00E5FF] mt-1">
+            {DEMO_BORDER_LOCATIONS.length} Strategic Points
           </div>
-          <div className="text-lg font-bold font-mono text-[#38BDF8] mt-1">28</div>
-          <div className="text-[10px] text-[#94A3B8] truncate">Verified temporal shifts</div>
+          <div className="text-[10px] text-[#10B981] mt-0.5">Multi-temporal optical & SAR pairs</div>
         </div>
 
-        <div className="bg-[#0B1523] border border-[#182A40] rounded-xl p-2.5">
-          <div className="text-[10px] uppercase font-bold text-[#64748B] flex items-center justify-between">
-            <span>Construction Changes</span>
-            <span className="text-[9px] font-mono text-[#F59E0B]">FOOTPRINT</span>
-          </div>
-          <div className="text-lg font-bold font-mono text-[#F59E0B] mt-1">14</div>
-          <div className="text-[10px] text-[#94A3B8] truncate">New structures / decks</div>
+        <div className="bg-[#0B1523] border border-[#182A40] p-3 rounded-xl shadow">
+          <div className="text-[10px] font-mono text-[#64748B] uppercase">Average Detection Confidence</div>
+          <div className="text-xl font-bold font-mono text-[#10B981] mt-1">92.4%</div>
+          <div className="text-[10px] text-[#64748B] mt-0.5">Cos-sim feature embeddings &delta;</div>
         </div>
 
-        <div className="bg-[#0B1523] border border-[#182A40] rounded-xl p-2.5">
-          <div className="text-[10px] uppercase font-bold text-[#64748B] flex items-center justify-between">
-            <span>Road Changes</span>
-            <span className="text-[9px] font-mono text-[#10B981]">CORRIDORS</span>
-          </div>
-          <div className="text-lg font-bold font-mono text-[#10B981] mt-1">9</div>
-          <div className="text-[10px] text-[#94A3B8] truncate">Widening & paving</div>
-        </div>
-
-        <div className="col-span-2 sm:col-span-1 bg-[#0B1523] border border-[#182A40] rounded-xl p-2.5">
-          <div className="text-[10px] uppercase font-bold text-[#64748B] flex items-center justify-between">
-            <span>Average Confidence</span>
-            <span className="text-[9px] font-mono text-[#A855F7]">SIH26227</span>
-          </div>
-          <div className="text-lg font-bold font-mono text-[#A855F7] mt-1">93.4%</div>
-          <div className="text-[10px] text-[#94A3B8] truncate">Analyst validation model</div>
+        <div className="bg-[#0B1523] border border-[#182A40] p-3 rounded-xl shadow">
+          <div className="text-[10px] font-mono text-[#64748B] uppercase">Latest Satellite Pass</div>
+          <div className="text-xl font-bold font-mono text-[#F59E0B] mt-1">2026-02-24</div>
+          <div className="text-[10px] text-[#94A3B8] mt-0.5">Sentinel-2 (10m L2A) Cadence</div>
         </div>
       </div>
 
-      {/* 3. NATURAL-LANGUAGE SEARCH & MULTI-FILTER BAR */}
-      <div className="px-3 sm:px-6 py-3 bg-[#0A121F] border-b border-[#182A40]">
-        <div className="flex flex-col gap-2">
-          {/* Main Search Bar */}
-          <div className="flex items-center space-x-2">
-            <div className="flex-1 flex items-center bg-[#070D16] border border-[#182A40] focus-within:border-[#00E5FF] rounded-xl px-3 py-2 transition shadow">
-              <Search className="w-4 h-4 text-[#64748B] mr-2 shrink-0" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for changes near an international border..."
-                className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-[#475569] outline-none"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="text-[#64748B] hover:text-white p-1">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={() => setShowFiltersModal(!showFiltersModal)}
-              className={`h-9 px-3 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shrink-0 ${
-                selectedType !== 'All' || selectedRegion !== 'All' || selectedDistance !== 'All'
-                  ? 'bg-[#0E355A] border-[#00E5FF] text-[#00E5FF]'
-                  : 'bg-[#0E1A2B] border-[#182A40] text-[#94A3B8] hover:text-white'
-              }`}
-            >
-              <Filter className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Filters</span>
-            </button>
+      {/* 3. NATURAL-LANGUAGE SEARCH & FILTERS BAR */}
+      <div className="px-4 py-2 shrink-0">
+        <div className="bg-[#0B1523] border border-[#182A40] p-3 rounded-xl space-y-2.5 shadow">
+          {/* Main Search Input */}
+          <div className="relative w-full">
+            <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search in plain English (e.g. 'find newly constructed structures near an international border' or 'road development')..."
+              className="w-full bg-[#070D16] border border-[#182A40] focus:border-[#00E5FF] text-xs text-white placeholder-[#64748B] rounded-lg pl-9 pr-24 py-2 outline-none transition"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#64748B] hover:text-white font-mono bg-[#0E1A2B] px-1.5 py-0.5 rounded cursor-pointer"
+              >
+                CLEAR
+              </button>
+            )}
           </div>
 
           {/* Example Search Query Pills */}
@@ -529,7 +975,6 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                 <option value="Land Clearance">Land Clearance</option>
                 <option value="Water-Extent Change">Water-Extent Change</option>
                 <option value="Vegetation Change">Vegetation Change</option>
-                <option value="Other">Other</option>
               </select>
             </div>
 
@@ -602,13 +1047,18 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                 className="bg-[#070D16] border border-[#182A40] text-white rounded-lg px-2 py-1 text-xs outline-none focus:border-[#00E5FF]"
               >
                 <option value="All">All Observation Periods</option>
-                <option value="2023">2023 → 2026</option>
                 <option value="2022">2022 → 2026</option>
               </select>
             </div>
 
             {/* Reset Filters */}
-            {(selectedType !== 'All' || selectedRegion !== 'All' || selectedDistance !== 'All' || selectedConfidence !== 'All' || selectedSource !== 'All' || selectedDateRange !== 'All' || searchQuery) && (
+            {(selectedType !== 'All' ||
+              selectedRegion !== 'All' ||
+              selectedDistance !== 'All' ||
+              selectedConfidence !== 'All' ||
+              selectedSource !== 'All' ||
+              selectedDateRange !== 'All' ||
+              searchQuery) && (
               <button
                 onClick={() => {
                   setSelectedType('All');
@@ -627,14 +1077,14 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
 
             {/* Result Count */}
             <span className="ml-auto text-[11px] font-mono text-[#00E5FF] shrink-0 font-bold">
-              {filteredLocations.length} relevant locations found
+              {filteredLocations.length} strategic locations found
             </span>
           </div>
         </div>
       </div>
 
-      {/* 4. MAIN WORKSPACE: MAP & LOCATION CAROUSEL (Left) + COMPARISON & ANALYST PANEL (Right) */}
-      <div className="p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4">
+      {/* 4. MAIN WORKSPACE: MAP & YEAR-BY-YEAR PROGRESSION (Left) + EVIDENCE VIEWER (Right) */}
+      <div className="p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (7 cols): Interactive Map + Multi-Year Timeline + Locations List */}
         <div className="lg:col-span-7 flex flex-col space-y-3">
           {/* Interactive Border Map */}
@@ -695,7 +1145,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                   </text>
                 </svg>
 
-                {/* Detected Change Location Pins */}
+                {/* Detected Change Location Pins: Clean by default; info card only when selected! */}
                 {filteredLocations.map((loc) => {
                   const isSelected = activeLocation.id === loc.id;
                   let pinColor = '#F59E0B';
@@ -720,30 +1170,35 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                       {/* Pin Center Marker */}
                       <div
                         className={`relative rounded-full border-2 transition-all flex items-center justify-center shadow-lg ${
-                          isSelected ? 'w-6 h-6 border-white shadow-[0_0_20px_#00E5FF]' : 'w-4 h-4 border-[#070D16] group-hover:scale-110'
+                          isSelected
+                            ? 'w-6 h-6 border-white shadow-[0_0_20px_#00E5FF] scale-125'
+                            : 'w-4 h-4 border-[#070D16] group-hover:scale-110 shadow-md'
                         }`}
                         style={{ backgroundColor: pinColor }}
                       >
                         <div className="w-1.5 h-1.5 rounded-full bg-white" />
                       </div>
 
-                      {/* Pin Tag Card */}
-                      <div
-                        className={`absolute left-5 top-1/2 -translate-y-1/2 whitespace-nowrap px-2.5 py-1.5 rounded-lg border text-[10px] font-sans transition-all shadow-2xl backdrop-blur-md ${
-                          isSelected
-                            ? 'bg-[#070D16]/95 border-[#00E5FF] text-white shadow-[0_0_15px_rgba(0,229,255,0.4)] z-30 scale-105'
-                            : 'bg-[#0B1523]/90 border-[#182A40] text-[#94A3B8] group-hover:text-white'
-                        }`}
-                      >
-                        <div className="flex items-center space-x-1.5 font-bold">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: pinColor }} />
-                          <span>{loc.id}</span>
-                          <span className="text-[#00E5FF]">• {loc.changeType}</span>
+                      {/* Pin Tag Card: ONLY SHOWN WHEN CLICKED / SELECTED */}
+                      {isSelected && (
+                        <div
+                          className="absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap px-3 py-2 rounded-xl border border-[#00E5FF] bg-[#070D16]/95 text-white shadow-[0_0_25px_rgba(0,229,255,0.6)] z-40 scale-105 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+                        >
+                          <div className="flex items-center space-x-1.5 font-bold">
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: pinColor }} />
+                            <span className="text-white text-xs">{loc.id}</span>
+                            <span className="text-[#00E5FF] text-[10px]">• {loc.changeType}</span>
+                          </div>
+                          <div className="text-[10px] text-[#38BDF8] font-medium mt-0.5 truncate max-w-[220px]">
+                            {loc.name}
+                          </div>
+                          <div className="text-[9px] font-mono text-[#F59E0B] mt-0.5 flex items-center space-x-2">
+                            <span>{loc.borderDistanceStr}</span>
+                            <span>•</span>
+                            <span className="text-[#10B981]">{loc.confidence}% match</span>
+                          </div>
                         </div>
-                        <div className="text-[9px] font-mono text-[#F59E0B]">
-                          {loc.borderDistanceStr}
-                        </div>
-                      </div>
+                      )}
 
                       {/* Bounding Polygon Box for selected target */}
                       {isSelected && (
@@ -792,50 +1247,116 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
             </div>
           </div>
 
-          {/* Multi-Year Timeline (2022 -> 2026) */}
-          <div className="bg-[#0B1523] border border-[#182A40] rounded-xl p-3 shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-1.5 text-xs font-bold text-white">
+          {/* Multi-Year Timeline Progression (2022 -> 2026) with Auto-Play & Forensic Change */}
+          <div className="bg-[#0B1523] border border-[#182A40] rounded-xl p-3 shadow-lg space-y-2.5">
+            {/* Timeline Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
                 <Calendar className="w-4 h-4 text-[#00E5FF]" />
-                <span>Multi-Temporal Progression Timeline</span>
+                <span className="text-xs font-bold text-white">Year-by-Year Multi-Temporal Progression</span>
               </div>
-              <span className="text-[10px] font-mono text-[#38BDF8]">
-                {activeTimelineStep.date} • Year {activeTimelineYear}
-              </span>
+              <div className="flex items-center space-x-2">
+                {/* Auto-Play Button */}
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shadow ${
+                    isPlaying
+                      ? 'bg-[#EF4444] text-white hover:bg-[#DC2626]'
+                      : 'bg-[#0284C7] text-white hover:bg-[#0369A1]'
+                  }`}
+                  title={isPlaying ? 'Pause Auto-Play' : 'Auto-Play Progression (2022 → 2026)'}
+                >
+                  {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  <span>{isPlaying ? 'Pause' : 'Play Progression'}</span>
+                </button>
+
+                {/* Full Dossier Inspector Trigger */}
+                <button
+                  onClick={() => setShowSchematicModal(true)}
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-[#38BDF8] hover:text-white flex items-center space-x-1.5 transition cursor-pointer"
+                  title="Open Full 5-Year Schematic Evolution Dossier"
+                >
+                  <Maximize2 className="w-3 h-3" />
+                  <span className="hidden sm:inline">Schematic Dossier</span>
+                </button>
+              </div>
             </div>
 
-            {/* Timeline Year Buttons */}
+            {/* Timeline Year Step Buttons (5 Years: 2022, 2023, 2024, 2025, 2026) */}
             <div className="grid grid-cols-5 gap-1.5">
               {[2022, 2023, 2024, 2025, 2026].map((yr) => {
                 const isSelected = activeTimelineYear === yr;
+                const step =
+                  activeLocation.timelineProgression.find((t) => t.year === yr) ||
+                  activeLocation.timelineProgression[0];
+
                 return (
                   <button
                     key={yr}
-                    onClick={() => setActiveTimelineYear(yr)}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-mono font-bold transition cursor-pointer flex flex-col items-center justify-center ${
+                    onClick={() => {
+                      setIsPlaying(false);
+                      setActiveTimelineYear(yr);
+                    }}
+                    className={`p-2 rounded-xl text-xs font-mono transition cursor-pointer flex flex-col items-center justify-between border ${
                       isSelected
-                        ? 'bg-[#00E5FF] text-[#070D16] shadow-[0_0_12px_rgba(0,229,255,0.4)]'
-                        : 'bg-[#0E1A2B] text-[#94A3B8] hover:text-white border border-[#182A40]'
+                        ? 'bg-[#0E355A] border-[#00E5FF] text-white shadow-[0_0_15px_rgba(0,229,255,0.4)] ring-1 ring-[#00E5FF]'
+                        : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:border-[#38BDF8] hover:text-white'
                     }`}
                   >
-                    <span>{yr}</span>
-                    <span className="text-[9px] font-normal truncate max-w-full">
-                      {yr === 2022 ? 'Baseline' : yr === 2024 ? 'Earthworks' : yr === 2026 ? 'Observed' : 'Erection'}
+                    <div className="flex items-center space-x-1 font-bold">
+                      <span className={isSelected ? 'text-[#00E5FF]' : 'text-white'}>{yr}</span>
+                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#00E5FF] animate-ping" />}
+                    </div>
+                    <span className="text-[9px] font-sans font-medium truncate max-w-full text-center mt-0.5">
+                      {step.stage}
+                    </span>
+                    <span className="text-[8px] font-mono px-1 py-0.2 rounded mt-1 bg-[#182A40]/80 text-[#38BDF8]">
+                      {step.builtFootprint}
                     </span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Timeline Stage Description */}
-            <div className="mt-2.5 p-2 rounded-lg bg-[#070D16] border border-[#182A40] text-xs flex items-center justify-between">
-              <div>
-                <span className="font-bold text-white">{activeTimelineStep.stage}:</span>{' '}
-                <span className="text-[#94A3B8]">{activeTimelineStep.notes}</span>
+            {/* Year-by-Year Forensic Observation Breakdown Card */}
+            <div className="p-3 rounded-xl bg-[#070D16] border border-[#182A40] space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-[#182A40] pb-2">
+                <div className="flex items-center space-x-2">
+                  <span className="px-2 py-0.5 rounded bg-[#00E5FF]/20 text-[#00E5FF] text-xs font-mono font-bold">
+                    Year {activeTimelineYear} • {activeTimelineStep.date}
+                  </span>
+                  <span className="text-xs font-bold text-white">{activeTimelineStep.stage}</span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0284C7]/20 text-[#38BDF8] font-bold self-start sm:self-auto">
+                  {activeTimelineStep.status}
+                </span>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#0284C7]/20 text-[#38BDF8] shrink-0 ml-2 font-bold">
-                {activeTimelineStep.status}
-              </span>
+
+              {/* Exact Change Description */}
+              <p className="text-xs text-[#94A3B8] leading-relaxed">
+                <span className="font-semibold text-white">What Changed in {activeTimelineYear}: </span>
+                {activeTimelineStep.notes}
+              </p>
+
+              {/* Metrics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[10px]">
+                <div className="p-1.5 rounded bg-[#0B1523] border border-[#182A40]">
+                  <span className="text-[#64748B] block uppercase text-[8px]">Built Footprint</span>
+                  <span className="text-white font-bold">{activeTimelineStep.builtFootprint}</span>
+                </div>
+                <div className="p-1.5 rounded bg-[#0B1523] border border-[#182A40]">
+                  <span className="text-[#64748B] block uppercase text-[8px]">Year-on-Year &Delta;</span>
+                  <span className="text-[#10B981] font-bold">{activeTimelineStep.yearDelta}</span>
+                </div>
+                <div className="p-1.5 rounded bg-[#0B1523] border border-[#182A40]">
+                  <span className="text-[#64748B] block uppercase text-[8px]">Activity Level</span>
+                  <span className="text-[#F59E0B] font-bold">{activeTimelineStep.activityLevel}</span>
+                </div>
+                <div className="p-1.5 rounded bg-[#0B1523] border border-[#182A40]">
+                  <span className="text-[#64748B] block uppercase text-[8px]">Sensor Source</span>
+                  <span className="text-[#38BDF8] font-bold truncate block">{activeLocation.source}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -844,7 +1365,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
             <div className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-2">
               Detected Locations in Sector ({filteredLocations.length})
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto no-scrollbar">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto no-scrollbar">
               {filteredLocations.map((loc) => {
                 const isSelected = activeLocation.id === loc.id;
                 return (
@@ -857,7 +1378,10 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                         : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:bg-[#0E1A2B] hover:text-white'
                     }`}
                   >
-                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-[#182A40] shrink-0 bg-cover bg-center" style={{ backgroundImage: `url(${loc.afterImageUrl})` }} />
+                    <div
+                      className="w-12 h-12 rounded-lg overflow-hidden border border-[#182A40] shrink-0 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${loc.afterImageUrl})` }}
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-white truncate">{loc.name}</span>
@@ -873,7 +1397,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
           </div>
         </div>
 
-        {/* Right Column (5 cols): Large Before/After Comparison & Analyst Card */}
+        {/* Right Column (5 cols): Large Comparison & Analyst Card */}
         <div className="lg:col-span-5 flex flex-col space-y-3">
           {/* Comparison Mode Header */}
           <div className="bg-[#0B1523] border border-[#182A40] rounded-xl p-3 shadow-lg flex items-center justify-between">
@@ -885,7 +1409,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
             <div className="flex items-center space-x-1 bg-[#070D16] p-0.5 rounded-lg border border-[#182A40]">
               <button
                 onClick={() => setViewMode('dual')}
-                className={`px-2.5 py-1 rounded text-[11px] font-medium transition cursor-pointer ${
+                className={`px-2 py-1 rounded text-[11px] font-medium transition cursor-pointer ${
                   viewMode === 'dual' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
                 }`}
               >
@@ -893,11 +1417,19 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
               </button>
               <button
                 onClick={() => setViewMode('swipe')}
-                className={`px-2.5 py-1 rounded text-[11px] font-medium transition cursor-pointer ${
+                className={`px-2 py-1 rounded text-[11px] font-medium transition cursor-pointer ${
                   viewMode === 'swipe' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
                 }`}
               >
-                Swipe Curtain
+                Swipe
+              </button>
+              <button
+                onClick={() => setViewMode('schematic')}
+                className={`px-2 py-1 rounded text-[11px] font-medium transition cursor-pointer ${
+                  viewMode === 'schematic' ? 'bg-[#0284C7] text-white font-bold' : 'text-[#94A3B8] hover:text-white'
+                }`}
+              >
+                5-Year View
               </button>
               <button
                 onClick={() => setShowHeatmap(!showHeatmap)}
@@ -911,12 +1443,57 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
             </div>
           </div>
 
-          {/* Before / After Viewer */}
+          {/* Visual Evidence Viewer */}
           <div className="bg-[#0B1523] border border-[#182A40] rounded-xl p-3 shadow-2xl overflow-hidden flex flex-col">
-            {viewMode === 'dual' ? (
-              /* DUAL TILE VIEW: Side-by-side Before vs After */
+            {viewMode === 'schematic' ? (
+              /* 5-YEAR SCHEMATIC GALLERY: All 5 Years Shown Side-by-Side */
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-white font-bold">5-YEAR TEMPORAL SATELLITE CADENCE</span>
+                  <span className="text-[#00E5FF] text-[10px]">Click any year to select</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-1.5">
+                  {activeLocation.timelineProgression.map((step) => {
+                    const isCur = activeTimelineYear === step.year;
+                    return (
+                      <div
+                        key={step.year}
+                        onClick={() => {
+                          setIsPlaying(false);
+                          setActiveTimelineYear(step.year);
+                        }}
+                        className={`rounded-xl border p-2 flex flex-col transition cursor-pointer ${
+                          isCur
+                            ? 'bg-[#0E355A] border-[#00E5FF] shadow-[0_0_15px_rgba(0,229,255,0.4)] ring-1 ring-[#00E5FF]'
+                            : 'bg-[#070D16] border-[#182A40] hover:border-[#38BDF8] text-[#94A3B8]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-[11px] font-mono font-bold mb-1">
+                          <span className={isCur ? 'text-[#00E5FF]' : 'text-white'}>{step.year}</span>
+                          <span className="text-[9px] text-[#64748B]">{step.date.slice(5)}</span>
+                        </div>
+                        <div className="aspect-[4/3] rounded-lg overflow-hidden border border-[#182A40] relative mb-1.5 bg-[#020617]">
+                          <img src={step.imgUrl} alt={step.stage} className="w-full h-full object-cover" />
+                          <span className="absolute bottom-1 left-1 bg-black/80 px-1 py-0.2 rounded text-[8px] font-mono text-[#38BDF8]">
+                            {step.builtFootprint}
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-bold text-white truncate">{step.stage}</div>
+                        <div className="text-[9px] text-[#94A3B8] line-clamp-2 mt-0.5 leading-tight">
+                          {step.notes}
+                        </div>
+                        <div className="mt-auto pt-1 flex items-center justify-between text-[8px] font-mono">
+                          <span className="text-[#10B981] font-semibold">{step.yearDelta}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : viewMode === 'dual' ? (
+              /* DUAL TILE VIEW: Side-by-side Before (Baseline) vs After (Selected Year) */
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 relative">
-                {/* Left: BEFORE */}
+                {/* Left: BASELINE */}
                 <div className="relative rounded-lg overflow-hidden border border-[#182A40] bg-[#070D16] aspect-[4/3]">
                   <img
                     src={activeLocation.beforeImageUrl}
@@ -924,14 +1501,14 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2 bg-[#070D16]/90 border border-[#182A40] text-[10px] font-mono px-2 py-0.5 rounded text-white backdrop-blur">
-                    BEFORE: {activeLocation.beforeDate}
+                    BASELINE: {activeLocation.beforeDate}
                   </div>
                   <div className="absolute bottom-2 left-2 text-[9px] font-mono text-[#94A3B8] bg-black/60 px-1.5 py-0.5 rounded">
-                    Baseline Terrain
+                    Undisturbed Terrain
                   </div>
                 </div>
 
-                {/* Right: AFTER */}
+                {/* Right: SELECTED YEAR OBSERVATION */}
                 <div className="relative rounded-lg overflow-hidden border border-[#182A40] bg-[#070D16] aspect-[4/3]">
                   <img
                     src={activeTimelineStep.imgUrl}
@@ -946,10 +1523,10 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                     </div>
                   )}
                   <div className="absolute top-2 left-2 bg-[#00E5FF]/20 border border-[#00E5FF] text-[10px] font-mono px-2 py-0.5 rounded text-[#00E5FF] font-bold backdrop-blur">
-                    AFTER: {activeTimelineStep.date}
+                    OBSERVED: {activeTimelineStep.date} (Year {activeTimelineYear})
                   </div>
-                  <div className="absolute bottom-2 right-2 text-[9px] font-mono text-[#10B981] bg-black/60 px-1.5 py-0.5 rounded font-bold">
-                    {activeLocation.changeType}
+                  <div className="absolute bottom-2 right-2 text-[9px] font-mono text-[#10B981] bg-black/75 px-1.5 py-0.5 rounded font-bold">
+                    {activeTimelineStep.stage}
                   </div>
                 </div>
               </div>
@@ -961,7 +1538,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                 onTouchMove={handleSliderMove}
                 className="relative rounded-lg overflow-hidden border border-[#182A40] aspect-[16/10] select-none cursor-ew-resize"
               >
-                {/* Underneath: AFTER image */}
+                {/* Underneath: AFTER image (Selected Year) */}
                 <img
                   src={activeTimelineStep.imgUrl}
                   alt="After"
@@ -972,7 +1549,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                   <div className="absolute inset-0 bg-red-500/25 mix-blend-color-dodge pointer-events-none" />
                 )}
 
-                {/* Top clipped: BEFORE image */}
+                {/* Top clipped: BEFORE image (Baseline) */}
                 <div
                   className="absolute inset-0 overflow-hidden pointer-events-none border-r-2 border-[#00E5FF]"
                   style={{ width: `${sliderPosition}%` }}
@@ -984,12 +1561,12 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                     style={{ width: '100%', maxWidth: 'none' }}
                   />
                   <div className="absolute top-2 left-2 bg-[#070D16]/90 border border-[#182A40] text-[10px] font-mono px-2 py-0.5 rounded text-white">
-                    BEFORE: {activeLocation.beforeDate}
+                    BASELINE: {activeLocation.beforeDate}
                   </div>
                 </div>
 
                 <div className="absolute top-2 right-2 bg-[#00E5FF]/20 border border-[#00E5FF] text-[10px] font-mono px-2 py-0.5 rounded text-[#00E5FF] font-bold">
-                  AFTER: {activeTimelineStep.date}
+                  OBSERVED: {activeTimelineStep.date} ({activeTimelineYear})
                 </div>
 
                 {/* Draggable Divider Handle */}
@@ -998,7 +1575,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                   style={{ left: `${sliderPosition}%` }}
                 >
                   <div className="w-6 h-6 rounded-full bg-[#00E5FF] text-[#070D16] font-bold text-xs flex items-center justify-center shadow-lg">
-                    ⇄
+                    &#8644;
                   </div>
                 </div>
               </div>
@@ -1007,7 +1584,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
             {/* Slider Instructions hint */}
             {viewMode === 'swipe' && (
               <div className="text-[10px] font-mono text-[#64748B] text-center mt-1.5">
-                Drag slider horizontally to inspect visual difference
+                Drag slider horizontally to inspect visual difference between Baseline and Year {activeTimelineYear}
               </div>
             )}
           </div>
@@ -1021,7 +1598,7 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
               </div>
               <div className="text-right">
                 <span className="text-[10px] font-mono text-[#64748B] uppercase font-bold">Confidence</span>
-                <div className="text-sm font-bold font-mono text-[#10B981]">{activeLocation.confidence}%</div>
+                <div className="text-sm font-bold font-mono text-[#10B981]">{activeLocation.confidence}% Match</div>
               </div>
             </div>
 
@@ -1063,11 +1640,11 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
-                onClick={() => setViewMode(viewMode === 'dual' ? 'swipe' : 'dual')}
+                onClick={() => setShowSchematicModal(true)}
                 className="py-2 px-3 rounded-lg bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-xs font-semibold text-white transition cursor-pointer flex items-center justify-center space-x-1.5"
               >
-                <Sliders className="w-3.5 h-3.5 text-[#00E5FF]" />
-                <span>{viewMode === 'dual' ? 'Compare (Swipe)' : 'Side-by-Side'}</span>
+                <Layers className="w-3.5 h-3.5 text-[#00E5FF]" />
+                <span>Schematic Dossier</span>
               </button>
               <button
                 onClick={() => setShowReportModal(true)}
@@ -1091,7 +1668,144 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
         </div>
       </div>
 
-      {/* 5. FORMAL GEOSPATIAL INTELLIGENCE REPORT MODAL */}
+      {/* 5. FULL 5-YEAR SCHEMATIC EVOLUTION DOSSIER MODAL */}
+      {showSchematicModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="bg-[#0B1523] border border-[#00E5FF]/40 rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col font-sans my-auto animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="bg-[#070D16] border-b border-[#182A40] px-5 py-4 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-[#00E5FF]/20 border border-[#00E5FF] flex items-center justify-center text-[#00E5FF] font-bold">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-white tracking-wider uppercase">
+                    Year-by-Year Schematic Evolution Dossier • {activeLocation.id}
+                  </h2>
+                  <div className="text-[10px] font-mono text-[#64748B]">
+                    {activeLocation.name} • {activeLocation.coordinates} • {activeLocation.borderDistanceStr}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSchematicModal(false)}
+                className="w-8 h-8 rounded-lg bg-[#0E1A2B] hover:bg-[#15273F] text-[#94A3B8] hover:text-white flex items-center justify-center transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body: Complete 5-Year Chronological Step-by-Step Gallery */}
+            <div className="p-5 space-y-4 overflow-y-auto max-h-[75vh] text-xs">
+              <div className="flex items-center justify-between bg-[#070D16] p-3 rounded-xl border border-[#182A40]">
+                <div>
+                  <span className="text-[10px] font-mono text-[#64748B] uppercase block">Analysis Category</span>
+                  <span className="font-bold text-white text-sm">{activeLocation.changeType}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-[#64748B] uppercase block">Observation Period</span>
+                  <span className="font-mono text-[#00E5FF] font-bold">{activeLocation.observationPeriod}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-[#64748B] uppercase block">Total Area Delta</span>
+                  <span className="font-mono text-[#10B981] font-bold">{activeLocation.changedArea}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-[#64748B] uppercase block">Confidence Score</span>
+                  <span className="font-mono text-[#F59E0B] font-bold">{activeLocation.confidence}% Match</span>
+                </div>
+              </div>
+
+              {/* 5-Year Cards Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                {activeLocation.timelineProgression.map((step) => (
+                  <div
+                    key={step.year}
+                    className="bg-[#070D16] border border-[#182A40] rounded-xl p-3 flex flex-col space-y-2 hover:border-[#00E5FF] transition"
+                  >
+                    <div className="flex items-center justify-between font-mono">
+                      <span className="px-2 py-0.5 rounded bg-[#00E5FF]/20 text-[#00E5FF] text-xs font-bold">
+                        Year {step.year}
+                      </span>
+                      <span className="text-[10px] text-[#64748B]">{step.date}</span>
+                    </div>
+
+                    <div className="aspect-[4/3] rounded-lg overflow-hidden border border-[#182A40] relative bg-[#020617]">
+                      <img src={step.imgUrl} alt={step.stage} className="w-full h-full object-cover" />
+                      <span className="absolute bottom-1 left-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] font-mono text-[#38BDF8]">
+                        Footprint: {step.builtFootprint}
+                      </span>
+                    </div>
+
+                    <div>
+                      <div className="font-bold text-white text-xs">{step.stage}</div>
+                      <div className="text-[10px] font-mono text-[#38BDF8] mt-0.5">{step.status}</div>
+                    </div>
+
+                    <p className="text-[11px] text-[#94A3B8] leading-tight flex-1">
+                      {step.notes}
+                    </p>
+
+                    <div className="pt-2 border-t border-[#182A40] space-y-1 font-mono text-[9px]">
+                      <div className="flex justify-between">
+                        <span className="text-[#64748B]">&Delta; Change:</span>
+                        <span className="text-[#10B981] font-bold">{step.yearDelta}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#64748B]">Activity:</span>
+                        <span className="text-[#F59E0B] font-bold">{step.activityLevel}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Forensic Assessment Summary */}
+              <div className="p-3.5 rounded-xl bg-[#070D16] border border-[#182A40] space-y-2">
+                <span className="font-bold text-white text-xs block">AI-Assisted Temporal Analysis Summary:</span>
+                <p className="text-[#94A3B8] leading-relaxed text-xs">
+                  {activeLocation.description} Multi-temporal analysis across the 2022&ndash;2026 satellite acquisition archive
+                  verifies progressive structural footprint alteration of {activeLocation.changedArea} within {activeLocation.borderDistanceStr}.
+                </p>
+                <div className="flex items-center space-x-4 pt-1 font-mono text-[10px] text-[#64748B]">
+                  <span>NDBI (Built-up Delta): <b className="text-white">{activeLocation.ndbiDelta}</b></span>
+                  <span>NDVI (Canopy Delta): <b className="text-white">{activeLocation.ndviDelta}</b></span>
+                  <span>Sensor: <b className="text-white">{activeLocation.source}</b></span>
+                </div>
+              </div>
+
+              {/* Disclaimer */}
+              <div className="p-2.5 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[11px] text-[#F59E0B]">
+                <b>MANDATORY NOTICE:</b> AI-assisted detection based on publicly available satellite imagery. Results require human analyst verification.
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-[#070D16] border-t border-[#182A40] px-5 py-3 flex items-center justify-between">
+              <span className="text-[10px] font-mono text-[#64748B]">
+                VIGIL Space Intelligence &bull; Multi-Temporal Forensic Cadence
+              </span>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => window.print()}
+                  className="h-8 px-3 rounded-lg bg-[#0E1A2B] hover:bg-[#15273F] border border-[#182A40] text-xs font-semibold text-white flex items-center space-x-1.5 transition cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 text-[#00E5FF]" />
+                  <span>Print Dossier</span>
+                </button>
+                <button
+                  onClick={() => setShowSchematicModal(false)}
+                  className="h-8 px-3.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] text-xs font-semibold text-white flex items-center space-x-1.5 transition cursor-pointer shadow"
+                >
+                  <span>Done</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. FORMAL GEOSPATIAL INTELLIGENCE REPORT MODAL */}
       {showReportModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
           <div className="bg-[#0B1523] border border-[#00E5FF]/40 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col font-sans my-auto animate-in fade-in zoom-in-95 duration-200">
@@ -1153,9 +1867,9 @@ export const BorderStrategicAnalysisView: React.FC<BorderStrategicAnalysisViewPr
                     </span>
                   </div>
                   <div className="rounded-lg overflow-hidden border border-[#182A40] aspect-video relative bg-[#070D16]">
-                    <img src={activeLocation.afterImageUrl} alt="After" className="w-full h-full object-cover" />
+                    <img src={activeTimelineStep.imgUrl} alt="After" className="w-full h-full object-cover" />
                     <span className="absolute bottom-1.5 left-1.5 bg-[#00E5FF]/20 border border-[#00E5FF] px-2 py-0.5 rounded text-[9px] font-mono text-[#00E5FF] font-bold">
-                      Observed: {activeLocation.afterDate}
+                      Observed: {activeTimelineStep.date} ({activeTimelineYear})
                     </span>
                   </div>
                 </div>
