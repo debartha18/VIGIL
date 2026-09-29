@@ -1614,40 +1614,38 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
                     )}
                   </div>
 
-                  {/* Feature Tag Card */}
-                  <div
-                    className={`absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap px-2.5 py-1.5 rounded-lg border text-[11px] font-sans transition-all shadow-2xl backdrop-blur-md ${
-                      isSelected
-                        ? 'bg-[#070D16]/95 border-[#00E5FF] text-white shadow-[0_0_20px_rgba(0,229,255,0.45)] z-30 scale-105'
-                        : 'bg-[#0B1523]/90 border-[#182A40] text-[#94A3B8] group-hover:text-white group-hover:border-[#0284C7]'
-                    }`}
-                  >
-                    {/* Header: Category Badge + Station Code */}
-                    <div className="flex items-center space-x-1.5 font-bold">
-                      <span className="text-xs">{st.categoryIcon}</span>
-                      <span className="text-white">{st.stationCode}</span>
-                      <span
-                        className="text-[9px] px-1 py-0.2 rounded font-mono font-medium"
-                        style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: st.color }}
-                      >
-                        {st.categoryLabel}
-                      </span>
-                    </div>
+                  {/* Feature Tag Card: Only shown when clicked / selected */}
+                  {isSelected && (
+                    <div
+                      className="absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap px-3 py-2 rounded-xl border border-[#00E5FF] bg-[#070D16]/95 text-white shadow-[0_0_25px_rgba(0,229,255,0.6)] z-40 scale-105 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+                    >
+                      {/* Header: Category Badge + Station Code */}
+                      <div className="flex items-center space-x-1.5 font-bold">
+                        <span className="text-sm">{st.categoryIcon}</span>
+                        <span className="text-white text-xs">{st.stationCode}</span>
+                        <span
+                          className="text-[9px] px-1.5 py-0.5 rounded font-mono font-medium"
+                          style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: st.color }}
+                        >
+                          {st.categoryLabel}
+                        </span>
+                      </div>
 
-                    {/* What VIGIL can show summary */}
-                    <div className="text-[10px] text-[#38BDF8] flex items-center space-x-1.5 font-medium mt-0.5">
-                      <span>{st.whatVigilShows}</span>
-                    </div>
+                      {/* What VIGIL can show summary */}
+                      <div className="text-[10px] text-[#38BDF8] flex items-center space-x-1.5 font-medium mt-1">
+                        <span>{st.whatVigilShows}</span>
+                      </div>
 
-                    {/* Delta & Sensor */}
-                    <div className="text-[9px] font-mono text-[#94A3B8] flex items-center space-x-2 mt-0.5">
-                      <span className="text-[#10B981] font-bold">{st.areaChange}</span>
-                      <span>•</span>
-                      <span>{st.sensor}</span>
-                      <span>•</span>
-                      <span className="text-[#F59E0B]">{st.confidencePct}% match</span>
+                      {/* Delta & Sensor */}
+                      <div className="text-[9px] font-mono text-[#94A3B8] flex items-center space-x-2 mt-1">
+                        <span className="text-[#10B981] font-bold">{st.areaChange}</span>
+                        <span>•</span>
+                        <span>{st.sensor}</span>
+                        <span>•</span>
+                        <span className="text-[#F59E0B]">{st.confidencePct}% match</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
