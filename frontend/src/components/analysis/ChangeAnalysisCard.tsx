@@ -114,6 +114,12 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
     }
   }, [externalSpectralMode]);
 
+  // Synchronize candidate switch: reset timeline milestone to latest afterDate and clear verdict
+  React.useEffect(() => {
+    setSelectedTimelineDate(afterDate);
+    setAnalystVerdict(null);
+  }, [candidateId, afterDate]);
+
   // 4. Image Enhancement Adjustments (Brightness, Contrast, Sharpness)
   const [showAdjustments, setShowAdjustments] = useState<boolean>(false);
   const [brightness, setBrightness] = useState<number>(0); // -50 to +50

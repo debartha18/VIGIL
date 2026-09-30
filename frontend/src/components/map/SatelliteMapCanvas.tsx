@@ -1,177 +1,18 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Plus,
   Minus,
-  Crosshair,
   Layers,
   ChevronDown,
   Check,
-  Flame,
-  Globe,
   RotateCcw,
   Maximize2
 } from 'lucide-react';
 import { SearchResultItem } from '../search/SemanticSearchResults';
-
-export interface MapTargetStation {
-  id: string;
-  title: string;
-  coordinates: string;
-  lat: number;
-  lon: number;
-  sensor: string;
-  category: 'construction' | 'embankment' | 'port' | 'bridge' | 'landfill' | 'offshore';
-  categoryLabel: string;
-  color: string;
-  confidencePct: number;
-  sst: string;
-  elevation: string;
-  albedo: string;
-  ndvi: string;
-  cloudCover: string;
-  areaHa: string;
-  // Canvas coordinate percentages in tactical and regional views
-  tacticalX: number;
-  tacticalY: number;
-  regionalX: number;
-  regionalY: number;
-}
-
-// Calibrated stations & targets matching ground-truth and regional oceanographic sectors
-const MAP_STATIONS: MapTargetStation[] = [
-  {
-    id: 'res-1',
-    title: 'Hazira Deepwater Wharf & Piling Deck',
-    coordinates: '21.4587° N, 72.7812° E',
-    lat: 21.4587,
-    lon: 72.7812,
-    sensor: 'Sentinel-2 (10m)',
-    category: 'construction',
-    categoryLabel: 'Wharf & Piling Deck',
-    color: '#00E5FF',
-    confidencePct: 96,
-    sst: '28.4 °C (SWIR B11)',
-    elevation: '+4.8m MSL',
-    albedo: '+0.28 NDBI',
-    ndvi: '0.12 (Built-up)',
-    cloudCover: '1.8% (Clear)',
-    areaHa: '4.2 ha (42,000 m²)',
-    tacticalX: 47,
-    tacticalY: 44,
-    regionalX: 38.2,
-    regionalY: 39.2,
-  },
-  {
-    id: 'res-2',
-    title: 'Dumas Coastal Bund & Sea Embankment',
-    coordinates: '21.4632° N, 72.7845° E',
-    lat: 21.4632,
-    lon: 72.7845,
-    sensor: 'Sentinel-2 (10m)',
-    category: 'embankment',
-    categoryLabel: 'Coastal Sea Bund',
-    color: '#38BDF8',
-    confidencePct: 93,
-    sst: '27.9 °C (SWIR B11)',
-    elevation: '+3.2m MSL',
-    albedo: '+0.19 NDBI',
-    ndvi: '0.22 (Tidal Grass)',
-    cloudCover: '1.4% (Clear)',
-    areaHa: '3.1 ha (31,000 m²)',
-    tacticalX: 57,
-    tacticalY: 36,
-    regionalX: 38.6,
-    regionalY: 38.8,
-  },
-  {
-    id: 'res-3',
-    title: 'Adani Marine Logistics Berth Extension',
-    coordinates: '21.4521° N, 72.7763° E',
-    lat: 21.4521,
-    lon: 72.7763,
-    sensor: 'Sentinel-1 SAR (10m)',
-    category: 'port',
-    categoryLabel: 'Marine Logistics Berth',
-    color: '#A855F7',
-    confidencePct: 89,
-    sst: '28.8 °C (SAR VV/VH)',
-    elevation: '+5.1m MSL',
-    albedo: '+0.34 NDBI',
-    ndvi: '0.08 (Asphalt / Metal)',
-    cloudCover: '0.0% (SAR All-Weather)',
-    areaHa: '4.8 ha (48,000 m²)',
-    tacticalX: 36,
-    tacticalY: 57,
-    regionalX: 37.8,
-    regionalY: 40.1,
-  },
-  {
-    id: 'res-4',
-    title: 'Tapi Rivermouth Pier Piling & Riprap',
-    coordinates: '21.4550° N, 72.7801° E',
-    lat: 21.4550,
-    lon: 72.7801,
-    sensor: 'Sentinel-2 (10m)',
-    category: 'bridge',
-    categoryLabel: 'Rivermouth Pier & Channel',
-    color: '#10B981',
-    confidencePct: 85,
-    sst: '26.8 °C (Water Interface)',
-    elevation: '+2.4m MSL',
-    albedo: '+0.15 NDBI',
-    ndvi: '0.18 (Riparian)',
-    cloudCover: '2.4% (Clear)',
-    areaHa: '1.8 ha (18,000 m²)',
-    tacticalX: 45,
-    tacticalY: 51,
-    regionalX: 38.1,
-    regionalY: 39.6,
-  },
-  {
-    id: 'res-5',
-    title: 'Coastal Mudflat Landfill & Earthworks',
-    coordinates: '21.4617° N, 72.7890° E',
-    lat: 21.4617,
-    lon: 72.7890,
-    sensor: 'Landsat-8/9 (15m)',
-    category: 'landfill',
-    categoryLabel: 'Reclamation & Earthworks',
-    color: '#F59E0B',
-    confidencePct: 81,
-    sst: '29.2 °C (Bare Soil)',
-    elevation: '+1.8m MSL',
-    albedo: '+0.26 NDBI',
-    ndvi: '0.05 (Sediment)',
-    cloudCover: '1.1% (Clear)',
-    areaHa: '5.6 ha (56,000 m²)',
-    tacticalX: 68,
-    tacticalY: 38,
-    regionalX: 39.1,
-    regionalY: 38.6,
-  },
-  {
-    id: 'res-6',
-    title: 'Hazira Port North Container Staging Yard',
-    coordinates: '21.4820° N, 72.7740° E',
-    lat: 21.4820,
-    lon: 72.7740,
-    sensor: 'Sentinel-2 (10m)',
-    category: 'port',
-    categoryLabel: 'Container Staging Yard',
-    color: '#EC4899',
-    confidencePct: 94,
-    sst: '28.9 °C (SWIR B11)',
-    elevation: '+5.5m MSL',
-    albedo: '+0.36 NDBI',
-    ndvi: '0.07 (Paved)',
-    cloudCover: '1.6% (Clear Sky)',
-    areaHa: '8.4 ha (84,000 m²)',
-    tacticalX: 42,
-    tacticalY: 28,
-    regionalX: 38.0,
-    regionalY: 37.8,
-  }
-];
+import {
+  CANONICAL_LOCATIONS,
+  locationToSearchResultItem
+} from '../../data/groundTruthTargets';
 
 interface SatelliteMapCanvasProps {
   coordinates?: string;
@@ -187,10 +28,10 @@ interface SatelliteMapCanvasProps {
 
 export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
   coordinates = 'Lat: 21.4587° N   Lon: 72.7812° E',
-  selectedAOI = 'AOI-1',
+  selectedAOI: _selectedAOI = 'AOI-1',
   onCoordinatesChange,
   siteName = 'Hazira Deepwater Wharf & Piling Deck',
-  selectedTargetId = 'res-1',
+  selectedTargetId,
   onSelectTarget,
   targets = [],
   mode = 'compact',
@@ -211,13 +52,21 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
   const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
 
-  // Active Selected Station / Coordinates
-  const [currentCoords, setCurrentCoords] = useState<string>(coordinates);
-  const [activeStation, setActiveStation] = useState<MapTargetStation>(() => {
-    return MAP_STATIONS.find(s => s.id === selectedTargetId) || MAP_STATIONS[0];
-  });
-
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Resolving display targets: prioritize passed search results, fallback to canonical
+  const displayTargets: SearchResultItem[] = useMemo(() => {
+    if (targets && targets.length > 0) return targets;
+    return CANONICAL_LOCATIONS.map(locationToSearchResultItem);
+  }, [targets]);
+
+  const activeTarget = useMemo(() => {
+    if (selectedTargetId) {
+      const found = displayTargets.find(t => t.id === selectedTargetId);
+      if (found) return found;
+    }
+    return displayTargets[0];
+  }, [displayTargets, selectedTargetId]);
 
   // Available spectral layers with real radiometric filters
   const layers = [
@@ -247,43 +96,35 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
     });
   }, []);
 
-  // Synchronize when external target changes
+  // Smoothly center the map view onto the active target
   useEffect(() => {
-    setCurrentCoords(coordinates);
-    const matched = MAP_STATIONS.find(s => s.id === selectedTargetId);
-    if (matched) {
-      setActiveStation(matched);
-    }
-  }, [coordinates, selectedTargetId]);
+    if (activeTarget) {
+      const posX = viewMode === 'regional'
+        ? (activeTarget.regionalX ?? activeTarget.tacticalX ?? 50)
+        : (activeTarget.tacticalX ?? 50);
+      const posY = viewMode === 'regional'
+        ? (activeTarget.regionalY ?? activeTarget.tacticalY ?? 50)
+        : (activeTarget.tacticalY ?? 50);
 
-  // Center on station when selected
-  const handleSelectStation = (station: MapTargetStation, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setActiveStation(station);
-    const coordsStr = `Lat: ${station.lat.toFixed(4)}° N   Lon: ${station.lon.toFixed(4)}° E`;
-    setCurrentCoords(coordsStr);
-    if (onCoordinatesChange) onCoordinatesChange(coordsStr);
+      // Centering offset calculation relative to 50%
+      setPan({
+        x: (50 - posX) * 3.2,
+        y: (50 - posY) * 2.8,
+      });
 
-    if (onSelectTarget) {
-      const matchInTargets = targets.find(t => t.id === station.id);
-      if (matchInTargets) {
-        onSelectTarget(matchInTargets);
-      } else {
-        onSelectTarget({
-          id: station.id,
-          title: station.title,
-          date: '2025-04-28',
-          sensor: station.sensor,
-          coordinates: station.coordinates,
-          matchType: 'High Match',
-          confidencePct: station.confidencePct,
-          imageUrl: '/assets/card_1_construction.jpg',
-          beforeImgUrl: '/assets/before_scene.jpg',
-          afterImgUrl: '/assets/after_scene.jpg',
-          areaHa: station.areaHa,
-          timeGap: '20 months'
-        });
+      if (onCoordinatesChange && activeTarget.coordinates) {
+        onCoordinatesChange(activeTarget.coordinates);
       }
+    }
+  }, [activeTarget, viewMode, onCoordinatesChange]);
+
+  const handleSelectStation = (target: SearchResultItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (onSelectTarget) {
+      onSelectTarget(target);
+    }
+    if (onCoordinatesChange && target.coordinates) {
+      onCoordinatesChange(target.coordinates);
     }
   };
 
@@ -319,9 +160,30 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
   };
 
   const resetView = () => {
-    setPan({ x: 0, y: 0 });
+    if (activeTarget) {
+      const posX = viewMode === 'regional'
+        ? (activeTarget.regionalX ?? activeTarget.tacticalX ?? 50)
+        : (activeTarget.tacticalX ?? 50);
+      const posY = viewMode === 'regional'
+        ? (activeTarget.regionalY ?? activeTarget.tacticalY ?? 50)
+        : (activeTarget.tacticalY ?? 50);
+
+      setPan({
+        x: (50 - posX) * 3.2,
+        y: (50 - posY) * 2.8,
+      });
+    } else {
+      setPan({ x: 0, y: 0 });
+    }
     setZoom(1.0);
   };
+
+  const activePosX = activeTarget
+    ? (viewMode === 'regional' ? (activeTarget.regionalX ?? activeTarget.tacticalX ?? 50) : (activeTarget.tacticalX ?? 50))
+    : 50;
+  const activePosY = activeTarget
+    ? (viewMode === 'regional' ? (activeTarget.regionalY ?? activeTarget.tacticalY ?? 50) : (activeTarget.tacticalY ?? 50))
+    : 50;
 
   return (
     <div
@@ -342,91 +204,79 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
         <div className="flex items-center space-x-1.5 pointer-events-auto bg-[#070D16]/95 border border-[#182A40] px-2.5 py-1 rounded-lg backdrop-blur-md shadow-xl text-xs">
           <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
           <span className="font-bold text-white tracking-tight hidden sm:inline">
-            Sentinel-2 Optical (10m)
+            {activeTarget?.sensor || 'Sentinel-2 Optical (10m)'}
           </span>
 
           <div className="h-3 w-[1px] bg-[#182A40] hidden sm:block" />
 
-          {/* View Switcher: Regional Ocean vs Tactical AOI */}
-          <div className="flex items-center bg-[#0B1523] p-0.5 rounded-md border border-[#182A40]">
+          {/* View Switcher: Regional Ocean vs Local AOI */}
+          <div className="flex bg-[#030712] rounded p-0.5 border border-[#182A40]">
             <button
-              onClick={() => {
-                setViewMode('regional');
-                resetView();
-              }}
-              className={`h-5 px-2 rounded text-[10px] font-medium transition cursor-pointer flex items-center space-x-1 ${
-                viewMode === 'regional' ? 'bg-[#0284C7] text-white shadow-sm' : 'text-[#94A3B8] hover:text-white'
+              onClick={() => setViewMode('tactical')}
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer ${
+                viewMode === 'tactical'
+                  ? 'bg-accent text-bg font-bold shadow'
+                  : 'text-[#94A3B8] hover:text-white'
               }`}
             >
-              <Globe className="w-2.5 h-2.5 text-[#00E5FF]" />
-              <span>Regional</span>
+              Local
             </button>
             <button
-              onClick={() => {
-                setViewMode('tactical');
-                resetView();
-              }}
-              className={`h-5 px-2 rounded text-[10px] font-medium transition cursor-pointer flex items-center space-x-1 ${
-                viewMode === 'tactical' ? 'bg-[#0284C7] text-white shadow-sm' : 'text-[#94A3B8] hover:text-white'
+              onClick={() => setViewMode('regional')}
+              className={`px-2 py-0.5 rounded text-[11px] font-medium transition cursor-pointer ${
+                viewMode === 'regional'
+                  ? 'bg-accent text-bg font-bold shadow'
+                  : 'text-[#94A3B8] hover:text-white'
               }`}
             >
-              <Crosshair className="w-2.5 h-2.5 text-[#10B981]" />
-              <span>Local {selectedAOI}</span>
+              Regional
             </button>
           </div>
+
+          {/* Open Full Interactive Map Button */}
+          {onOpenFullMap && (
+            <button
+              onClick={onOpenFullMap}
+              className="ml-1 p-1 rounded bg-[#0A1628] hover:bg-[#132438] border border-[#182A40] text-[#00E5FF] transition cursor-pointer flex items-center space-x-1"
+              title="Open full interactive map screen"
+            >
+              <Maximize2 className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
-        {/* Right: Consolidated "Layers & More" Dropdown (Uncluttered Map Header) */}
-        <div className="relative pointer-events-auto">
+        {/* Right: Layers & Heatmap */}
+        <div className="flex items-center space-x-1.5 pointer-events-auto relative">
+          <button
+            onClick={() => setShowHeatmap(!showHeatmap)}
+            className={`px-2 py-1 rounded-lg border text-xs font-medium transition cursor-pointer flex items-center space-x-1 shadow-lg backdrop-blur-md ${
+              showHeatmap
+                ? 'bg-change/20 border-change text-change'
+                : 'bg-[#070D16]/95 border-[#182A40] text-[#94A3B8] hover:text-white'
+            }`}
+            title="Toggle detected change heatmap"
+          >
+            <span>Heatmap</span>
+          </button>
+
           <button
             onClick={() => setShowLayerMenu(!showLayerMenu)}
-            className="h-6 px-2.5 rounded-lg bg-[#070D16]/95 border border-[#182A40] hover:border-[#00E5FF]/60 text-white text-[11px] font-medium flex items-center space-x-1.5 transition shadow backdrop-blur-md cursor-pointer focus-visible:ring-2 focus-visible:ring-[#00E5FF] focus:outline-none"
-            title="Spectral Layers, Heatmap and Display Controls"
+            className="bg-[#070D16]/95 border border-[#182A40] hover:border-[#00E5FF]/50 px-2.5 py-1 rounded-lg text-white font-medium text-xs flex items-center space-x-1.5 transition cursor-pointer shadow-xl backdrop-blur-md"
           >
             <Layers className="w-3.5 h-3.5 text-[#00E5FF]" />
-            <span className="hidden sm:inline">Layers & More</span>
+            <span className="hidden sm:inline">{activeLayer.split(' ')[0]}</span>
             <ChevronDown className="w-3 h-3 text-[#64748B]" />
           </button>
 
           {showLayerMenu && (
-            <div className="absolute top-7 right-0 w-64 bg-[#0B1523] border border-[#182A40] rounded-xl shadow-2xl p-2.5 z-50 text-xs space-y-2 font-sans animate-in fade-in">
-              <div className="px-2 py-1 text-[10px] text-[#94A3B8] uppercase font-bold tracking-wider border-b border-[#182A40]/70">
-                Display & Analysis Overlays
+            <div
+              className="absolute top-8 right-0 w-64 bg-[#070D16]/98 border border-[#182A40] rounded-xl shadow-2xl p-2 z-50 text-xs backdrop-blur-lg animate-in fade-in"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="px-2 py-1 text-[10px] text-[#64748B] font-mono border-b border-[#182A40] mb-1">
+                SPECTRAL LAYERS & INDICES
               </div>
-
-              {/* Quick Actions in Menu: Heatmap & Fullscreen Expand */}
-              <div className="grid grid-cols-2 gap-1.5 px-1">
-                <button
-                  onClick={() => setShowHeatmap(!showHeatmap)}
-                  className={`flex items-center justify-center space-x-1 py-1.5 px-2 rounded-lg border text-[11px] font-medium transition cursor-pointer ${
-                    showHeatmap
-                      ? 'bg-[#EF4444]/20 border-[#EF4444] text-[#EF4444]'
-                      : 'bg-[#070D16] border-[#182A40] text-[#94A3B8] hover:text-white'
-                  }`}
-                >
-                  <Flame className="w-3 h-3 text-[#EF4444]" />
-                  <span>Heatmap</span>
-                </button>
-
-                {onOpenFullMap && (
-                  <button
-                    onClick={() => {
-                      setShowLayerMenu(false);
-                      onOpenFullMap();
-                    }}
-                    className="flex items-center justify-center space-x-1 py-1.5 px-2 rounded-lg bg-[#070D16] border border-[#182A40] text-[#94A3B8] hover:text-white hover:border-[#00E5FF] transition cursor-pointer text-[11px]"
-                  >
-                    <Maximize2 className="w-3 h-3 text-[#00E5FF]" />
-                    <span>Full Map</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="px-2 pt-1 text-[10px] text-[#94A3B8] uppercase font-bold tracking-wider">
-                Spectral Band Layers
-              </div>
-
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {layers.map((l) => (
                   <div
                     key={l.name}
@@ -455,7 +305,7 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
 
       {/* 2. MAIN SATELLITE MAP TEXTURE & PROGRESSIVE TILE CANVAS */}
       <div
-        className="absolute inset-[-25%] transition-transform duration-150 ease-out"
+        className="absolute inset-[-25%] transition-transform duration-300 ease-out"
         style={{
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           transformOrigin: 'center center',
@@ -486,25 +336,29 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
           <div className="absolute inset-0 pointer-events-none transition-opacity duration-200">
             <div
               className="absolute w-72 h-72 rounded-full bg-change/10 border border-change/25"
-              style={{ top: '44%', left: '46%', transform: 'translate(-50%, -50%)' }}
+              style={{ top: `${activePosY}%`, left: `${activePosX}%`, transform: 'translate(-50%, -50%)' }}
             />
           </div>
         )}
 
         {/* 3. NUMBERED LOCATION MARKERS matching results strip rank */}
-        {MAP_STATIONS.map((station, idx) => {
-          const isSelected = (selectedTargetId ? selectedTargetId === station.id : activeStation.id === station.id);
-          const posX = station.tacticalX;
-          const posY = station.tacticalY;
+        {displayTargets.map((item, idx) => {
+          const isSelected = activeTarget?.id === item.id;
+          const posX = viewMode === 'regional'
+            ? (item.regionalX ?? item.tacticalX ?? 50)
+            : (item.tacticalX ?? 50);
+          const posY = viewMode === 'regional'
+            ? (item.regionalY ?? item.tacticalY ?? 50)
+            : (item.tacticalY ?? 50);
           const rank = idx + 1;
 
           return (
             <div
-              key={station.id}
-              onClick={(e) => handleSelectStation(station, e)}
+              key={item.id}
+              onClick={(e) => handleSelectStation(item, e)}
               className="absolute z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
               style={{ left: `${posX}%`, top: `${posY}%` }}
-              title={`#${rank} ${station.title} (${station.lat.toFixed(4)}°N, ${station.lon.toFixed(4)}°E)`}
+              title={`#${rank} ${item.title} (${item.coordinates})`}
             >
               {/* Numbered Marker Badge */}
               <div
@@ -517,26 +371,26 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
                 {rank}
               </div>
 
-              {/* ONE small label for the selected AOI only (name + ID in mono) */}
+              {/* Small label for the selected AOI */}
               {isSelected && (
                 <div className="absolute left-7 top-1/2 -translate-y-1/2 whitespace-nowrap px-2 py-0.5 rounded-md bg-surface/95 border border-border text-xs text-text shadow-subtle pointer-events-none flex items-center space-x-1.5 animate-in fade-in duration-150">
-                  <span className="font-medium">{station.title.split(' ')[0]}</span>
-                  <span className="font-mono text-text-2 text-[10px]">· {station.id}</span>
+                  <span className="font-medium">{item.locationName || item.title.split(' ')[0]}</span>
+                  <span className="font-mono text-text-2 text-[10px]">· {item.coordinates.split(',')[0]}</span>
                 </div>
               )}
             </div>
           );
         })}
 
-        {/* AOI boundary: 1.5-2px solid --boundary */}
+        {/* Dynamic AOI boundary surrounding selected station */}
         {viewMode === 'tactical' && (
           <div
-            className="absolute rounded-md border-2 border-boundary bg-boundary/5 pointer-events-none"
+            className="absolute rounded-md border-2 border-boundary bg-boundary/5 pointer-events-none transition-all duration-300"
             style={{
-              top: '48%',
-              left: '52%',
-              width: '240px',
-              height: '170px',
+              top: `${activePosY}%`,
+              left: `${activePosX}%`,
+              width: '200px',
+              height: '140px',
               transform: 'translate(-50%, -50%)',
             }}
           />
@@ -545,12 +399,14 @@ export const SatelliteMapCanvas: React.FC<SatelliteMapCanvasProps> = ({
 
       {/* 4. SLEEK COORDINATE READOUT & DEMO NOTE (Bottom Left) */}
       <div className="absolute bottom-2.5 left-2.5 z-30 pointer-events-none flex flex-wrap items-center gap-2">
-        <div className="bg-surface/90 border border-border rounded-md px-2 py-1 text-xs font-mono text-text-2 flex items-center space-x-2 shadow-subtle" title={`${siteName} (${currentCoords})`}>
-          <span className="text-text tabular-nums">{currentCoords}</span>
-          <span className="border-l border-border pl-2 text-text-2 truncate max-w-[160px]" title={siteName}>{siteName}</span>
+        <div className="bg-surface/90 border border-border rounded-md px-2 py-1 text-xs font-mono text-text-2 flex items-center space-x-2 shadow-subtle">
+          <span className="text-text tabular-nums">{activeTarget?.coordinates || coordinates}</span>
+          <span className="border-l border-border pl-2 text-text-2 truncate max-w-[180px]" title={activeTarget?.title || siteName}>
+            {activeTarget?.title || siteName}
+          </span>
         </div>
         <div className="bg-surface/90 border border-border rounded-md px-2 py-1 text-[11px] text-text-2 font-sans shadow-subtle">
-          Imagery: public/demo data
+          {activeTarget?.state ? `${activeTarget.state}, ${activeTarget.country || 'India'}` : 'public/demo data'}
         </div>
       </div>
 

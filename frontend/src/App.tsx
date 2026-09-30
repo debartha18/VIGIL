@@ -94,7 +94,7 @@ const VigilPlatform: React.FC = () => {
   const [activeTab, setActiveTab] = useState<OrbitalTab>(() => {
     return tabFromPath(window.location.pathname);
   });
-  const [selectedResultId, setSelectedResultId] = useState<string>('res-1');
+  const [selectedResultId, setSelectedResultId] = useState<string>(GROUND_TRUTH_TARGETS[0]?.id || 'loc-mundra');
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [currentQuery, setCurrentQuery] = useState<string>('"construction near sea"');
@@ -192,12 +192,14 @@ const VigilPlatform: React.FC = () => {
       aoi: {
         id: selectedResult.id,
         name: selectedResult.title,
-        locationName: selectedResult.locationName || 'Hazira Coastal Sector',
+        locationName: selectedResult.locationName || selectedResult.title,
         coordinates: selectedResult.coordinates,
         latitude: lat,
         longitude: lon,
-        region: selectedResult.locationName ? `${selectedResult.locationName}, Gujarat` : 'Hazira Maritime Corridor',
-        distanceFromBorder: 'Coastal Maritime Approach Zone (~18 km from open waters)'
+        region: selectedResult.locationName
+          ? `${selectedResult.locationName}, ${(selectedResult as any).state || (selectedResult as any).country || 'India'}`
+          : `${(selectedResult as any).state || 'Regional Sector'}`,
+        distanceFromBorder: 'Active Observation Sector'
       },
       imagery: {
         sensor: selectedResult.sensor,
@@ -281,8 +283,14 @@ const VigilPlatform: React.FC = () => {
     }, 100);
   };
 
-  // Semantic query ranking
-  const handleSearch = async (query: string, dateRange?: [string, string], sensor?: string) => {
+  // Semantic query ranking and multi-location retrieval
+  const handleSearch = async (
+    query: string,
+    dateRange?: [string, string],
+    sensor?: string,
+    stateFilter?: string,
+    categoryFilter?: string
+  ) => {
     setCurrentQuery(query);
     setIsSearching(true);
 
@@ -296,28 +304,86 @@ const VigilPlatform: React.FC = () => {
         5
       ).catch(() => {});
 
-      // Score and rank authentic targets based on semantic concept terms
-      const terms = query.toLowerCase().replace(/["']/g, '').split(/\s+/).filter(t => t.length > 2);
+      const cleanQuery = query.toLowerCase().replace(/["']/g, '').trim();
+      const terms = cleanQuery.split(/\s+/).filter(t => t.length > 2);
 
       const scored = GROUND_TRUTH_TARGETS.map(target => {
         let score = 0;
+
+        // Exact / broad phrase match in title or keywords
+        if (cleanQuery && target.title.toLowerCase().includes(cleanQuery)) score += 15;
+        if (cleanQuery && target.keywords.some(k => k === cleanQuery || cleanQuery.includes(k) || k.includes(cleanQuery))) score += 12;
+        if (cleanQuery && (target as any).description && (target as any).description.toLowerCase().includes(cleanQuery)) score += 8;
+
+        // Semantic word matches
         for (const term of terms) {
           if (target.keywords.some(k => k.includes(term) || term.includes(k))) {
-            score += 3;
+            score += 5;
           }
           if (target.title.toLowerCase().includes(term)) {
+            score += 6;
+          }
+          if (target.locationName && target.locationName.toLowerCase().includes(term)) {
+            score += 5;
+          }
+          if ((target as any).state && (target as any).state.toLowerCase().includes(term)) {
+            score += 8;
+          }
+          if ((target as any).country && (target as any).country.toLowerCase().includes(term)) {
+            score += 4;
+          }
+          if ((target as any).category && (target as any).category.toLowerCase().includes(term)) {
+            score += 6;
+          }
+          if ((target as any).description && (target as any).description.toLowerCase().includes(term)) {
             score += 4;
           }
         }
+
+        // Location / State filter
+        if (stateFilter && stateFilter !== 'All Regions') {
+          if (stateFilter === 'Global (Amazon)') {
+            if ((target as any).country === 'Brazil' || (target as any).region?.toLowerCase().includes('amazon')) {
+              score += 30;
+            } else {
+              score -= 100;
+            }
+          } else if ((target as any).state?.toLowerCase() === stateFilter.toLowerCase()) {
+            score += 30;
+          } else {
+            score -= 100;
+          }
+        }
+
+        // Category filter
+        if (categoryFilter && categoryFilter !== 'All Categories') {
+          const catMap: Record<string, string[]> = {
+            'Coastal / Port': ['port', 'construction'],
+            'Deforestation': ['deforestation'],
+            'Mining': ['mining'],
+            'Urban Expansion': ['urban'],
+            'Infrastructure / Roads': ['roads'],
+            'Floods / Water': ['flood']
+          };
+          const allowed = catMap[categoryFilter];
+          if (allowed && allowed.includes((target as any).category || '')) {
+            score += 30;
+          } else {
+            score -= 100;
+          }
+        }
+
         // Sensor matching boost
         if (sensor && sensor !== 'All Sensors' && target.sensor.toLowerCase().includes(sensor.toLowerCase().split(' ')[0])) {
-          score += 2;
+          score += 3;
         }
+
         return { target, score };
       });
 
       scored.sort((a, b) => b.score - a.score || b.target.confidencePct - a.target.confidencePct);
-      const ranked = scored.map(s => s.target).slice(0, 5);
+      const eligible = scored.filter(s => s.score > -50);
+      const ranked = (eligible.length > 0 ? eligible : scored).map(s => s.target).slice(0, 5);
 
       setSearchResults(ranked);
       if (ranked.length > 0) {
@@ -498,7 +564,7 @@ const VigilPlatform: React.FC = () => {
                     siteName={selectedResult.title}
                     selectedTargetId={selectedResult.id}
                     onSelectTarget={(target) => handleSelectResult(target)}
-                    targets={GROUND_TRUTH_TARGETS}
+                    targets={searchResults}
                     mode="compact"
                     onOpenFullMap={() => handleTabChange('satellite-map')}
                   />
@@ -525,6 +591,7 @@ const VigilPlatform: React.FC = () => {
                     resolution={selectedResult.resolution}
                     changePercentage={selectedResult.changePercentage}
                     sensor={selectedResult.sensor}
+                    passes={selectedResult.passes}
                     externalViewMode={activeCardViewMode}
                     onViewModeChange={setActiveCardViewMode}
                     externalShowChangeMask={cardShowChangeMask}

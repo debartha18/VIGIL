@@ -20,6 +20,17 @@ export interface SearchResultItem {
   areaHa?: string;
   timeGap?: string;
   locationName?: string;
+  country?: string;
+  state?: string;
+  region?: string;
+  category?: string;
+  description?: string;
+  lat?: number;
+  lon?: number;
+  tacticalX?: number;
+  tacticalY?: number;
+  regionalX?: number;
+  regionalY?: number;
   changeType?: string;
   observationPeriod?: string;
   cloudCover?: string;
@@ -140,7 +151,6 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
             const isSelected = selectedId === card.id;
             const locationStr = card.locationName || card.title.split(' ')[0] || 'Hazira';
             const changeTypeStr = card.changeType || 'Detected Change';
-            const obsPeriodStr = card.observationPeriod || '2023 → 2025';
 
             return (
               <div
@@ -193,28 +203,42 @@ export const SemanticSearchResults: React.FC<SemanticSearchResultsProps> = ({
                     </div>
                   </div>
 
-                  {/* Card Title */}
+                  {/* Card Title & Location */}
                   <h4
-                    className="text-xs font-semibold text-text tracking-normal leading-snug line-clamp-1 mb-1 font-sans group-hover:text-accent transition-colors"
+                    className="text-xs font-semibold text-text tracking-normal leading-snug line-clamp-1 mb-0.5 font-sans group-hover:text-accent transition-colors"
                     title={card.title}
                   >
                     {card.title}
                   </h4>
+                  <div className="text-[11px] text-text-2 mb-1.5 flex items-center justify-between">
+                    <span className="truncate max-w-[150px]">{card.state ? `${card.state}, ${card.country || 'India'}` : (card.country || 'India')}</span>
+                    <span className="font-mono text-accent font-medium">{card.changePercentage || ''}</span>
+                  </div>
 
                   {/* Card Forensic Metadata list */}
-                  <div className="space-y-0.5 text-xs text-text-2 font-sans">
-                    <div className="flex items-center justify-between">
-                      <span className="text-text-2">Observation:</span>
-                      <span className="font-mono text-text text-[11px] tabular-nums">{obsPeriodStr}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-text-2">Sensor / Res:</span>
-                      <span className="font-mono text-text text-[11px] truncate max-w-[120px] tabular-nums">{card.sensor}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
+                  <div className="space-y-0.5 text-xs text-text-2 font-sans border-t border-border/60 pt-1">
+                    <div className="flex items-center justify-between text-[11px]">
                       <span className="text-text-2">Coordinates:</span>
-                      <span className="font-mono text-text-2 text-[11px] truncate max-w-[120px] tabular-nums group-hover:text-text transition-colors">
+                      <span className="font-mono text-text text-[11px] truncate max-w-[125px] tabular-nums" title={card.coordinates}>
                         {card.coordinates}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-text-2">Dates (B/A):</span>
+                      <span className="font-mono text-text text-[11px] tabular-nums">
+                        {card.beforeDate?.slice(0, 7) || '2023'} → {card.date?.slice(0, 7) || '2025'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-text-2">Area / Conf:</span>
+                      <span className="font-mono text-text text-[11px] tabular-nums">
+                        {card.areaHa?.split(' ')[0] || '4.2'} ha · <span className="text-accent">{card.confidencePct}%</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-text-2">Sensor:</span>
+                      <span className="font-mono text-text-2 text-[10px] truncate max-w-[125px] tabular-nums" title={card.sensor}>
+                        {card.sensor}
                       </span>
                     </div>
                   </div>
