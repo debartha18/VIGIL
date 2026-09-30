@@ -26,7 +26,7 @@ export const TopBar: React.FC<TopBarProps> = ({ health, analystName = 'ANALYST /
       <div className="flex items-center space-x-3">
         <div className="flex items-center space-x-2">
           <div className="w-2.5 h-2.5 bg-cyan rounded-full shadow-[0_0_8px_#22D3EE]" />
-          <span className="font-mono text-base font-bold tracking-widest text-text-0">KSHITIJ</span>
+          <span className="font-mono text-base font-bold tracking-widest text-text-0">Orbital Intel</span>
         </div>
         <span className="text-line text-sm">|</span>
         <span className="text-xs font-mono tracking-wider text-text-1 uppercase">

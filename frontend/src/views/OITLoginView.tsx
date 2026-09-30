@@ -198,8 +198,7 @@ export const OITLoginView: React.FC<OITLoginViewProps> = ({ onSuccess }) => {
           </div>
           <div>
             <div className="text-base font-bold text-white tracking-tight flex items-center space-x-2">
-              <span>VIGIL</span>
-              <span className="text-[#38BDF8] font-normal text-xs">| Orbital Intel</span>
+              <span>Orbital Intel</span>
             </div>
             <div className="text-[10px] text-[#64748B] font-mono">
               Earth Observation & Satellite Intelligence Platform
@@ -239,7 +238,7 @@ export const OITLoginView: React.FC<OITLoginViewProps> = ({ onSuccess }) => {
             </h1>
             <p className="text-xs text-[#94A3B8] leading-relaxed">
               {mode === 'login'
-                ? 'Sign in to access the VIGIL Earth Observation Intelligence Platform'
+                ? 'Sign in to access the Orbital Intel Earth Observation Platform'
                 : 'Verify your OIT identity to re-establish platform credentials'}
             </p>
           </div>
@@ -365,7 +364,7 @@ export const OITLoginView: React.FC<OITLoginViewProps> = ({ onSuccess }) => {
                   </>
                 ) : (
                   <>
-                    <span>Sign In to VIGIL</span>
+                    <span>Sign In to Orbital Intel</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}

@@ -143,7 +143,7 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
         <div className="p-3 border-t border-border flex items-center justify-between text-[11px] text-text-2 font-mono bg-surface">
           <div className="flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-ok" />
-            <span className="text-text font-medium">VIGIL v2.4</span>
+            <span className="text-text font-medium">Orbital Intel v2.4</span>
           </div>
           <span className="text-[10px] text-text-2">Connected</span>
         </div>

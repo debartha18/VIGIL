@@ -60,7 +60,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
     {
       id: 'welcome-msg',
       sender: 'assistant',
-      text: `Welcome to **VIGIL Assistant** — your AI geospatial intelligence copilot.\n\nContext loaded for **${context.aoi.name}**.\n\nAsk any question about this satellite imagery, or select a quick action below.`,
+      text: `Welcome to **Orbital Intel Assistant** — your AI geospatial intelligence copilot.\n\nContext loaded for **${context.aoi.name}**.\n\nAsk any question about this satellite imagery, or select a quick action below.`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       suggestedFollowUps: [
         'What changed here?',
@@ -214,15 +214,15 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
             setIsMinimized(false);
           }}
           className="fixed bottom-5 right-5 z-40 flex items-center space-x-2 px-3 py-2 rounded-md bg-surface border border-border text-text shadow-subtle hover:bg-raised transition-colors duration-150 cursor-pointer font-sans group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          title="Open VIGIL Assistant"
-          aria-label="Open VIGIL Assistant"
+          title="Open Orbital Intel Assistant"
+          aria-label="Open Orbital Intel Assistant"
         >
           <div className="relative flex items-center justify-center">
             <Bot className="w-4 h-4 text-accent" />
             <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-ok" />
           </div>
           <span className="text-xs font-semibold font-mono text-text">
-            VIGIL AI
+            Orbital Intel AI
           </span>
         </button>
       )}
@@ -248,7 +248,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center space-x-2">
                   <h3 className="text-xs font-semibold text-text tracking-normal truncate">
-                    VIGIL Assistant
+                    Orbital Intel Assistant
                   </h3>
                   <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-raised border border-border text-text-2">
                     {aiMode === 'LIVE_AI' ? 'Live AI' : 'Demo AI'}
@@ -296,7 +296,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-1 hover:text-flag hover:bg-raised rounded transition cursor-pointer"
-                title="Close VIGIL Assistant"
+                title="Close Orbital Intel Assistant"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -394,7 +394,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                       <div className="flex items-center space-x-1.5 text-[10px] text-[#64748B] mb-1 px-1">
                         {!isUser && <Bot className="w-3 h-3 text-[#00E5FF]" />}
                         <span className="font-semibold text-[#94A3B8]">
-                          {isUser ? 'Analyst' : 'VIGIL Assistant'}
+                          {isUser ? 'Analyst' : 'Orbital Intel Assistant'}
                         </span>
                         <span>•</span>
                         <span>{msg.timestamp}</span>

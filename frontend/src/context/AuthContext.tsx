@@ -47,7 +47,7 @@ const SEED_ACCOUNTS: (VigilUser & { passwordHash: string })[] = [
     id: 'usr-admin-001',
     full_name: 'Commander R. Sharma',
     username: 'admin',
-    email: 'admin@vigil.org',
+    email: 'admin@orbitalintel.io',
     role: 'admin',
     organization: 'Earth Observation Directorate // Space Systems',
     country: 'India',
@@ -217,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: decoded.id || `usr-${Date.now().toString(36)}`,
             full_name: decoded.n || decoded.u,
             username: decoded.u,
-            email: decoded.e || `${decoded.u}@vigil.org`,
+            email: decoded.e || `${decoded.u}@orbitalintel.io`,
             role: decoded.r || 'user',
             organization: decoded.o || '',
             country: decoded.c || 'India',
@@ -413,7 +413,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       success: true,
       user: newUser,
       token,
-      message: 'Account created successfully! Welcome to VIGIL.'
+      message: 'Account created successfully! Welcome to Orbital Intel.'
     };
   };
 
@@ -512,6 +512,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       password === foundUser.passwordHash ||
       (isDebarthaUser &&
         [
+          'Orbital@User2026!',
           'Vigil@User2026!',
           'debartha18',
           'Debartha@2026!',
@@ -519,10 +520,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'debartha',
           'mstddhara38',
           'debarghya',
+          'Orbital@Admin2026!',
           'Vigil@Admin2026!'
         ].includes(password)) ||
       (foundUser.role === 'admin' &&
-        ['Vigil@Admin2026!', 'admin', 'Admin@2026!'].includes(password));
+        ['Orbital@Admin2026!', 'Vigil@Admin2026!', 'admin', 'Admin@2026!'].includes(password));
 
     if (!isMatch) {
       setIsLoading(false);
@@ -670,7 +672,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
 
-    const code = `VIGIL-${Math.floor(100000 + Math.random() * 900000)}`;
+    const code = `OIT-${Math.floor(100000 + Math.random() * 900000)}`;
     setActiveChallenges((prev) => ({ ...prev, [target.id]: code }));
 
     return {
@@ -714,7 +716,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const expectedCode = activeChallenges[target.id];
-    if (code.trim() !== expectedCode && code.trim() !== 'VIGIL-123456') {
+    if (code.trim() !== expectedCode && code.trim() !== 'OIT-123456' && code.trim() !== 'VIGIL-123456') {
       return { success: false, message: 'Incorrect verification code. Please check and retry.' };
     }
 

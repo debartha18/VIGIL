@@ -1370,7 +1370,7 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
             <div className="flex items-center space-x-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping" />
               <h1 className="text-xs sm:text-sm font-bold text-white tracking-wide truncate max-w-[200px] sm:max-w-none">
-                VIGIL Construction & Earth Observation Map
+                Orbital Intel Construction & Earth Observation Map
               </h1>
               <span className="hidden lg:inline text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00E5FF]/20 text-[#00E5FF] border border-[#00E5FF]/40 font-bold">
                 LIVE SURVEILLANCE
@@ -1672,7 +1672,7 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
             <div className="flex items-center justify-between border-b border-[#182A40] pb-1.5 text-[#64748B] font-bold tracking-wider uppercase text-[10px]">
               <span className="flex items-center space-x-1.5 text-white">
                 <Sparkles className="w-3.5 h-3.5 text-[#00E5FF]" />
-                <span>WHAT VIGIL SHOWS</span>
+                <span>WHAT ORBITAL INTEL SHOWS</span>
               </span>
               <button
                 onClick={() => setShowLegend(!showLegend)}
@@ -1750,7 +1750,7 @@ export const SatelliteAltimetryMapView: React.FC<SatelliteAltimetryMapViewProps>
 
         {/* Telemetry Metric 1: What VIGIL Detects */}
         <div className="bg-[#070D16] border border-[#182A40] rounded-lg px-2.5 py-1.5 min-w-[220px] shrink-0">
-          <div className="text-[9px] text-[#64748B] uppercase font-bold truncate">What VIGIL Can Show</div>
+          <div className="text-[9px] text-[#64748B] uppercase font-bold truncate">What Orbital Intel Can Show</div>
           <div className="text-xs font-medium text-white truncate mt-0.5" title={activeStation.whatVigilShows}>
             {activeStation.whatVigilShows}
           </div>

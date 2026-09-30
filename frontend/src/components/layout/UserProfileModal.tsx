@@ -110,7 +110,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
             <div>
               <h2 className="text-base font-semibold text-white">User Profile & Account</h2>
               <p className="text-xs text-[#94A3B8]">
-                Manage your VIGIL personal information and platform details
+                Manage your Orbital Intel personal information and platform details
               </p>
             </div>
           </div>

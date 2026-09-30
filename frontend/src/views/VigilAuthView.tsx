@@ -92,13 +92,13 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
     setMode('signin');
     if (role === 'debartha') {
       setSignInIdentifier('debartha18');
-      setSignInPassword('Vigil@User2026!');
+      setSignInPassword('Orbital@User2026!');
     } else if (role === 'admin') {
-      setSignInIdentifier('admin@vigil.org');
-      setSignInPassword('Vigil@Admin2026!');
+      setSignInIdentifier('admin@orbitalintel.io');
+      setSignInPassword('Orbital@Admin2026!');
     } else {
       setSignInIdentifier('debarghya@gmail.com');
-      setSignInPassword('Vigil@User2026!');
+      setSignInPassword('Orbital@User2026!');
     }
   };
 
@@ -163,7 +163,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
     });
 
     if (res.success) {
-      setSuccessMessage('Account created successfully! Redirecting to VIGIL Dashboard...');
+      setSuccessMessage('Account created successfully! Redirecting to Orbital Intel Dashboard...');
       setTimeout(() => {
         if (onSuccess) onSuccess();
       }, 700);
@@ -257,7 +257,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
           </div>
           <div>
             <div className="text-base font-bold text-white tracking-tight flex items-center space-x-2">
-              <span>VIGIL</span>
+              <span>Orbital Intel</span>
               <span className="text-[#38BDF8] font-normal text-xs">| Earth Observation Intelligence</span>
             </div>
             <div className="text-[10px] text-[#64748B] font-mono">
@@ -332,10 +332,10 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
           <div className="space-y-1 text-center">
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
               {mode === 'signup'
-                ? 'Create your VIGIL Account'
+                ? 'Create your Orbital Intel Account'
                 : mode === 'forgot_password'
                 ? 'Reset your Password'
-                : 'Sign In to VIGIL'}
+                : 'Sign In to Orbital Intel'}
             </h1>
             <p className="text-xs text-[#94A3B8] leading-relaxed">
               {mode === 'signup'
@@ -467,7 +467,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                   </>
                 ) : (
                   <>
-                    <span>Sign In to VIGIL</span>
+                    <span>Sign In to Orbital Intel</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -730,7 +730,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                       type="text"
                       value={resetCode}
                       onChange={(e) => setResetCode(e.target.value)}
-                      placeholder="VIGIL-######"
+                      placeholder="OIT-######"
                       className="w-full px-3 py-2 bg-[#070D16] border border-[#182A40] focus:border-[#0284C7] rounded-lg text-sm text-white font-mono outline-none"
                     />
                   </div>
@@ -846,7 +846,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
                   <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#A855F7]/20 text-[#C084FC] font-mono">Admin</span>
                 </div>
                 <div className="text-[10px] font-mono text-[#64748B] truncate mt-0.5">
-                  admin@vigil.org
+                  admin@orbitalintel.io
                 </div>
               </button>
 
@@ -885,7 +885,7 @@ export const VigilAuthView: React.FC<VigilAuthViewProps> = ({
         <div className="flex items-center space-x-2 text-[10px] shrink-0">
           <span className="text-[#10B981] font-semibold">100% PUBLIC ACCESS</span>
           <span>·</span>
-          <span>VIGIL SATELLITE INTELLIGENCE</span>
+          <span>ORBITAL INTEL SATELLITE INTELLIGENCE</span>
         </div>
       </footer>
     </div>

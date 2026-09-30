@@ -149,7 +149,7 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
                 {/* User Identity Info Header */}
                 <div className="px-3.5 py-2 border-b border-border space-y-1">
                   <div className="font-semibold text-text text-xs">{displayName}</div>
-                  <div className="text-[11px] font-mono text-text-2">{user?.email || 'user@vigil.org'}</div>
+                  <div className="text-[11px] font-mono text-text-2">{user?.email || 'user@orbitalintel.io'}</div>
                   <div className="flex items-center space-x-2 pt-1">
                     <span
                       className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-raised text-text-2 border border-border"
@@ -258,7 +258,7 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
                 <LogOut className="w-4 h-4" />
               </div>
               <div className="leading-tight">
-                <div className="font-semibold text-sm">Sign Out from VIGIL?</div>
+                <div className="font-semibold text-sm">Sign Out from Orbital Intel?</div>
                 <div className="text-[11px] text-text-2">Your session will be terminated.</div>
               </div>
             </div>
