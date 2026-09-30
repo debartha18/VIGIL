@@ -171,7 +171,10 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
   // Compute CSS filter string for active enhancements & spectral band simulations
   const getFilterStyle = (_isAfter?: boolean) => {
-    let base = `brightness(${1 + brightness / 100}) contrast(${1 + contrast / 100})`;
+    // Add radiometric base dehazing & contrast lift to ensure crisp, vibrant satellite detail
+    const baseBrightness = (1 + brightness / 100) * 1.02;
+    const baseContrast = (1 + contrast / 100) * 1.08;
+    let base = `brightness(${baseBrightness}) contrast(${baseContrast}) saturate(1.14)`;
 
     if (sharpness === 'enhanced') {
       base += ' contrast(1.15) saturate(1.1)';
@@ -220,7 +223,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         {/* Left: Target Name & Coordinates */}
         <div className="flex items-center space-x-2 min-w-0">
           <TrendingUp className="w-4 h-4 text-accent shrink-0" />
-          <h2 className="text-xs sm:text-sm font-semibold text-text tracking-normal font-sans truncate max-w-[190px] sm:max-w-xs" title={candidateTitle}>
+          <h2 className="text-xs sm:text-sm font-semibold text-text tracking-normal font-sans truncate max-w-xs sm:max-w-md" title={candidateTitle}>
             {candidateTitle}
           </h2>
           <span className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-raised border border-border text-[11px] font-mono text-text-2 shrink-0" title={coordinates}>
@@ -782,29 +785,31 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
       </div>
 
       {/* 5. MULTI-TEMPORAL CONTINUOUS MILESTONES SCRUBBER (Tertiary: flat and low contrast) */}
-      <div className="bg-bg px-3 py-1.5 rounded-md border border-border flex items-center justify-between gap-2 shrink-0 text-xs font-sans">
-        <span className="text-text-2 text-xs shrink-0 font-medium">Passes:</span>
-        <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
-          {timelineMilestones.map((m) => {
-            const isSel = selectedTimelineDate === m.date;
-            return (
-              <button
-                key={m.date}
-                onClick={() => setSelectedTimelineDate(m.date)}
-                className={`px-2.5 py-1 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none flex items-center space-x-1 shrink-0 ${
-                  isSel
-                    ? 'bg-raised text-text font-medium border border-border'
-                    : 'bg-transparent text-text-2 hover:text-text'
-                }`}
-                title={`Pass ${m.month}: ${m.label} (${m.date})`}
-              >
-                <span>{m.month}</span>
-                <span className="text-[11px] text-text-2">({m.label})</span>
-              </button>
-            );
-          })}
+      <div className="bg-bg px-3 py-1.5 rounded-md border border-border flex items-center justify-between gap-3 shrink-0 text-xs font-sans">
+        <div className="flex items-center space-x-2 overflow-hidden min-w-0">
+          <span className="text-text-2 text-xs shrink-0 font-medium">Passes:</span>
+          <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
+            {timelineMilestones.map((m) => {
+              const isSel = selectedTimelineDate === m.date;
+              return (
+                <button
+                  key={m.date}
+                  onClick={() => setSelectedTimelineDate(m.date)}
+                  className={`px-2.5 py-1 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none flex items-center space-x-1 shrink-0 ${
+                    isSel
+                      ? 'bg-raised text-text font-medium border border-border'
+                      : 'bg-transparent text-text-2 hover:text-text'
+                  }`}
+                  title={`Pass ${m.month}: ${m.label} (${m.date})`}
+                >
+                  <span>{m.month}</span>
+                  <span className="text-[11px] text-text-2">({m.label})</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <span className="text-text-2 shrink-0 text-xs font-mono tabular-nums hidden sm:inline">
+        <span className="text-text-2 shrink-0 text-xs font-mono tabular-nums hidden sm:inline border-l border-border pl-3">
           {computedPeriod} · {computedTimeGap}
         </span>
       </div>
@@ -847,9 +852,9 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           </div>
 
           {/* Card 4: Coordinates */}
-          <div className="bg-bg border border-border rounded-md p-2.5">
+          <div className="bg-bg border border-border rounded-md p-2.5 flex flex-col justify-between">
             <span className="text-text-2 text-xs block">Coordinates</span>
-            <div className="mt-1 font-mono text-sm sm:text-base font-semibold text-text tabular-nums truncate" title={coordinates}>
+            <div className="mt-1 font-mono text-[13px] sm:text-sm font-semibold text-text tabular-nums" title={coordinates}>
               {coordinates}
             </div>
             <div className="text-[11px] text-text-2 truncate" title={locationName}>
