@@ -118,6 +118,7 @@ const VigilPlatform: React.FC = () => {
   const [isGuestExploring, setIsGuestExploring] = useState<boolean>(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup' | 'forgot_password' | null>(null);
   const [isNavOpen, setIsNavOpen] = useState<boolean>(false);
+  const [selectedAOIFilter, setSelectedAOIFilter] = useState<string | null>(null);
 
   // Route Synchronization with Browser History & Popstate
   useEffect(() => {
@@ -492,20 +493,35 @@ const VigilPlatform: React.FC = () => {
             </div>
           ) : activeTab === 'change-analysis' ? (
             <div className="flex-1 min-h-0 overflow-y-auto">
-              <ChangeAnalysisView onSelectCandidate={(c) => {
-                setSelectedResult({
-                  ...selectedResult,
-                  title: c.id,
-                  coordinates: '21.4587° N, 72.7812° E',
-                  confidencePct: Math.round((c.confidence?.composite_score || 0.88) * 100)
-                });
-                setShowDetailModal(true);
-              }} />
+              <ChangeAnalysisView
+                filterAOI={selectedAOIFilter}
+                onClearFilter={() => setSelectedAOIFilter(null)}
+                onSelectCandidate={(c) => {
+                  setSelectedResult({
+                    ...selectedResult,
+                    id: c.id,
+                    title: c.title || c.id,
+                    locationName: c.locationName || selectedResult.locationName,
+                    coordinates: c.coordinates || selectedResult.coordinates,
+                    confidencePct: c.confidencePct || Math.round((c.confidence?.composite_score || 0.88) * 100),
+                    areaHa: c.areaHa || selectedResult.areaHa,
+                    beforeImgUrl: c.beforeImgUrl || selectedResult.beforeImgUrl,
+                    afterImgUrl: c.afterImgUrl || selectedResult.afterImgUrl,
+                    date: c.date || selectedResult.date,
+                    beforeDate: c.beforeDate || selectedResult.beforeDate,
+                    changeType: c.changeType || selectedResult.changeType,
+                    sensor: c.sensor || selectedResult.sensor,
+                    description: c.description || selectedResult.description
+                  });
+                  setShowDetailModal(true);
+                }}
+              />
             </div>
           ) : activeTab === 'aoi-monitor' ? (
             <div className="flex-1 min-h-0 overflow-y-auto">
               <AOIMonitorView
-                onViewChange={() => {
+                onViewChange={(aoiId) => {
+                  setSelectedAOIFilter(aoiId);
                   handleTabChange('change-analysis');
                 }}
               />
