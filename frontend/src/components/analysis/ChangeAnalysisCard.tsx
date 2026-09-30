@@ -240,13 +240,18 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             <button
               role="tab"
               aria-selected={viewMode === 'visual'}
-              onClick={() => { setViewMode('visual'); onViewModeChange?.('visual'); }}
+              onClick={() => {
+                setViewMode('visual');
+                setShowChangeMask(false);
+                onViewModeChange?.('visual');
+                onToggleChangeMask?.(false);
+              }}
               className={`h-6 px-2.5 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
                 viewMode === 'visual'
                   ? 'bg-raised text-accent font-medium border-b-2 border-accent'
                   : 'text-text-2 hover:text-text'
               }`}
-              title="A. Visual mode: single high-resolution satellite imagery"
+              title="A. Visual mode: right side displays clean observed satellite imagery"
             >
               Visual
             </button>
@@ -254,7 +259,10 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             <button
               role="tab"
               aria-selected={viewMode === 'comparison'}
-              onClick={() => { setViewMode('comparison'); onViewModeChange?.('comparison'); }}
+              onClick={() => {
+                setViewMode('comparison');
+                onViewModeChange?.('comparison');
+              }}
               className={`h-6 px-2.5 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
                 viewMode === 'comparison'
                   ? 'bg-raised text-accent font-medium border-b-2 border-accent'
@@ -268,13 +276,19 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             <button
               role="tab"
               aria-selected={viewMode === 'change-map'}
-              onClick={() => { setViewMode('change-map'); onViewModeChange?.('change-map'); }}
+              onClick={() => {
+                setViewMode('change-map');
+                setShowChangeMask(true);
+                setShowBoundingBox(true);
+                onViewModeChange?.('change-map');
+                onToggleChangeMask?.(true);
+              }}
               className={`h-6 px-2.5 rounded text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
                 viewMode === 'change-map'
                   ? 'bg-raised text-accent font-medium border-b-2 border-accent'
                   : 'text-text-2 hover:text-text'
               }`}
-              title="C. Change Map mode: semi-transparent detected change mask"
+              title="C. Change Map mode: right side highlights detected change mask"
             >
               Change Map
             </button>
@@ -352,31 +366,29 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
             <span>AOI Box</span>
           </button>
 
-          {/* Comparison Slider vs Dual Tile (When in comparison mode) */}
-          {viewMode === 'comparison' && (
-            <div className="flex items-center bg-bg p-0.5 rounded-md border border-border" role="group" aria-label="Comparison view type">
-              <button
-                onClick={() => setComparisonType('swipe')}
-                aria-label="Slider comparison"
-                className={`h-5 w-6 rounded flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
-                  comparisonType === 'swipe' ? 'bg-raised text-accent' : 'text-text-2 hover:text-text'
-                }`}
-                title="Slider comparison"
-              >
-                <Sliders className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setComparisonType('side-by-side')}
-                aria-label="Side-by-side comparison"
-                className={`h-5 w-6 rounded flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
-                  comparisonType === 'side-by-side' ? 'bg-raised text-accent' : 'text-text-2 hover:text-text'
-                }`}
-                title="Side-by-side dual tile comparison"
-              >
-                <Columns className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+          {/* Comparison Slider vs Dual Tile */}
+          <div className="flex items-center bg-bg p-0.5 rounded-md border border-border" role="group" aria-label="Comparison view type">
+            <button
+              onClick={() => setComparisonType('swipe')}
+              aria-label="Slider comparison"
+              className={`h-5 w-6 rounded flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
+                comparisonType === 'swipe' ? 'bg-raised text-accent' : 'text-text-2 hover:text-text'
+              }`}
+              title="Slider comparison"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setComparisonType('side-by-side')}
+              aria-label="Side-by-side comparison"
+              className={`h-5 w-6 rounded flex items-center justify-center transition cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
+                comparisonType === 'side-by-side' ? 'bg-raised text-accent' : 'text-text-2 hover:text-text'
+              }`}
+              title="Side-by-side dual tile comparison"
+            >
+              <Columns className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
           {/* Adjustments Tray Toggle */}
           <button
@@ -473,315 +485,196 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
       {/* 4. HERO SATELLITE IMAGERY WORKSPACE (Maximum Visual Focus) */}
       <div className="flex-1 min-h-[175px] sm:min-h-[195px] relative rounded-md border border-border bg-bg overflow-hidden my-1.5 flex flex-col justify-center">
-        {/* VIEW MODE A: VISUAL (Single Full-Size High-Resolution Viewport) */}
-        {viewMode === 'visual' && (
-          <div className="w-full h-full relative group">
-            <img
-              src={activePhase.img}
-              alt="Satellite observation"
-              className="w-full h-full object-cover object-center select-none"
-              style={{
-                filter: getFilterStyle(true),
-                imageRendering: 'auto'
-              }}
-            />
+        <div className="w-full h-full relative flex flex-col justify-center">
+          {comparisonType === 'swipe' ? (
+            /* SMOOTH DRAGGABLE COMPARISON SLIDER (Unified across Visual, Before/After & Change Map) */
+            <div
+              ref={containerRef}
+              className="relative w-full h-full select-none cursor-ew-resize overflow-hidden"
+            >
+              {/* Underneath: RIGHT IMAGE (Active Observation / Visual / Change Map) */}
+              <img
+                src={activePhase.img}
+                alt="Right observation scene"
+                className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
+                style={{ filter: getFilterStyle(true) }}
+              />
 
-            {/* Change Mask Overlay if enabled in Visual mode */}
-            {showChangeMask && activePhase.hasChange && (
-              <div
-                className="absolute inset-0 pointer-events-none transition-opacity"
-                style={{ opacity: maskOpacity / 100 }}
-              >
-                {/* Vector Change Polygon Mask */}
-                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <polygon
-                    points="32,24 68,22 74,68 34,72"
-                    fill="rgba(245, 158, 11, 0.15)"
-                    stroke="#F59E0B"
-                    strokeWidth="2"
-                  />
-                </svg>
-              </div>
-            )}
-
-            {/* Bounding Box Frame (Secondary Reference) */}
-            {showBoundingBox && activePhase.hasChange && (
-              <div className="absolute top-[22%] left-[32%] w-[42%] h-[48%] border border-boundary rounded pointer-events-none">
-                <span className="absolute -top-2.5 left-1 bg-surface border border-boundary text-text-2 text-[8px] font-mono px-1 rounded">
-                  AOI DETECTED CHANGE
-                </span>
-              </div>
-            )}
-
-            {/* Metadata Tag directly on image (Top Left) */}
-            <div className="absolute top-2.5 left-2.5 z-20 bg-surface/90 border border-border rounded px-2.5 py-1 backdrop-blur text-[10px] font-mono space-y-0.5 shadow-subtle" title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}>
-              <div className="text-text font-medium flex items-center space-x-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-ok" />
-                <span>ACTIVE OBSERVATION</span>
-              </div>
-              <div className="text-text-2 flex items-center space-x-2 text-[9px]">
-                <span>{sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'}</span>
-                <span>•</span>
-                <span className="text-text font-medium">{formatDateDisplay(selectedTimelineDate)}</span>
-                <span>•</span>
-                <span>{resolution.replace(/\s*Optical.*$/i, '').trim()}</span>
-                <span>•</span>
-                <span>Cloud {cloudCover.replace(/\s*\(.*?\)/g, '').trim()}</span>
-              </div>
-            </div>
-
-            {/* Orientation & Scale Overlay (Bottom) */}
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20 font-mono text-[9px]">
-              {/* Metric Scale Bar */}
-              <div className="bg-surface/90 border border-border px-2 py-0.5 rounded text-text-2 backdrop-blur flex items-center space-x-1.5">
-                <div className="w-16 h-1 border-b border-l border-r border-text-2" />
-                <span>0 100 250 m</span>
-              </div>
-
-              {/* North Compass Arrow */}
-              <div className="w-6 h-6 rounded-full bg-surface/90 border border-border flex items-center justify-center text-text-2 backdrop-blur shadow-subtle">
-                <span className="font-semibold text-[8px]">N</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* VIEW MODE B: BEFORE / AFTER COMPARISON (Slider vs Dual Tile) */}
-        {viewMode === 'comparison' && (
-          <div className="w-full h-full relative flex flex-col justify-center">
-            {comparisonType === 'swipe' ? (
-              /* SMOOTH DRAGGABLE COMPARISON SLIDER */
-              <div
-                ref={containerRef}
-                className="relative w-full h-full select-none cursor-ew-resize overflow-hidden"
-              >
-                {/* Underneath: AFTER / ACTIVE OBSERVATION (T2) */}
-                <img
-                  src={activePhase.img}
-                  alt="After scene"
-                  className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
-                  style={{ filter: getFilterStyle(true) }}
-                />
-
-                {/* Optional Change Mask Layer on After */}
-                {showChangeMask && activePhase.hasChange && (
-                  <div
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ opacity: maskOpacity / 100 }}
-                  >
-                    <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      <polygon
-                        points="32,24 68,22 74,68 34,72"
-                        fill="rgba(245, 158, 11, 0.15)"
-                        stroke="#F59E0B"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                  </div>
-                )}
-
-                {/* Top Clipped: BEFORE / BASELINE OBSERVATION (T1) */}
+              {/* Change Mask Layer on Right Image (Visible in Change Map mode or when toggled in comparison) */}
+              {(viewMode === 'change-map' || (viewMode === 'comparison' && showChangeMask)) && activePhase.hasChange && (
                 <div
-                  className="absolute inset-0 overflow-hidden pointer-events-none"
-                  style={{ clipPath: `inset(0 ${100 - swipePos}% 0 0)` }}
+                  className="absolute inset-0 pointer-events-none transition-opacity"
+                  style={{ opacity: maskOpacity / 100 }}
                 >
+                  <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <defs>
+                      <pattern id="changeHatch" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                        <line x1="0" y1="0" x2="0" y2="4" stroke="#F59E0B" strokeWidth="1" />
+                      </pattern>
+                    </defs>
+                    <polygon
+                      points="30,22 70,20 76,70 32,74"
+                      fill={viewMode === 'change-map' ? 'url(#changeHatch)' : 'rgba(245, 158, 11, 0.15)'}
+                      stroke="#F59E0B"
+                      strokeWidth="2"
+                    />
+                    {viewMode === 'change-map' && (
+                      <polygon
+                        points="30,22 70,20 76,70 32,74"
+                        fill="rgba(245, 158, 11, 0.18)"
+                      />
+                    )}
+                  </svg>
+                </div>
+              )}
+
+              {/* Bounding Box Frame on Right Image */}
+              {(viewMode === 'change-map' || (viewMode === 'comparison' && showBoundingBox)) && activePhase.hasChange && (
+                <div className="absolute top-[20%] left-[30%] w-[46%] h-[54%] border border-dashed border-boundary rounded pointer-events-none">
+                  {viewMode === 'change-map' && (
+                    <span className="absolute -top-2.5 left-2 bg-surface border border-border text-text-2 text-[8px] font-mono px-1 rounded">
+                      DIFF FOOTPRINT: {areaHa} ({changePercentage})
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Top Clipped: LEFT IMAGE (Baseline Before Scene - FIXED & NEVER CHANGES) */}
+              <div
+                className="absolute inset-0 overflow-hidden pointer-events-none"
+                style={{ clipPath: `inset(0 ${100 - swipePos}% 0 0)` }}
+              >
+                <img
+                  src={beforeImgUrl}
+                  alt="Before baseline scene"
+                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  style={{ filter: getFilterStyle(false) }}
+                />
+              </div>
+
+              {/* FIXED LEFT IMAGE METADATA TAG (Always Baseline Before) */}
+              <div
+                className="absolute top-2 left-2 z-20 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto"
+                title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}
+              >
+                <div className="font-semibold text-text">BEFORE · {formatDateDisplay(beforeDate)}</div>
+                <div className="text-text-2 text-[9px]">{sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'} · {resolution.replace(/\s*Optical.*$/i, '').trim()} · Cloud {beforeCloudCover.replace(/\s*\(.*?\)/g, '').trim()}</div>
+              </div>
+
+              {/* DYNAMIC RIGHT IMAGE METADATA TAG (Updates with selected mode) */}
+              <div
+                className="absolute top-2 right-2 z-20 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto text-right"
+                title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}
+              >
+                <div className="font-semibold text-text">
+                  {viewMode === 'visual' ? 'VISUAL' : viewMode === 'change-map' ? 'CHANGE MAP' : 'AFTER'} · {formatDateDisplay(selectedTimelineDate)}
+                </div>
+                <div className="text-text-2 text-[9px]">
+                  {viewMode === 'change-map'
+                    ? `Diff: ${changePercentage} · ${areaHa}`
+                    : `${sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'} · {resolution.replace(/\s*Optical.*$/i, '').trim()} · Cloud ${cloudCover.replace(/\s*\(.*?\)/g, '').trim()}`}
+                </div>
+              </div>
+
+              {/* Draggable Divider Line & Neutral Grip */}
+              <div
+                className="absolute top-0 bottom-0 w-[2px] bg-border pointer-events-none z-20"
+                style={{ left: `${swipePos}%` }}
+              >
+                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-7 rounded bg-surface border border-border flex items-center justify-center shadow-subtle">
+                  <div className="w-0.5 h-3.5 bg-text-2/40 rounded-full" />
+                </div>
+              </div>
+
+              {/* Smooth Range Input Controller */}
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={swipePos}
+                onChange={(e) => setSwipePos(Number(e.target.value))}
+                className="absolute inset-0 opacity-0 cursor-ew-resize w-full h-full z-10"
+                aria-label="Swipe curtain comparison slider"
+              />
+
+              {/* Scale Bar & Position Indicator */}
+              <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-20 font-mono text-[9px]">
+                <div className="bg-surface/85 border border-border px-2 py-0.5 rounded text-text-2 backdrop-blur">
+                  0 100 250 m
+                </div>
+                <div className="text-text-2 bg-surface/90 px-2 py-0.5 rounded border border-border">
+                  Drag slider to compare ({swipePos}%)
+                </div>
+                <div className="w-5 h-5 rounded-full bg-surface/90 border border-border flex items-center justify-center text-[8px] text-text-2">
+                  <span>N</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* LARGE SIDE-BY-SIDE DUAL TILE COMPARISON */
+            <div className="grid grid-cols-2 gap-2 w-full h-full p-1.5">
+              {/* Left: BEFORE Tile (FIXED BASELINE - NEVER CHANGES) */}
+              <div className="relative rounded-lg overflow-hidden border border-border bg-bg flex flex-col">
+                <div className="bg-surface px-2.5 py-1 border-b border-border text-[10px] font-mono flex items-center justify-between" title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}>
+                  <span className="text-text font-medium">BEFORE · {formatDateDisplay(beforeDate)}</span>
+                  <span className="text-text-2 text-[9px]">Cloud {beforeCloudCover.replace(/\s*\(.*?\)/g, '').trim()}</span>
+                </div>
+                <div className="relative flex-1 min-h-0">
                   <img
                     src={beforeImgUrl}
-                    alt="Before scene"
-                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    alt="Before baseline observation"
+                    className="w-full h-full object-cover object-center"
                     style={{ filter: getFilterStyle(false) }}
                   />
-                </div>
-
-                {/* BEFORE 2-line Metadata Tag on Left */}
-                <div
-                  className="absolute top-2 left-2 z-20 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto"
-                  title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}
-                >
-                  <div className="font-semibold text-text">BEFORE · {formatDateDisplay(beforeDate)}</div>
-                  <div className="text-text-2 text-[9px]">{sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'} · {resolution.replace(/\s*Optical.*$/i, '').trim()} · Cloud {beforeCloudCover.replace(/\s*\(.*?\)/g, '').trim()}</div>
-                </div>
-
-                {/* AFTER 2-line Metadata Tag on Right */}
-                <div
-                  className="absolute top-2 right-2 z-20 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto text-right"
-                  title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}
-                >
-                  <div className="font-semibold text-text">AFTER · {formatDateDisplay(selectedTimelineDate)}</div>
-                  <div className="text-text-2 text-[9px]">{sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'} · {resolution.replace(/\s*Optical.*$/i, '').trim()} · Cloud {cloudCover.replace(/\s*\(.*?\)/g, '').trim()}</div>
-                </div>
-
-                {/* Draggable Divider Line & Small Neutral Grip */}
-                <div
-                  className="absolute top-0 bottom-0 w-[2px] bg-border pointer-events-none z-20"
-                  style={{ left: `${swipePos}%` }}
-                >
-                  <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-7 rounded bg-surface border border-border flex items-center justify-center shadow-subtle">
-                    <div className="w-0.5 h-3.5 bg-text-2/40 rounded-full" />
-                  </div>
-                </div>
-
-                {/* Smooth Range Input Controller */}
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={swipePos}
-                  onChange={(e) => setSwipePos(Number(e.target.value))}
-                  className="absolute inset-0 opacity-0 cursor-ew-resize w-full h-full z-10"
-                  aria-label="Swipe curtain comparison slider"
-                />
-
-                {/* Scale Bar & Position Indicator in Slider View */}
-                <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none z-20 font-mono text-[9px]">
-                  <div className="bg-surface/85 border border-border px-2 py-0.5 rounded text-text-2 backdrop-blur">
-                    0 100 250 m
-                  </div>
-                  <div className="text-text-2 bg-surface/90 px-2 py-0.5 rounded border border-border">
-                    Drag slider to compare ({swipePos}%)
-                  </div>
-                  <div className="w-5 h-5 rounded-full bg-surface/90 border border-border flex items-center justify-center text-[8px] text-text-2">
-                    <span>N</span>
+                  <div className="absolute bottom-1.5 left-1.5 bg-surface/90 border border-border px-1.5 py-0.5 rounded text-[8px] font-mono text-text-2">
+                    Sentinel-2 • {resolution.replace(/\s*Optical.*$/i, '').trim()}
                   </div>
                 </div>
               </div>
-            ) : (
-              /* LARGE SIDE-BY-SIDE DUAL TILE COMPARISON */
-              <div className="grid grid-cols-2 gap-2 w-full h-full p-1.5">
-                {/* Left: BEFORE Tile */}
-                <div className="relative rounded-lg overflow-hidden border border-border bg-bg flex flex-col">
-                  {/* BEFORE Metadata directly above/on image */}
-                  <div className="bg-surface px-2.5 py-1 border-b border-border text-[10px] font-mono flex items-center justify-between" title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}>
-                    <span className="text-text font-medium">BEFORE · {formatDateDisplay(beforeDate)}</span>
-                    <span className="text-text-2 text-[9px]">Cloud {beforeCloudCover.replace(/\s*\(.*?\)/g, '').trim()}</span>
-                  </div>
-                  <div className="relative flex-1 min-h-0">
-                    <img
-                      src={beforeImgUrl}
-                      alt="Before observation"
-                      className="w-full h-full object-cover object-center"
-                      style={{ filter: getFilterStyle(false) }}
-                    />
-                    <div className="absolute bottom-1.5 left-1.5 bg-surface/90 border border-border px-1.5 py-0.5 rounded text-[8px] font-mono text-text-2">
-                      Sentinel-2 • {resolution.replace(/\s*Optical.*$/i, '').trim()}
-                    </div>
-                  </div>
+
+              {/* Right: AFTER / VISUAL / CHANGE MAP Tile (Updates with View Mode) */}
+              <div className="relative rounded-lg overflow-hidden border border-border bg-bg flex flex-col">
+                <div className="bg-surface px-2.5 py-1 border-b border-border text-[10px] font-mono flex items-center justify-between" title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}>
+                  <span className="text-text font-medium">
+                    {viewMode === 'visual' ? 'VISUAL' : viewMode === 'change-map' ? 'CHANGE MAP' : 'AFTER'} · {formatDateDisplay(selectedTimelineDate)}
+                  </span>
+                  <span className="text-text-2 text-[9px]">
+                    {viewMode === 'change-map' ? `Delta: ${changePercentage}` : `Cloud ${cloudCover.replace(/\s*\(.*?\)/g, '').trim()}`}
+                  </span>
                 </div>
-
-                {/* Right: AFTER Tile */}
-                <div className="relative rounded-lg overflow-hidden border border-border bg-bg flex flex-col">
-                  {/* AFTER Metadata directly above/on image */}
-                  <div className="bg-surface px-2.5 py-1 border-b border-border text-[10px] font-mono flex items-center justify-between" title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}>
-                    <span className="text-text font-medium">AFTER · {formatDateDisplay(selectedTimelineDate)}</span>
-                    <span className="text-text-2 text-[9px]">Cloud {cloudCover.replace(/\s*\(.*?\)/g, '').trim()}</span>
-                  </div>
-                  <div className="relative flex-1 min-h-0">
-                    <img
-                      src={activePhase.img}
-                      alt="After observation"
-                      className="w-full h-full object-cover object-center"
-                      style={{ filter: getFilterStyle(true) }}
-                    />
-                    {showChangeMask && activePhase.hasChange && (
-                      <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{ opacity: maskOpacity / 100 }}
-                      >
-                        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                          <polygon
-                            points="32,24 68,22 74,68 34,72"
-                            fill="rgba(245, 158, 11, 0.15)"
-                            stroke="#F59E0B"
-                            strokeWidth="2"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                    {showBoundingBox && activePhase.hasChange && (
-                      <div className="absolute top-[24%] left-[30%] w-[42%] h-[48%] border border-boundary rounded pointer-events-none" />
-                    )}
-                    <div className="absolute bottom-1.5 left-1.5 bg-surface/90 border border-border px-1.5 py-0.5 rounded text-[8px] font-mono text-text-2">
-                      Sentinel-2 • {resolution.replace(/\s*Optical.*$/i, '').trim()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* VIEW MODE C: CHANGE MAP (Semi-Transparent Change Mask Focused View) */}
-        {viewMode === 'change-map' && (
-          <div className="w-full h-full relative group">
-            <img
-              src={activePhase.img}
-              alt="Detected change scene"
-              className="w-full h-full object-cover object-center select-none"
-              style={{ filter: getFilterStyle(true) }}
-            />
-
-            {/* High-Definition Change Mask Overlay */}
-            {showChangeMask && (
-              <div
-                className="absolute inset-0 pointer-events-none transition-opacity"
-                style={{ opacity: maskOpacity / 100 }}
-              >
-                <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  {/* Subtle Grid Hatching Pattern */}
-                  <defs>
-                    <pattern id="changeHatch" width="4" height="4" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
-                      <line x1="0" y1="0" x2="0" y2="4" stroke="#F59E0B" strokeWidth="1" />
-                    </pattern>
-                  </defs>
-                  {/* Outer Diff Contour */}
-                  <polygon
-                    points="30,22 70,20 76,70 32,74"
-                    fill="url(#changeHatch)"
-                    stroke="#F59E0B"
-                    strokeWidth="2"
+                <div className="relative flex-1 min-h-0">
+                  <img
+                    src={activePhase.img}
+                    alt="Observed right scene"
+                    className="w-full h-full object-cover object-center"
+                    style={{ filter: getFilterStyle(true) }}
                   />
-                  <polygon
-                    points="30,22 70,20 76,70 32,74"
-                    fill="rgba(245, 158, 11, 0.15)"
-                  />
-                </svg>
-              </div>
-            )}
-
-            {/* Bounding Box Frame (Secondary Reference) */}
-            {showBoundingBox && (
-              <div className="absolute top-[20%] left-[30%] w-[46%] h-[54%] border border-dashed border-boundary rounded pointer-events-none">
-                <span className="absolute -top-2.5 left-2 bg-surface border border-border text-text-2 text-[8px] font-mono px-1 rounded">
-                  DIFF FOOTPRINT: {areaHa} ({changePercentage})
-                </span>
-              </div>
-            )}
-
-            {/* Change Map Legend Overlay (Top Left) */}
-            <div className="absolute top-2.5 left-2.5 z-20 bg-surface/95 border border-border rounded p-2 backdrop-blur text-[10px] font-mono space-y-1 shadow-subtle">
-              <div className="text-text font-medium flex items-center space-x-1.5">
-                <span className="w-2 h-2 rounded-full bg-change" />
-                <span>CHANGE MASK</span>
-              </div>
-              <div className="text-text-2 text-[9px]">
-                Detected Feature: <b className="text-text font-medium">{changeType}</b>
-              </div>
-              <div className="text-ok font-medium text-[9px]">
-                Delta: {changePercentage} • Area: {areaHa}
+                  {(viewMode === 'change-map' || (viewMode === 'comparison' && showChangeMask)) && activePhase.hasChange && (
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{ opacity: maskOpacity / 100 }}
+                    >
+                      <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                        <polygon
+                          points="32,24 68,22 74,68 34,72"
+                          fill="rgba(245, 158, 11, 0.15)"
+                          stroke="#F59E0B"
+                          strokeWidth="2"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                  {(viewMode === 'change-map' || (viewMode === 'comparison' && showBoundingBox)) && activePhase.hasChange && (
+                    <div className="absolute top-[24%] left-[30%] w-[42%] h-[48%] border border-boundary rounded pointer-events-none" />
+                  )}
+                  <div className="absolute bottom-1.5 left-1.5 bg-surface/90 border border-border px-1.5 py-0.5 rounded text-[8px] font-mono text-text-2">
+                    Sentinel-2 • {resolution.replace(/\s*Optical.*$/i, '').trim()}
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Scale Bar & North Indicator */}
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20 font-mono text-[9px]">
-              <div className="bg-surface/85 border border-border px-2 py-0.5 rounded text-text-2 backdrop-blur">
-                0 100 250 m
-              </div>
-              <div className="w-6 h-6 rounded-full bg-surface/90 border border-border flex items-center justify-center text-text-2 backdrop-blur shadow-subtle">
-                <span className="font-semibold text-[8px]">N</span>
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* 5. MULTI-TEMPORAL CONTINUOUS MILESTONES SCRUBBER (Tertiary: flat and low contrast) */}
