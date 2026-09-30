@@ -15,10 +15,11 @@ import { UserProfileModal } from './UserProfileModal';
 
 interface OrbitalHeaderProps {
   onOpenAuth?: (mode: 'signin' | 'signup') => void;
-  onToggleMobileNav?: () => void;
+  onToggleNav?: () => void;
+  isNavOpen?: boolean;
 }
 
-export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onToggleMobileNav }) => {
+export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onToggleNav, isNavOpen = false }) => {
   const { profile, setIsProfileModalOpen } = useAnalyst();
   const { user, isAuthenticated, logout } = useAuth();
 
@@ -60,17 +61,18 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
 
   return (
     <header className="h-14 bg-surface border-b border-border px-3 sm:px-5 flex items-center justify-between select-none z-30 shrink-0 font-sans">
-      {/* Left: Mobile Drawer Trigger + Orbital Intel Logo & Subtitle */}
+      {/* Left: Three-line Hamburger Button + Orbital Intel Logo & Subtitle */}
       <div className="flex items-center space-x-2 sm:space-x-3">
-        {/* Mobile Hamburger Toggle Button */}
+        {/* Three-line Hamburger Button (Desktop & Mobile) */}
         <button
           type="button"
-          onClick={onToggleMobileNav}
-          className="md:hidden p-2 -ml-1 rounded text-text-2 hover:text-text hover:bg-raised transition-colors focus:outline-none"
-          aria-label="Toggle navigation drawer"
-          title="Open Navigation Menu"
+          onClick={onToggleNav}
+          className="p-1.5 sm:p-2 -ml-1 rounded-md text-text-2 hover:text-text hover:bg-raised transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-pointer flex items-center justify-center"
+          aria-label={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isNavOpen}
+          title={isNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
         >
-          <Menu className="w-5 h-5 text-accent" />
+          <Menu className="w-5 h-5 text-accent stroke-[2.2]" />
         </button>
 
         <div className="relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 shrink-0">

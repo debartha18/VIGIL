@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Home,
   Search,
@@ -26,16 +26,27 @@ export type OrbitalTab =
 interface OrbitalSidebarProps {
   activeTab: OrbitalTab;
   onSelectTab: (tab: OrbitalTab) => void;
-  isMobileOpen?: boolean;
-  onCloseMobile?: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
   activeTab,
   onSelectTab,
-  isMobileOpen = false,
-  onCloseMobile,
+  isOpen = false,
+  onClose,
 }) => {
+  // Close menu on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const menuItems: { id: OrbitalTab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <Home className="w-4 h-4" /> },
     { id: 'semantic-search', label: 'Semantic Search', icon: <Search className="w-4 h-4" /> },
@@ -50,58 +61,25 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
 
   return (
     <>
-      {/* 1. Desktop Permanent Sidebar (hidden on mobile, visible md+) */}
-      <aside className="hidden md:flex w-56 bg-surface border-r border-border flex-col justify-between select-none shrink-0 z-20 font-sans">
-        {/* Navigation list */}
-        <div className="py-3 px-2 space-y-1">
-          {menuItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onSelectTab(item.id)}
-                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded text-xs transition cursor-pointer ${
-                  isActive
-                    ? 'bg-raised text-accent font-medium border border-border shadow-subtle'
-                    : 'text-text-2 hover:text-text hover:bg-raised/60'
-                }`}
-              >
-                <span className={`shrink-0 ${isActive ? 'text-accent' : 'text-text-2'}`}>
-                  {item.icon}
-                </span>
-                <span className="tracking-normal text-left leading-snug">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Functional System Status Footer */}
-        <div className="p-3 border-t border-border flex items-center justify-between text-[11px] text-text-2 font-mono">
-          <div className="flex items-center space-x-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-ok" />
-            <span className="text-text font-medium">VIGIL v2.4</span>
-          </div>
-          <span className="text-[10px]">Ready</span>
-        </div>
-      </aside>
-
-      {/* 2. Mobile Slide-in Drawer with Backdrop (visible only < md when opened) */}
-      {/* Backdrop Overlay */}
+      {/* Subtle Backdrop Overlay */}
       <div
-        onClick={onCloseMobile}
-        className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden transition-opacity duration-200 ${
-          isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        onClick={onClose}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-[2px] z-40 transition-opacity duration-200 ease-out ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         aria-hidden="true"
       />
 
-      {/* Slide-in Drawer Panel */}
-      <div
-        className={`fixed inset-y-0 left-0 w-64 max-w-[82vw] bg-surface border-r border-border flex flex-col justify-between select-none z-50 md:hidden font-sans shadow-subtle transform transition-transform duration-200 ease-in-out ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+      {/* Slide-in Navigation Drawer Panel (Hidden by default, overlays content on click) */}
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation drawer"
+        className={`fixed inset-y-0 left-0 w-64 sm:w-72 max-w-[85vw] bg-surface border-r border-border flex flex-col justify-between select-none z-50 font-sans shadow-2xl transition-transform duration-250 ease-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
         }`}
       >
-        {/* Mobile Drawer Header with Logo & Close Button */}
+        {/* Drawer Header with Title & Close (X) Button */}
         <div className="h-14 px-4 border-b border-border flex items-center justify-between shrink-0 bg-surface">
           <div className="flex items-center space-x-2.5">
             <div className="w-7 h-7 flex items-center justify-center text-accent">
@@ -118,55 +96,58 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
               </svg>
             </div>
             <div>
-              <div className="text-sm font-semibold text-text tracking-wide">VIGIL</div>
+              <div className="text-xs font-bold text-text tracking-wider uppercase">Navigation</div>
               <div className="text-[10px] text-text-2 font-mono leading-none">Orbital Intelligence</div>
             </div>
           </div>
 
           <button
-            onClick={onCloseMobile}
-            className="w-7 h-7 rounded bg-surface hover:bg-raised border border-border text-text-2 hover:text-text flex items-center justify-center transition cursor-pointer"
+            type="button"
+            onClick={onClose}
+            className="w-7 h-7 rounded-md bg-surface hover:bg-raised border border-border text-text-2 hover:text-text flex items-center justify-center transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             aria-label="Close navigation menu"
+            title="Close navigation menu"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Mobile Navigation List */}
-        <div className="py-3 px-2 space-y-1 overflow-y-auto flex-1">
+        {/* Navigation Item List */}
+        <div className="py-3 px-2.5 space-y-1 overflow-y-auto flex-1">
           {menuItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => {
                   onSelectTab(item.id);
-                  if (onCloseMobile) onCloseMobile();
+                  if (onClose) onClose();
                 }}
-                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded text-xs transition cursor-pointer ${
+                className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-md text-xs transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   isActive
-                    ? 'bg-raised text-accent font-medium border border-border'
-                    : 'text-text-2 hover:text-text hover:bg-raised/60'
+                    ? 'bg-raised text-accent font-semibold border border-border shadow-subtle ring-1 ring-accent/30'
+                    : 'text-text-2 hover:text-text hover:bg-raised/60 border border-transparent'
                 }`}
               >
-                <span className={isActive ? 'text-accent' : 'text-text-2'}>
+                <span className={`shrink-0 ${isActive ? 'text-accent' : 'text-text-2'}`}>
                   {item.icon}
                 </span>
-                <span className="tracking-normal">{item.label}</span>
+                <span className="tracking-normal text-left font-sans">{item.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Mobile Drawer Footer */}
+        {/* Drawer System Status Footer */}
         <div className="p-3 border-t border-border flex items-center justify-between text-[11px] text-text-2 font-mono bg-surface">
           <div className="flex items-center space-x-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-ok" />
+            <span className="w-2 h-2 rounded-full bg-ok" />
             <span className="text-text font-medium">VIGIL v2.4</span>
           </div>
-          <span className="text-[10px]">Connected</span>
+          <span className="text-[10px] text-text-2">Connected</span>
         </div>
-      </div>
+      </aside>
     </>
   );
 };
