@@ -18,7 +18,9 @@ import {
   Layers,
   MapPin,
   Sliders,
-  FileText
+  FileText,
+  Palette,
+  GripVertical
 } from 'lucide-react';
 import {
   AnalysisContext,
@@ -27,6 +29,78 @@ import {
   UIActionTrigger
 } from '../../types/assistant';
 import { vigilAssistantService } from '../../services/VigilAssistantService';
+
+export type AIThemeId = 'cyan' | 'amber' | 'emerald' | 'purple' | 'orange';
+
+export interface AIThemeStyle {
+  id: AIThemeId;
+  name: string;
+  badgeHex: string;
+  glowRgba: string;
+  borderHex: string;
+  buttonHex: string;
+  buttonHoverHex: string;
+  textAccentHex: string;
+  bgHex: string;
+}
+
+export const AI_THEMES: Record<AIThemeId, AIThemeStyle> = {
+  cyan: {
+    id: 'cyan',
+    name: 'Cyber Cyan',
+    badgeHex: '#00E5FF',
+    glowRgba: 'rgba(0, 229, 255, 0.55)',
+    borderHex: '#00E5FF',
+    buttonHex: '#0284C7',
+    buttonHoverHex: '#0369A1',
+    textAccentHex: '#38BDF8',
+    bgHex: 'rgba(0, 229, 255, 0.15)'
+  },
+  amber: {
+    id: 'amber',
+    name: 'Electric Amber',
+    badgeHex: '#F59E0B',
+    glowRgba: 'rgba(245, 158, 11, 0.6)',
+    borderHex: '#F59E0B',
+    buttonHex: '#D97706',
+    buttonHoverHex: '#B45309',
+    textAccentHex: '#FBBF24',
+    bgHex: 'rgba(245, 158, 11, 0.18)'
+  },
+  emerald: {
+    id: 'emerald',
+    name: 'Neon Emerald',
+    badgeHex: '#10B981',
+    glowRgba: 'rgba(16, 185, 129, 0.55)',
+    borderHex: '#10B981',
+    buttonHex: '#059669',
+    buttonHoverHex: '#047857',
+    textAccentHex: '#34D399',
+    bgHex: 'rgba(16, 185, 129, 0.18)'
+  },
+  purple: {
+    id: 'purple',
+    name: 'Cosmic Violet',
+    badgeHex: '#C084FC',
+    glowRgba: 'rgba(168, 85, 247, 0.6)',
+    borderHex: '#A855F7',
+    buttonHex: '#7C3AED',
+    buttonHoverHex: '#6D28D9',
+    textAccentHex: '#E879F9',
+    bgHex: 'rgba(168, 85, 247, 0.18)'
+  },
+  orange: {
+    id: 'orange',
+    name: 'Solar Orange',
+    badgeHex: '#FB923C',
+    glowRgba: 'rgba(249, 115, 22, 0.6)',
+    borderHex: '#F97316',
+    buttonHex: '#EA580C',
+    buttonHoverHex: '#C2410C',
+    textAccentHex: '#FED7AA',
+    bgHex: 'rgba(249, 115, 22, 0.18)'
+  }
+};
 
 interface VigilAssistantChatProps {
   context: AnalysisContext;
@@ -54,6 +128,51 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [expandedEvidenceIds, setExpandedEvidenceIds] = useState<Record<string, boolean>>({});
   const [isListening, setIsListening] = useState<boolean>(false);
+
+  // Theme Customization State
+  const [currentThemeId, setCurrentThemeId] = useState<AIThemeId>(() => {
+    try {
+      const saved = localStorage.getItem('orbital_ai_theme') as AIThemeId;
+      if (saved && AI_THEMES[saved]) return saved;
+    } catch {}
+    return 'cyan';
+  });
+  const [showColorPicker, setShowColorPicker] = useState<boolean>(false);
+  const activeTheme = AI_THEMES[currentThemeId] || AI_THEMES.cyan;
+
+  // Floating Launcher Position (Draggable anywhere on screen)
+  const [btnPosition, setBtnPosition] = useState<{ x?: number; y?: number }>(() => {
+    try {
+      const saved = localStorage.getItem('orbital_ai_btn_pos');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          return parsed;
+        }
+      }
+    } catch {}
+    return { x: undefined, y: undefined };
+  });
+
+  const [isDraggingBtn, setIsDraggingBtn] = useState<boolean>(false);
+  const dragStartRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number; moved: boolean } | null>(null);
+
+  // Chat Window Position (Draggable by header)
+  const [windowPosition, setWindowPosition] = useState<{ x?: number; y?: number }>(() => {
+    try {
+      const saved = localStorage.getItem('orbital_ai_window_pos');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          return parsed;
+        }
+      }
+    } catch {}
+    return { x: undefined, y: undefined };
+  });
+
+  const [isDraggingWindow, setIsDraggingWindow] = useState<boolean>(false);
+  const windowDragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number; moved: boolean } | null>(null);
 
   // Initial welcome greeting
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
@@ -194,6 +313,123 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
     ]);
   };
 
+  // Resize listener to prevent elements from going off-screen
+  useEffect(() => {
+    const handleResize = () => {
+      setBtnPosition((prev) => {
+        if (prev.x !== undefined && prev.x > window.innerWidth - 140) {
+          return { ...prev, x: Math.max(12, window.innerWidth - 220) };
+        }
+        return prev;
+      });
+      setWindowPosition((prev) => {
+        if (prev.x !== undefined && prev.x > window.innerWidth - 200) {
+          return { ...prev, x: Math.max(10, window.innerWidth - 460) };
+        }
+        return prev;
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Floating Launcher Drag Handler
+  const handleBtnPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest('.prevent-drag')) return;
+
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: rect.left,
+      initialY: rect.top,
+      moved: false
+    };
+
+    const handlePointerMove = (ev: PointerEvent) => {
+      if (!dragStartRef.current) return;
+      const dx = ev.clientX - dragStartRef.current.startX;
+      const dy = ev.clientY - dragStartRef.current.startY;
+      if (Math.hypot(dx, dy) > 5) {
+        dragStartRef.current.moved = true;
+        setIsDraggingBtn(true);
+        const newX = Math.max(12, Math.min(window.innerWidth - rect.width - 12, dragStartRef.current.initialX + dx));
+        const newY = Math.max(12, Math.min(window.innerHeight - rect.height - 12, dragStartRef.current.initialY + dy));
+        setBtnPosition({ x: newX, y: newY });
+      }
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      if (dragStartRef.current?.moved) {
+        setBtnPosition((current) => {
+          try {
+            localStorage.setItem('orbital_ai_btn_pos', JSON.stringify(current));
+          } catch {}
+          return current;
+        });
+        setTimeout(() => setIsDraggingBtn(false), 80);
+      } else {
+        setIsDraggingBtn(false);
+      }
+      dragStartRef.current = null;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  // Chat Window Header Drag Handler
+  const handleHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isMaximized) return;
+    if ((e.target as HTMLElement).closest('button, input, select, a, .prevent-drag')) return;
+
+    const windowEl = (e.currentTarget.closest('.assistant-chat-window') as HTMLElement) || e.currentTarget;
+    const rect = windowEl.getBoundingClientRect();
+    windowDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: rect.left,
+      initialY: rect.top,
+      moved: false
+    };
+
+    const handlePointerMove = (ev: PointerEvent) => {
+      if (!windowDragRef.current) return;
+      const dx = ev.clientX - windowDragRef.current.startX;
+      const dy = ev.clientY - windowDragRef.current.startY;
+      if (Math.hypot(dx, dy) > 5) {
+        windowDragRef.current.moved = true;
+        setIsDraggingWindow(true);
+        const newX = Math.max(8, Math.min(window.innerWidth - rect.width - 8, windowDragRef.current.initialX + dx));
+        const newY = Math.max(8, Math.min(window.innerHeight - rect.height - 8, windowDragRef.current.initialY + dy));
+        setWindowPosition({ x: newX, y: newY });
+      }
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      if (windowDragRef.current?.moved) {
+        setWindowPosition((current) => {
+          try {
+            localStorage.setItem('orbital_ai_window_pos', JSON.stringify(current));
+          } catch {}
+          return current;
+        });
+        setTimeout(() => setIsDraggingWindow(false), 80);
+      } else {
+        setIsDraggingWindow(false);
+      }
+      windowDragRef.current = null;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
   const quickActions = [
     { label: 'What changed?', query: 'What changed here?' },
     { label: 'Compare dates', query: 'Compare the two dates' },
@@ -206,56 +442,209 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
 
   return (
     <>
-      {/* 1. COMPACT LAUNCHER BUTTON (Bottom-Right, safe offset z-40) */}
+      {/* 1. MOVABLE & HIGH-VISIBILITY CUSTOMIZABLE LAUNCHER PILL */}
       {!isOpen && (
-        <button
-          onClick={() => {
-            setIsOpen(true);
-            setIsMinimized(false);
-          }}
-          className="fixed bottom-5 right-5 z-40 flex items-center space-x-2 px-3 py-2 rounded-md bg-surface border border-border text-text shadow-subtle hover:bg-raised transition-colors duration-150 cursor-pointer font-sans group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-          title="Open Orbital Intel Assistant"
-          aria-label="Open Orbital Intel Assistant"
+        <div
+          style={
+            btnPosition.x !== undefined && btnPosition.y !== undefined
+              ? { left: `${btnPosition.x}px`, top: `${btnPosition.y}px` }
+              : { right: '24px', bottom: '86px' }
+          }
+          onPointerDown={handleBtnPointerDown}
+          className="fixed z-50 flex items-center select-none touch-none cursor-grab active:cursor-grabbing group animate-in fade-in zoom-in-95 duration-150"
         >
-          <div className="relative flex items-center justify-center">
-            <Bot className="w-4 h-4 text-accent" />
-            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-ok" />
+          {/* Main Floating Badge */}
+          <div
+            onClick={() => {
+              if (!isDraggingBtn) {
+                setIsOpen(true);
+                setIsMinimized(false);
+              }
+            }}
+            style={{
+              boxShadow: `0 0 24px ${activeTheme.glowRgba}, 0 8px 24px rgba(0,0,0,0.65)`,
+              borderColor: activeTheme.borderHex
+            }}
+            className="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-full bg-[#080F1A]/95 border-2 text-white backdrop-blur-xl transition-all hover:scale-105 active:scale-95 shadow-2xl"
+            title="Orbital Intel AI (Click to Open • Drag anywhere to Move)"
+            aria-label="Orbital Intel AI (Click to Open • Drag anywhere to Move)"
+          >
+            {/* Drag Handle Indicator */}
+            <div
+              className="text-white/40 group-hover:text-white/80 transition-colors pl-0.5"
+              title="Drag to move anywhere"
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </div>
+
+            {/* Glowing Bot Icon with Pulsing Radar Ring */}
+            <div
+              style={{ backgroundColor: activeTheme.bgHex, borderColor: activeTheme.borderHex }}
+              className="relative flex items-center justify-center w-7 h-7 rounded-full border shadow-inner shrink-0"
+            >
+              <Bot className="w-4 h-4" style={{ color: activeTheme.badgeHex }} />
+              <span
+                style={{ borderColor: activeTheme.badgeHex }}
+                className="absolute inset-0 rounded-full animate-ping opacity-60 border"
+              />
+              <span
+                style={{ backgroundColor: activeTheme.badgeHex }}
+                className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-[#080F1A]"
+              />
+            </div>
+
+            {/* Label and Hint */}
+            <div className="flex flex-col text-left pr-0.5 leading-tight">
+              <div className="flex items-center space-x-1.5">
+                <span className="text-xs font-bold font-mono tracking-wide text-white drop-shadow-sm">
+                  Orbital Intel AI
+                </span>
+                <span
+                  style={{ color: activeTheme.textAccentHex, backgroundColor: activeTheme.bgHex }}
+                  className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full uppercase"
+                >
+                  LIVE
+                </span>
+              </div>
+              <span className="text-[10px] text-white/60 font-sans">
+                Drag to move • Click to open
+              </span>
+            </div>
+
+            {/* Palette / Color Customizer Trigger Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowColorPicker((prev) => !prev);
+              }}
+              className="prevent-drag p-1 rounded-full hover:bg-white/15 text-white/70 hover:text-white transition-colors cursor-pointer ml-0.5"
+              title="Customize AI Color & Theme"
+              aria-label="Customize AI Color & Theme"
+            >
+              <Palette className="w-3.5 h-3.5" style={{ color: activeTheme.badgeHex }} />
+            </button>
           </div>
-          <span className="text-xs font-semibold font-mono text-text">
-            Orbital Intel AI
-          </span>
-        </button>
+
+          {/* Color Customizer Popover Menu */}
+          {showColorPicker && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="prevent-drag absolute bottom-full mb-2.5 right-0 bg-[#070D16]/95 border border-[#182A40] rounded-xl p-3 shadow-2xl backdrop-blur-xl flex flex-col space-y-2 z-50 min-w-[210px] animate-in fade-in zoom-in-95 duration-100"
+            >
+              <div className="flex items-center justify-between text-[11px] font-semibold text-white/90 border-b border-[#182A40] pb-1.5">
+                <span className="flex items-center space-x-1.5">
+                  <Palette className="w-3.5 h-3.5 text-[#38BDF8]" />
+                  <span>AI Color Theme</span>
+                </span>
+                <button
+                  onClick={() => setShowColorPicker(false)}
+                  className="text-white/60 hover:text-white text-xs cursor-pointer px-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="text-[10px] text-white/70">Choose high-visibility glow:</div>
+
+              <div className="grid grid-cols-5 gap-1.5 pt-0.5">
+                {Object.values(AI_THEMES).map((thm) => (
+                  <button
+                    key={thm.id}
+                    onClick={() => {
+                      setCurrentThemeId(thm.id);
+                      try {
+                        localStorage.setItem('orbital_ai_theme', thm.id);
+                      } catch {}
+                    }}
+                    title={thm.name}
+                    style={{
+                      backgroundColor: thm.badgeHex,
+                      boxShadow: currentThemeId === thm.id ? `0 0 10px ${thm.badgeHex}` : 'none'
+                    }}
+                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                      currentThemeId === thm.id
+                        ? 'ring-2 ring-white scale-110 shadow-lg'
+                        : 'opacity-70 hover:opacity-100 hover:scale-105'
+                    }`}
+                  >
+                    {currentThemeId === thm.id && <Check className="w-3.5 h-3.5 text-[#070D16] stroke-[3]" />}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] font-mono text-white/70 pt-1 border-t border-[#182A40]/60">
+                <span>Selected:</span>
+                <span className="font-bold" style={{ color: activeTheme.textAccentHex }}>
+                  {activeTheme.name}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* 2. CHAT PANEL WINDOW */}
+      {/* 2. CHAT PANEL WINDOW (Draggable by header, Theme-styled) */}
       {isOpen && (
         <div
-          className={`fixed z-50 transition-all duration-200 flex flex-col bg-surface border border-border shadow-subtle font-sans text-text ${
+          style={
+            !isMaximized && windowPosition.x !== undefined && windowPosition.y !== undefined
+              ? {
+                  left: `${windowPosition.x}px`,
+                  top: `${windowPosition.y}px`,
+                  borderColor: activeTheme.borderHex,
+                  boxShadow: `0 0 26px ${activeTheme.glowRgba}, 0 20px 40px rgba(0, 0, 0, 0.75)`
+                }
+              : {
+                  borderColor: activeTheme.borderHex,
+                  boxShadow: `0 0 26px ${activeTheme.glowRgba}, 0 20px 40px rgba(0, 0, 0, 0.75)`
+                }
+          }
+          className={`assistant-chat-window fixed z-50 transition-all duration-200 flex flex-col bg-[#080F1A]/95 border-2 shadow-2xl backdrop-blur-xl font-sans text-text ${
             isMinimized
-              ? 'bottom-4 right-4 w-72 sm:w-80 h-12 rounded-md overflow-hidden'
+              ? 'bottom-4 right-4 w-72 sm:w-80 h-12 rounded-xl overflow-hidden'
               : isMaximized
-              ? 'bottom-2 right-2 left-2 top-2 sm:bottom-4 sm:right-4 sm:left-auto sm:top-auto sm:w-[680px] sm:h-[760px] max-w-[calc(100vw-16px)] max-h-[calc(100vh-16px)] rounded-md'
-              : 'bottom-4 right-4 w-[calc(100vw-32px)] sm:w-[440px] h-[590px] max-h-[calc(100vh-40px)] rounded-md'
+              ? 'inset-2 sm:inset-4 w-auto h-auto rounded-xl'
+              : windowPosition.x !== undefined
+              ? 'w-[calc(100vw-32px)] sm:w-[450px] h-[590px] max-h-[calc(100vh-40px)] rounded-xl'
+              : 'bottom-4 right-4 w-[calc(100vw-32px)] sm:w-[450px] h-[590px] max-h-[calc(100vh-40px)] rounded-xl'
           }`}
         >
-          {/* A. HEADER */}
-          <div className="flex items-center justify-between px-3 py-2 bg-surface border-b border-border rounded-t-md shrink-0 select-none">
-            {/* Title & Status */}
-            <div className="flex items-center space-x-2 min-w-0">
-              <div className="w-6 h-6 rounded bg-raised border border-border flex items-center justify-center shrink-0">
-                <Bot className="w-3.5 h-3.5 text-accent" />
+          {/* A. HEADER (Draggable on desktop) */}
+          <div
+            onPointerDown={handleHeaderPointerDown}
+            className={`flex items-center justify-between px-3.5 py-2.5 bg-[#0B1523] border-b border-[#182A40] rounded-t-xl shrink-0 select-none ${
+              !isMaximized ? (isDraggingWindow ? 'cursor-grabbing' : 'cursor-grab') : ''
+            }`}
+            title={!isMaximized ? 'Drag header to move window anywhere' : ''}
+          >
+            {/* Title & Status with Drag Grip */}
+            <div className="flex items-center space-x-2.5 min-w-0">
+              {!isMaximized && (
+                <div className="text-white/40 hover:text-white/80 transition-colors" title="Drag to move">
+                  <GripVertical className="w-3.5 h-3.5" />
+                </div>
+              )}
+              <div
+                style={{ backgroundColor: activeTheme.bgHex, borderColor: activeTheme.borderHex }}
+                className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0"
+              >
+                <Bot className="w-4 h-4" style={{ color: activeTheme.badgeHex }} />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center space-x-2">
-                  <h3 className="text-xs font-semibold text-text tracking-normal truncate">
+                  <h3 className="text-xs font-bold text-white tracking-normal truncate">
                     Orbital Intel Assistant
                   </h3>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-raised border border-border text-text-2">
+                  <span
+                    style={{ color: activeTheme.textAccentHex, backgroundColor: activeTheme.bgHex }}
+                    className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase font-bold"
+                  >
                     {aiMode === 'LIVE_AI' ? 'Live AI' : 'Demo AI'}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1.5 text-[10px] text-text-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-ok" />
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: activeTheme.badgeHex }} />
                   <span className="truncate">Context: {context.aoi.name}</span>
                 </div>
               </div>
@@ -263,10 +652,35 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
 
             {/* Header Control Buttons */}
             <div className="flex items-center space-x-1 shrink-0 text-text-2">
+              {/* Palette / Theme Customizer Button */}
+              <button
+                onClick={() => setShowColorPicker(!showColorPicker)}
+                className="p-1 hover:text-white hover:bg-white/10 rounded transition cursor-pointer"
+                title="Change AI theme color"
+              >
+                <Palette className="w-3.5 h-3.5" style={{ color: activeTheme.badgeHex }} />
+              </button>
+
+              {/* Reset Window Position button (if dragged) */}
+              {windowPosition.x !== undefined && (
+                <button
+                  onClick={() => {
+                    setWindowPosition({ x: undefined, y: undefined });
+                    try {
+                      localStorage.removeItem('orbital_ai_window_pos');
+                    } catch {}
+                  }}
+                  className="p-1 hover:text-white hover:bg-white/10 rounded transition cursor-pointer"
+                  title="Reset window position to bottom-right"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              )}
+
               {/* Clear History */}
               <button
                 onClick={handleClearChat}
-                className="p-1 hover:text-text hover:bg-raised rounded transition cursor-pointer"
+                className="p-1 hover:text-white hover:bg-white/10 rounded transition cursor-pointer"
                 title="Clear conversation history"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -275,17 +689,17 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               {/* Minimize / Restore */}
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="p-1 hover:text-text hover:bg-raised rounded transition cursor-pointer"
+                className="p-1 hover:text-white hover:bg-white/10 rounded transition cursor-pointer"
                 title={isMinimized ? 'Restore chat window' : 'Minimize chat window'}
               >
                 {isMinimized ? <ChevronUp className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
               </button>
 
-              {/* Maximize / Normal (Only when not minimized) */}
+              {/* Maximize / Normal */}
               {!isMinimized && (
                 <button
                   onClick={() => setIsMaximized(!isMaximized)}
-                  className="p-1 hover:text-text hover:bg-raised rounded transition cursor-pointer hidden sm:block"
+                  className="p-1 hover:text-white hover:bg-white/10 rounded transition cursor-pointer hidden sm:block"
                   title={isMaximized ? 'Dock window' : 'Expand window'}
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
@@ -295,13 +709,43 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               {/* Close */}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 hover:text-flag hover:bg-raised rounded transition cursor-pointer"
+                className="p-1 hover:text-red-400 hover:bg-white/10 rounded transition cursor-pointer"
                 title="Close Orbital Intel Assistant"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
+
+          {/* Theme Palette Bar inside chat when toggled */}
+          {showColorPicker && (
+            <div className="px-3.5 py-2 bg-[#060D17] border-b border-[#182A40] flex items-center justify-between animate-in fade-in duration-150">
+              <div className="flex items-center space-x-2 text-[10px] text-white/80 font-mono">
+                <Palette className="w-3.5 h-3.5 text-[#38BDF8]" />
+                <span>AI Theme Color:</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                {Object.values(AI_THEMES).map((thm) => (
+                  <button
+                    key={thm.id}
+                    onClick={() => {
+                      setCurrentThemeId(thm.id);
+                      try {
+                        localStorage.setItem('orbital_ai_theme', thm.id);
+                      } catch {}
+                    }}
+                    title={thm.name}
+                    style={{ backgroundColor: thm.badgeHex }}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                      currentThemeId === thm.id ? 'ring-2 ring-white scale-110 shadow' : 'opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    {currentThemeId === thm.id && <Check className="w-3 h-3 text-[#070D16] stroke-[3]" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* If minimized, hide body and show mini prompt */}
           {!isMinimized && (
@@ -607,7 +1051,8 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                   <button
                     type="submit"
                     disabled={!inputQuery.trim() || isTyping}
-                    className="p-2 rounded bg-accent hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed text-[#0E1116] shadow-subtle transition cursor-pointer flex items-center justify-center shrink-0 font-medium"
+                    style={{ backgroundColor: activeTheme.buttonHex }}
+                    className="p-2 rounded hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-lg transition cursor-pointer flex items-center justify-center shrink-0 font-medium"
                     title="Send query"
                   >
                     <Send className="w-4 h-4" />
