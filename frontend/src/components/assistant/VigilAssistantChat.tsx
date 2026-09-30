@@ -253,19 +253,38 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
     }
 
     const handleOpenAI = () => {
-      setIsOpen(true);
-      setIsMinimized(false);
       setWindowPosition({ x: undefined, y: undefined });
       setBtnPosition({ x: undefined, y: undefined });
       try {
         localStorage.removeItem('orbital_ai_btn_pos');
         localStorage.removeItem('orbital_ai_window_pos');
       } catch {}
+      setIsOpen(true);
+      setIsMinimized(false);
     };
 
     window.addEventListener('open-orbital-ai', handleOpenAI);
     return () => window.removeEventListener('open-orbital-ai', handleOpenAI);
   }, []);
+
+  const openChatSafe = () => {
+    setWindowPosition((prev) => {
+      if (
+        prev.x === undefined ||
+        prev.y === undefined ||
+        prev.x < 10 ||
+        (typeof window !== 'undefined' && prev.x > window.innerWidth - 100) ||
+        prev.y < 10 ||
+        (typeof window !== 'undefined' && prev.y > window.innerHeight - 100)
+      ) {
+        try { localStorage.removeItem('orbital_ai_window_pos'); } catch {}
+        return { x: undefined, y: undefined };
+      }
+      return prev;
+    });
+    setIsOpen(true);
+    setIsMinimized(false);
+  };
 
   // Auto-scroll on new message
   useEffect(() => {
@@ -401,6 +420,9 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const dragDistRef = useRef<number>(0);
+  const isDraggingRef = useRef<boolean>(false);
+
   // Floating Launcher Drag Handler (Zero-lag, 120 FPS butter-smooth)
   const handleBtnPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.prevent-drag')) return;
@@ -408,35 +430,39 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
     const el = launcherRef.current;
     if (!el) return;
 
-    const captureTarget = e.currentTarget;
-    try {
-      captureTarget.setPointerCapture(e.pointerId);
-    } catch {}
+    dragDistRef.current = 0;
+    isDraggingRef.current = false;
 
     const rect = el.getBoundingClientRect();
     const startX = e.clientX;
     const startY = e.clientY;
     const initialX = rect.left;
     const initialY = rect.top;
-    let hasMoved = false;
     let currentX = initialX;
     let currentY = initialY;
-
-    // Remove CSS transitions instantly so it doesn't fight mouse movement
-    el.style.transition = 'none';
-    el.style.willChange = 'left, top';
-    document.body.style.userSelect = 'none';
+    let pointerCaptured = false;
+    const targetElement = e.currentTarget;
 
     const handlePointerMove = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
+      const dist = Math.hypot(dx, dy);
+      dragDistRef.current = dist;
 
-      if (!hasMoved && Math.hypot(dx, dy) > 3) {
-        hasMoved = true;
-        setIsDraggingBtn(true);
-      }
+      // Only start dragging if moved more than 7px
+      if (dist > 7) {
+        if (!isDraggingRef.current) {
+          isDraggingRef.current = true;
+          setIsDraggingBtn(true);
+          el.style.transition = 'none';
+          el.style.willChange = 'left, top';
+          document.body.style.userSelect = 'none';
+          try {
+            targetElement.setPointerCapture(e.pointerId);
+            pointerCaptured = true;
+          } catch {}
+        }
 
-      if (hasMoved) {
         if (rafRef.current) cancelAnimationFrame(rafRef.current);
         rafRef.current = requestAnimationFrame(() => {
           const newX = Math.max(10, Math.min(window.innerWidth - rect.width - 10, initialX + dx));
@@ -451,10 +477,12 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
       }
     };
 
-    const handlePointerUp = (ev: PointerEvent) => {
-      try {
-        captureTarget.releasePointerCapture(ev.pointerId);
-      } catch {}
+    const handlePointerUp = () => {
+      if (pointerCaptured) {
+        try {
+          targetElement.releasePointerCapture(e.pointerId);
+        } catch {}
+      }
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -463,14 +491,21 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
       el.style.willChange = '';
       document.body.style.userSelect = '';
 
-      if (hasMoved) {
+      if (isDraggingRef.current) {
         setBtnPosition({ x: currentX, y: currentY });
         try {
           localStorage.setItem('orbital_ai_btn_pos', JSON.stringify({ x: currentX, y: currentY }));
         } catch {}
-        setTimeout(() => setIsDraggingBtn(false), 50);
+        setTimeout(() => {
+          isDraggingRef.current = false;
+          setIsDraggingBtn(false);
+          dragDistRef.current = 0;
+        }, 120);
       } else {
+        // Direct tap or click: OPEN CHAT IMMEDIATELY!
+        isDraggingRef.current = false;
         setIsDraggingBtn(false);
+        openChatSafe();
       }
     };
 
@@ -576,22 +611,30 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               ? { left: `${btnPosition.x}px`, top: `${btnPosition.y}px`, right: 'auto', bottom: 'auto' }
               : { right: '24px', bottom: '86px' }
           }
-          onPointerDown={handleBtnPointerDown}
-          className="fixed z-[9999] flex items-center select-none touch-none cursor-grab active:cursor-grabbing group"
+          className={`fixed z-[9999] flex items-center select-none group ${isDraggingBtn ? 'scale-105 opacity-90' : ''}`}
         >
           {/* Main Floating Badge */}
           <div
-            onClick={() => {
-              if (!isDraggingBtn) {
-                setIsOpen(true);
-                setIsMinimized(false);
+            role="button"
+            tabIndex={0}
+            onPointerDown={handleBtnPointerDown}
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest('.prevent-drag')) return;
+              if (dragDistRef.current <= 7) {
+                openChatSafe();
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openChatSafe();
               }
             }}
             style={{
               boxShadow: `0 0 24px ${activeTheme.glowRgba}, 0 8px 24px rgba(0,0,0,0.65)`,
               borderColor: activeTheme.borderHex
             }}
-            className="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-full bg-[#080F1A]/95 border-2 text-white backdrop-blur-xl transition-[transform,colors] hover:scale-105 active:scale-95 shadow-2xl"
+            className="flex items-center space-x-2.5 px-3.5 py-2.5 rounded-full bg-[#080F1A]/95 border-2 text-white backdrop-blur-xl transition-[transform,colors] hover:scale-105 active:scale-95 shadow-2xl cursor-pointer"
             title="Orbital Intel AI (Click to Open • Drag anywhere to Move)"
             aria-label="Orbital Intel AI (Click to Open • Drag anywhere to Move)"
           >
@@ -736,7 +779,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               ? 'bottom-4 right-4 w-72 sm:w-80 h-12 rounded-xl overflow-hidden'
               : isMaximized
               ? 'inset-2 sm:inset-4 w-auto h-auto rounded-xl'
-              : windowPosition.x !== undefined
+              : windowPosition.x !== undefined && windowPosition.y !== undefined
               ? 'w-[calc(100vw-32px)] sm:w-[450px] h-[590px] max-h-[calc(100vh-40px)] rounded-xl'
               : 'bottom-4 right-4 w-[calc(100vw-32px)] sm:w-[450px] h-[590px] max-h-[calc(100vh-40px)] rounded-xl'
           }`}
