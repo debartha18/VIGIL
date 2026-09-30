@@ -9,7 +9,8 @@ import {
   Grid,
   FileText,
   ShieldAlert,
-  X
+  X,
+  Bot
 } from 'lucide-react';
 
 export type OrbitalTab =
@@ -137,6 +138,27 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
               </button>
             );
           })}
+        </div>
+
+        {/* Orbital Intel AI Quick Access in Drawer */}
+        <div className="p-2.5 mx-2.5 mb-2 rounded-lg bg-[#081524] border border-[#00E5FF]/30 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Bot className="w-4 h-4 text-[#00E5FF] animate-pulse" />
+            <div className="leading-tight">
+              <div className="text-xs font-semibold text-white">Orbital AI Copilot</div>
+              <div className="text-[10px] text-text-2">Geospatial Assistant</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-orbital-ai'));
+              if (onClose) onClose();
+            }}
+            className="px-2 py-1 text-[11px] font-mono font-medium rounded bg-[#00E5FF]/20 hover:bg-[#00E5FF]/30 text-[#00E5FF] border border-[#00E5FF]/40 cursor-pointer transition active:scale-95"
+          >
+            Open
+          </button>
         </div>
 
         {/* Drawer System Status Footer */}

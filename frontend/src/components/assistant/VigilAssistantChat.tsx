@@ -140,13 +140,22 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
   const [showColorPicker, setShowColorPicker] = useState<boolean>(false);
   const activeTheme = AI_THEMES[currentThemeId] || AI_THEMES.cyan;
 
-  // Floating Launcher Position (Draggable anywhere on screen)
+  // Floating Launcher Position (Draggable anywhere on screen with strict viewport boundary validation)
   const [btnPosition, setBtnPosition] = useState<{ x?: number; y?: number }>(() => {
     try {
       const saved = localStorage.getItem('orbital_ai_btn_pos');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+        if (
+          typeof parsed.x === 'number' &&
+          typeof parsed.y === 'number' &&
+          Number.isFinite(parsed.x) &&
+          Number.isFinite(parsed.y) &&
+          parsed.x >= 10 &&
+          parsed.x <= (typeof window !== 'undefined' ? Math.max(window.innerWidth - 80, 200) : 1920) &&
+          parsed.y >= 10 &&
+          parsed.y <= (typeof window !== 'undefined' ? Math.max(window.innerHeight - 50, 200) : 1080)
+        ) {
           return parsed;
         }
       }
@@ -156,13 +165,22 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
 
   const [isDraggingBtn, setIsDraggingBtn] = useState<boolean>(false);
 
-  // Chat Window Position (Draggable by header)
+  // Chat Window Position (Draggable by header with viewport boundary validation)
   const [windowPosition, setWindowPosition] = useState<{ x?: number; y?: number }>(() => {
     try {
       const saved = localStorage.getItem('orbital_ai_window_pos');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+        if (
+          typeof parsed.x === 'number' &&
+          typeof parsed.y === 'number' &&
+          Number.isFinite(parsed.x) &&
+          Number.isFinite(parsed.y) &&
+          parsed.x >= 10 &&
+          parsed.x <= (typeof window !== 'undefined' ? Math.max(window.innerWidth - 120, 200) : 1920) &&
+          parsed.y >= 10 &&
+          parsed.y <= (typeof window !== 'undefined' ? Math.max(window.innerHeight - 100, 200) : 1080)
+        ) {
           return parsed;
         }
       }
@@ -200,6 +218,54 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
   useEffect(() => {
     vigilAssistantService.setContext(context);
   }, [context]);
+
+  // Viewport validation and remote open listener
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (
+        btnPosition.x !== undefined &&
+        (btnPosition.x < 10 || btnPosition.x > window.innerWidth - 80 || !Number.isFinite(btnPosition.x))
+      ) {
+        setBtnPosition({ x: undefined, y: undefined });
+        try { localStorage.removeItem('orbital_ai_btn_pos'); } catch {}
+      }
+      if (
+        btnPosition.y !== undefined &&
+        (btnPosition.y < 10 || btnPosition.y > window.innerHeight - 50 || !Number.isFinite(btnPosition.y))
+      ) {
+        setBtnPosition({ x: undefined, y: undefined });
+        try { localStorage.removeItem('orbital_ai_btn_pos'); } catch {}
+      }
+      if (
+        windowPosition.x !== undefined &&
+        (windowPosition.x < 10 || windowPosition.x > window.innerWidth - 100 || !Number.isFinite(windowPosition.x))
+      ) {
+        setWindowPosition({ x: undefined, y: undefined });
+        try { localStorage.removeItem('orbital_ai_window_pos'); } catch {}
+      }
+      if (
+        windowPosition.y !== undefined &&
+        (windowPosition.y < 10 || windowPosition.y > window.innerHeight - 80 || !Number.isFinite(windowPosition.y))
+      ) {
+        setWindowPosition({ x: undefined, y: undefined });
+        try { localStorage.removeItem('orbital_ai_window_pos'); } catch {}
+      }
+    }
+
+    const handleOpenAI = () => {
+      setIsOpen(true);
+      setIsMinimized(false);
+      setWindowPosition({ x: undefined, y: undefined });
+      setBtnPosition({ x: undefined, y: undefined });
+      try {
+        localStorage.removeItem('orbital_ai_btn_pos');
+        localStorage.removeItem('orbital_ai_window_pos');
+      } catch {}
+    };
+
+    window.addEventListener('open-orbital-ai', handleOpenAI);
+    return () => window.removeEventListener('open-orbital-ai', handleOpenAI);
+  }, []);
 
   // Auto-scroll on new message
   useEffect(() => {
@@ -507,11 +573,11 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
           ref={launcherRef}
           style={
             btnPosition.x !== undefined && btnPosition.y !== undefined
-              ? { left: `${btnPosition.x}px`, top: `${btnPosition.y}px` }
+              ? { left: `${btnPosition.x}px`, top: `${btnPosition.y}px`, right: 'auto', bottom: 'auto' }
               : { right: '24px', bottom: '86px' }
           }
           onPointerDown={handleBtnPointerDown}
-          className="fixed z-50 flex items-center select-none touch-none cursor-grab active:cursor-grabbing group"
+          className="fixed z-[9999] flex items-center select-none touch-none cursor-grab active:cursor-grabbing group"
         >
           {/* Main Floating Badge */}
           <div
@@ -653,6 +719,8 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
               ? {
                   left: `${windowPosition.x}px`,
                   top: `${windowPosition.y}px`,
+                  right: 'auto',
+                  bottom: 'auto',
                   borderColor: activeTheme.borderHex,
                   boxShadow: `0 0 26px ${activeTheme.glowRgba}, 0 20px 40px rgba(0, 0, 0, 0.75)`
                 }
@@ -661,7 +729,7 @@ export const VigilAssistantChat: React.FC<VigilAssistantChatProps> = ({
                   boxShadow: `0 0 26px ${activeTheme.glowRgba}, 0 20px 40px rgba(0, 0, 0, 0.75)`
                 }
           }
-          className={`assistant-chat-window fixed z-50 flex flex-col bg-[#080F1A]/95 border-2 shadow-2xl backdrop-blur-xl font-sans text-text ${
+          className={`assistant-chat-window fixed z-[9999] flex flex-col bg-[#080F1A]/95 border-2 shadow-2xl backdrop-blur-xl font-sans text-text ${
             isDraggingWindow ? 'transition-none select-none' : 'transition-[opacity,transform] duration-150'
           } ${
             isMinimized

@@ -6,7 +6,8 @@ import {
   ShieldAlert,
   ChevronDown,
   UserCheck,
-  Menu
+  Menu,
+  Bot
 } from 'lucide-react';
 import { useAnalyst } from '../../context/AnalystContext';
 import { useAuth } from '../../context/AuthContext';
@@ -109,7 +110,20 @@ export const OrbitalHeader: React.FC<OrbitalHeaderProps> = ({ onOpenAuth, onTogg
       </div>
 
       {/* Right side: Authenticated User Badge & Dropdown or Public Sign In/Up */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2 sm:space-x-3">
+        {/* Quick Launch Orbital Intel AI Button */}
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent('open-orbital-ai'));
+          }}
+          className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#0E2238] hover:bg-[#122B48] border border-[#00E5FF]/40 hover:border-[#00E5FF] text-[#00E5FF] transition cursor-pointer text-xs font-mono font-medium shadow-sm hover:shadow-[0_0_12px_rgba(0,229,255,0.3)] active:scale-95"
+          title="Open Orbital Intel AI Copilot"
+        >
+          <Bot className="w-3.5 h-3.5 animate-pulse text-[#00E5FF]" />
+          <span className="hidden sm:inline">AI Copilot</span>
+        </button>
+
         {isAuthenticated ? (
           <div className="relative" ref={dropdownRef}>
             <div
