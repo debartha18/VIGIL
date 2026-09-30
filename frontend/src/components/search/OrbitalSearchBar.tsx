@@ -116,7 +116,7 @@ export const OrbitalSearchBar: React.FC<OrbitalSearchBarProps> = ({
   };
 
   return (
-    <div className="w-full bg-surface px-3 sm:px-4 py-2 border-b border-border shrink-0 select-none relative z-20">
+    <div className="w-full bg-surface px-3 sm:px-4 py-2 border-b border-border shrink-0 select-none relative z-40">
       <form onSubmit={handleSearchSubmit} className="flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-0 xl:space-x-3">
         {/* Semantic Query Input + Mobile Quick Submit */}
         <div className="flex items-center space-x-2 w-full xl:flex-1">
@@ -166,7 +166,7 @@ export const OrbitalSearchBar: React.FC<OrbitalSearchBarProps> = ({
             {showStateMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute top-10 left-0 sm:left-auto sm:right-0 md:left-0 w-48 max-h-72 overflow-y-auto bg-raised border border-border rounded-md shadow-subtle p-1.5 z-50 text-xs space-y-0.5 font-sans animate-in fade-in duration-150"
+                className="absolute top-10 left-0 sm:left-auto sm:right-0 md:left-0 w-48 max-h-72 overflow-y-auto bg-raised border border-border rounded-md shadow-2xl p-1.5 z-50 text-xs space-y-0.5 font-sans animate-in fade-in duration-150"
               >
                 <div className="px-2 py-1 text-[11px] font-semibold text-text-2 border-b border-border/80 mb-1">
                   Region / State
@@ -215,7 +215,7 @@ export const OrbitalSearchBar: React.FC<OrbitalSearchBarProps> = ({
             {showCategoryMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute top-10 left-0 sm:left-auto sm:right-0 md:left-0 w-52 bg-raised border border-border rounded-md shadow-subtle p-1.5 z-50 text-xs space-y-0.5 font-sans animate-in fade-in duration-150"
+                className="absolute top-10 left-0 sm:left-auto sm:right-0 md:left-0 w-52 bg-raised border border-border rounded-md shadow-2xl p-1.5 z-50 text-xs space-y-0.5 font-sans animate-in fade-in duration-150"
               >
                 <div className="px-2 py-1 text-[11px] font-semibold text-text-2 border-b border-border/80 mb-1">
                   Change Category
@@ -266,7 +266,7 @@ export const OrbitalSearchBar: React.FC<OrbitalSearchBarProps> = ({
             {showDateMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute top-10 right-0 sm:right-auto sm:left-0 w-[310px] sm:w-[340px] bg-raised border border-border rounded-md shadow-subtle p-3 z-50 text-xs space-y-3 font-sans animate-in fade-in duration-150"
+                className="absolute top-10 right-0 sm:right-auto sm:left-0 w-[310px] sm:w-[340px] bg-raised border border-border rounded-md shadow-2xl p-3 z-50 text-xs space-y-3 font-sans animate-in fade-in duration-150"
               >
                 <div>
                   <div className="text-xs font-semibold text-text-2 mb-1.5 flex items-center justify-between">
@@ -367,7 +367,7 @@ export const OrbitalSearchBar: React.FC<OrbitalSearchBarProps> = ({
             {showSensorMenu && (
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute top-10 right-0 w-60 bg-raised border border-border rounded-md shadow-subtle p-2 z-50 text-xs space-y-1 font-sans animate-in fade-in duration-150"
+                className="absolute top-10 right-0 w-60 bg-raised border border-border rounded-md shadow-2xl p-2 z-50 text-xs space-y-1 font-sans animate-in fade-in duration-150"
               >
                 <div className="px-2 py-1 text-xs text-text-2 font-medium flex items-center justify-between border-b border-border pb-1.5 mb-1">
                   <span>Select constellation</span>

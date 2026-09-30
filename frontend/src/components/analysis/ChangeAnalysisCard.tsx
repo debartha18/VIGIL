@@ -560,7 +560,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
               {/* FIXED LEFT IMAGE METADATA TAG (Always Baseline Before) */}
               <div
-                className="absolute top-2 left-2 z-20 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto"
+                className="absolute top-2 left-2 z-10 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto"
                 title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}
               >
                 <div className="font-semibold text-text">BEFORE · {formatDateDisplay(beforeDate)}</div>
@@ -569,7 +569,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
 
               {/* DYNAMIC RIGHT IMAGE METADATA TAG (Updates with selected mode) */}
               <div
-                className="absolute top-2 right-2 z-20 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto text-right"
+                className="absolute top-2 right-2 z-10 bg-surface/90 border border-border rounded-md px-2.5 py-1 text-[10px] font-mono backdrop-blur shadow-subtle pointer-events-auto text-right"
                 title={`Band: ${spectralMode === 'RGB' ? 'RGB (True Color)' : spectralMode}`}
               >
                 <div className="font-semibold text-text">
@@ -578,7 +578,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
                 <div className="text-text-2 text-[9px]">
                   {viewMode === 'change-map'
                     ? `Diff: ${changePercentage} · ${areaHa}`
-                    : `${sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'} · {resolution.replace(/\s*Optical.*$/i, '').trim()} · Cloud ${cloudCover.replace(/\s*\(.*?\)/g, '').trim()}`}
+                    : `${sensor ? sensor.replace(/\s*\(.*?\)/g, '').trim() : 'Sentinel-2'} · ${resolution.replace(/\s*Optical.*$/i, '').trim()} · Cloud ${cloudCover.replace(/\s*\(.*?\)/g, '').trim()}`}
                 </div>
               </div>
 
