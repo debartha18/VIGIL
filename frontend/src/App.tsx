@@ -489,9 +489,9 @@ const VigilPlatform: React.FC = () => {
               </div>
 
               {/* Top Row: Central Map (Left) + Change Analysis Panel (Right) */}
-              <div className="flex flex-col lg:grid lg:grid-cols-[1fr_1.25fr] gap-3 shrink-0 h-auto lg:h-[480px] xl:h-[520px]">
+              <div className="flex flex-col lg:grid lg:grid-cols-[1fr_1.25fr] gap-3 shrink-0 min-h-0 lg:min-h-[540px] xl:min-h-[580px]">
                 {/* Central Map with AOI, Controls & India Inset */}
-                <div className="h-[280px] sm:h-[340px] lg:h-full min-h-0 w-full">
+                <div className="h-[320px] sm:h-[380px] lg:h-full min-h-[320px] lg:min-h-[540px] w-full">
                   <SatelliteMapCanvas
                     coordinates={`Lat: ${selectedResult.coordinates.split(',')[0]}   Lon: ${selectedResult.coordinates.split(',')[1] || ''}`}
                     selectedAOI="AOI-1"
@@ -505,7 +505,7 @@ const VigilPlatform: React.FC = () => {
                 </div>
 
                 {/* Change Analysis Panel with Before/After Crops & Timeline */}
-                <div className="h-auto lg:h-full min-h-0 w-full">
+                <div className="h-auto lg:h-full min-h-[540px] w-full flex flex-col">
                   <ChangeAnalysisCard
                     candidateTitle={selectedResult.title}
                     changeType={selectedResult.changeType}

@@ -217,7 +217,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
   }, [onToggleChangeMask]);
 
   return (
-    <div className="w-full h-full bg-surface border border-border rounded-md p-3 flex flex-col justify-between select-none overflow-hidden font-sans text-text text-xs shadow-subtle">
+    <div className="w-full h-full bg-surface border border-border rounded-md p-3 flex flex-col justify-between select-none overflow-y-auto overflow-x-hidden font-sans text-text text-xs shadow-subtle custom-scrollbar">
       {/* 1. TOP HEADER BAR: Viewing Modes & Quick Actions */}
       <div className="flex items-center justify-between pb-2 border-b border-border/80 shrink-0 gap-2">
         {/* Left: Target Name & Coordinates */}
@@ -472,7 +472,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
       )}
 
       {/* 4. HERO SATELLITE IMAGERY WORKSPACE (Maximum Visual Focus) */}
-      <div className="flex-1 min-h-[220px] sm:min-h-[240px] relative rounded-md border border-border bg-bg overflow-hidden my-1.5 flex flex-col justify-center">
+      <div className="flex-1 min-h-[175px] sm:min-h-[195px] relative rounded-md border border-border bg-bg overflow-hidden my-1.5 flex flex-col justify-center">
         {/* VIEW MODE A: VISUAL (Single Full-Size High-Resolution Viewport) */}
         {viewMode === 'visual' && (
           <div className="w-full h-full relative group">
@@ -819,9 +819,9 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         {/* Metric Cards Grid - Secondary hierarchy: compact, hairline dividers, no heavy boxes */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {/* Card 1: Changed Area */}
-          <div className="bg-bg border border-border rounded-md p-2.5">
+          <div className="bg-bg border border-border rounded-md p-2">
             <span className="text-text-2 text-xs block">Changed area</span>
-            <div className="mt-1 font-mono text-xl font-semibold text-text tabular-nums">
+            <div className="mt-0.5 font-mono text-xl font-semibold text-text tabular-nums">
               {areaHa.split(' ')[0]} {areaHa.split(' ')[1] || 'ha'}
             </div>
             <div className="text-[11px] text-text-2 font-mono tabular-nums">
@@ -830,9 +830,9 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           </div>
 
           {/* Card 2: Detection Confidence */}
-          <div className="bg-bg border border-border rounded-md p-2.5">
+          <div className="bg-bg border border-border rounded-md p-2">
             <span className="text-text-2 text-xs block">Detection confidence</span>
-            <div className="mt-1 font-mono text-xl font-semibold text-text tabular-nums">
+            <div className="mt-0.5 font-mono text-xl font-semibold text-text tabular-nums">
               {confidence}%
             </div>
             <div className="text-[11px] text-text-2">
@@ -841,9 +841,9 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           </div>
 
           {/* Card 3: Change Delta */}
-          <div className="bg-bg border border-border rounded-md p-2.5">
+          <div className="bg-bg border border-border rounded-md p-2">
             <span className="text-text-2 text-xs block">Change delta</span>
-            <div className="mt-1 font-mono text-xl font-semibold text-text tabular-nums">
+            <div className="mt-0.5 font-mono text-xl font-semibold text-text tabular-nums">
               {changePercentage}
             </div>
             <div className="text-[11px] text-text-2 truncate" title={changeType}>
@@ -852,9 +852,9 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
           </div>
 
           {/* Card 4: Coordinates */}
-          <div className="bg-bg border border-border rounded-md p-2.5 flex flex-col justify-between">
+          <div className="bg-bg border border-border rounded-md p-2 flex flex-col justify-between">
             <span className="text-text-2 text-xs block">Coordinates</span>
-            <div className="mt-1 font-mono text-[13px] sm:text-sm font-semibold text-text tabular-nums" title={coordinates}>
+            <div className="mt-0.5 font-mono text-[13px] sm:text-sm font-semibold text-text tabular-nums" title={coordinates}>
               {coordinates}
             </div>
             <div className="text-[11px] text-text-2 truncate" title={locationName}>
@@ -864,19 +864,19 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
         </div>
 
         {/* Mandatory Verification Note & Review Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1 text-xs">
-          <div className="flex items-center space-x-1.5 text-text-2 text-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-1.5 pb-1 shrink-0 text-xs">
+          <div className="flex items-center space-x-1.5 text-text-2 text-xs shrink-0">
             <AlertCircle className="w-3.5 h-3.5 shrink-0 text-text-2" />
             <span>AI-assisted detection. Analyst verification required.</span>
           </div>
 
           {/* Quick Review Buttons */}
-          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-end shrink-0">
             <button
               onClick={() => handleQuickReview('CONFIRMED')}
               disabled={isSubmitting || analystVerdict === 'CONFIRMED'}
               aria-label="Confirm detected change"
-              className={`h-7 px-3 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none ${
+              className={`h-7 px-3 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus:outline-none shrink-0 ${
                 analystVerdict === 'CONFIRMED'
                   ? 'bg-ok text-bg'
                   : 'bg-accent hover:bg-accent/90 active:bg-accent/80 text-bg'
@@ -890,7 +890,7 @@ export const ChangeAnalysisCard: React.FC<ChangeAnalysisCardProps> = ({
               onClick={() => handleQuickReview('REJECTED')}
               disabled={isSubmitting || analystVerdict === 'REJECTED'}
               aria-label="Flag detection as false positive"
-              className={`h-7 px-3 rounded-md text-xs font-normal border border-border bg-transparent text-text-2 hover:text-flag hover:border-flag/60 flex items-center space-x-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-flag focus:outline-none ${
+              className={`h-7 px-3 rounded-md text-xs font-normal border border-border bg-transparent text-text-2 hover:text-flag hover:border-flag/60 flex items-center space-x-1.5 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-flag focus:outline-none shrink-0 ${
                 analystVerdict === 'REJECTED' ? 'border-flag text-flag bg-flag/10' : ''
               }`}
             >
