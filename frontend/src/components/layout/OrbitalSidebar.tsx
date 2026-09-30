@@ -64,7 +64,7 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
       {/* Subtle Backdrop Overlay */}
       <div
         onClick={onClose}
-        className={`fixed inset-0 bg-black/60 backdrop-blur-[2px] z-40 transition-opacity duration-200 ease-out ${
+        className={`fixed inset-0 bg-black/60 backdrop-blur-[2px] z-[90] transition-opacity duration-200 ease-out ${
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         aria-hidden="true"
@@ -75,7 +75,7 @@ export const OrbitalSidebar: React.FC<OrbitalSidebarProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Navigation drawer"
-        className={`fixed inset-y-0 left-0 w-64 sm:w-72 max-w-[85vw] bg-surface border-r border-border flex flex-col justify-between select-none z-50 font-sans shadow-2xl transition-transform duration-250 ease-out ${
+        className={`fixed inset-y-0 left-0 w-64 sm:w-72 max-w-[85vw] bg-surface border-r border-border flex flex-col justify-between select-none z-[100] font-sans shadow-2xl transition-transform duration-250 ease-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
         }`}
       >

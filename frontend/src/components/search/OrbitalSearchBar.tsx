@@ -116,7 +116,7 @@ export const OrbitalSearchBar: React.FC<OrbitalSearchBarProps> = ({
   };
 
   return (
-    <div className="w-full bg-surface px-3 sm:px-4 py-2 border-b border-border shrink-0 select-none relative z-50">
+    <div className="w-full bg-surface px-3 sm:px-4 py-2 border-b border-border shrink-0 select-none relative z-20">
       <form onSubmit={handleSearchSubmit} className="flex flex-col xl:flex-row xl:items-center gap-2 xl:gap-0 xl:space-x-3">
         {/* Semantic Query Input + Mobile Quick Submit */}
         <div className="flex items-center space-x-2 w-full xl:flex-1">

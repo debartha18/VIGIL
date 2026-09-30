@@ -430,7 +430,15 @@ const VigilPlatform: React.FC = () => {
 
   // 2. Authenticated or Guest Preview -> Render VIGIL Platform
   return (
-    <div className="flex flex-col min-h-[100dvh] h-screen w-full max-w-full bg-[#070D16] text-white overflow-hidden font-sans select-none">
+    <div className="flex flex-col min-h-[100dvh] h-screen w-full max-w-full bg-[#070D16] text-white overflow-hidden font-sans select-none relative">
+      {/* Navigation Drawer (Unified across Desktop and Mobile, hidden by default, slide-in overlay) */}
+      <OrbitalSidebar
+        activeTab={activeTab}
+        onSelectTab={handleTabChange}
+        isOpen={isNavOpen}
+        onClose={() => setIsNavOpen(false)}
+      />
+
       {/* 1. Top Header with User Account, Profile & Three-line Hamburger Button */}
       <OrbitalHeader
         onOpenAuth={(mode) => setAuthModalMode(mode)}
@@ -438,16 +446,8 @@ const VigilPlatform: React.FC = () => {
         isNavOpen={isNavOpen}
       />
 
-      {/* 2. Main Workstation Area: Full-width Content Workspace + Overlay Navigation Drawer */}
+      {/* 2. Main Workstation Area: Full-width Content Workspace */}
       <div className="flex-1 flex min-h-0 overflow-hidden w-full max-w-full relative">
-        {/* Navigation Drawer (Unified across Desktop and Mobile, hidden by default, slide-in overlay) */}
-        <OrbitalSidebar
-          activeTab={activeTab}
-          onSelectTab={handleTabChange}
-          isOpen={isNavOpen}
-          onClose={() => setIsNavOpen(false)}
-        />
-
         {/* Content Workspace - Automatically Expands to Full Available Width */}
         <main className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#070D16] w-full max-w-full">
           {/* Top Search Filter Bar (hidden on dedicated fullscreen map & border analysis) */}
